@@ -1,22 +1,70 @@
-# Tests
+# Airline Simulation (Streamlit)
 
-## Run the smoke test
+Minimal Streamlit UI with **exactly three screens**:
 
-From the repository root, run:
+1. **Login**
+2. **Team View**
+3. **Admin View**
 
-```bash
-/workspaces/airline_sim/.venv/bin/python -m unittest -v tests/test_smoke_simulation_flow.py
-```
+## Constraints Implemented
 
-## What it validates
+- Single app file routing (no multipage app, no `pages/` directory)
+- Routing is only via `st.session_state`:
+  - Not authenticated → `render_login()`
+  - Authenticated + role `team` → `render_team()`
+  - Authenticated + role `admin` → `render_admin()`
+- No extra navigation sections
+- Sidebar collapse control hidden via CSS (no collapsible sidebar dependency)
 
-The smoke test in `tests/test_smoke_simulation_flow.py` runs an end-to-end lifecycle in an isolated temporary directory:
+## Project Files
 
-1. `setup_simulation`
-2. `start_simulation`
-3. `enter_decision` (two teams)
-4. `move_next_round` (twice)
-5. `undo_round`
-6. `end_simulation`
+- `main.py` — Streamlit app entrypoint and 3 screen renderers:
+  - `render_login()`
+  - `render_team()`
+  - `render_admin()`
+- `styles.css` — dashboard styling and sidebar-collapse hiding
+- `requirements.txt` — Python dependencies
 
-It then verifies final simulation/round states and key CSV outputs (`round_results_team.csv`, `round_results_market.csv`, `admin_actions.csv`, and `log.csv`).
+## Team View
+
+Team screen includes only:
+
+- Enter decisions
+- View current decisions
+- View results
+
+## Admin View
+
+Admin screen includes only lifecycle actions:
+
+- Setup simulation
+- Start / Next / Undo / End
+- Backup / Restore / Destroy
+
+## Run Locally (Ubuntu/Linux)
+
+1. Create and activate a virtual environment:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Start the app:
+   ```bash
+   streamlit run main.py
+   ```
+
+4. Open in browser (from dev container):
+   ```bash
+   "$BROWSER" http://localhost:8501
+   ```
+
+## Notes
+
+- This is intentionally minimal and scoped to the 3-screen requirement only.
+- Authentication is session-based UI gating for demo workflow.
