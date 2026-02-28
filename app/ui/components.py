@@ -16,6 +16,34 @@ SIMULATION_COPYRIGHT = "Copyright 2026 by Dr. Jose Mendoza"
 ADMIN_VIEW_CAPTION = "Admin operations for setup, lifecycle, backups, restore, results, logs, and users"
 TEAM_VIEW_CAPTION = "Team decision entry and results tracking"
 DASHBOARD_VIEW_CAPTION = "Unified entry point for Admin and Team operations"
+SIDEBAR_CONTEXT_HEADER = "Context"
+SIDEBAR_QUICK_CHECKS_HEADER = "Quick Checks"
+SIDEBAR_SIMULATION_ID_LABEL = "Simulation ID"
+SIDEBAR_SIMULATIONS_ROOT_LABEL = "Simulations Root"
+SIDEBAR_ADMIN_USER_ID_LABEL = "Admin User ID"
+SIDEBAR_TEAM_ID_LABEL = "Team ID"
+SIDEBAR_BACKUPS_ROOT_LABEL = "Backups Root"
+SIDEBAR_ARCHIVE_ROOT_LABEL = "Archive Root"
+SIDEBAR_CHECK_STATUS_BUTTON = "Check Status"
+SIDEBAR_QUICK_MARKET_RESULTS_BUTTON = "Quick Market Results"
+ADMIN_QUICK_LIFECYCLE_ACTIONS_LABEL = "Quick lifecycle actions"
+ADMIN_TABS = ["Setup", "Parameters", "Backup / Restore / Destroy", "Reporting", "Users"]
+ADMIN_SUBHEADER_SETUP = "Setup Simulation"
+ADMIN_SUBHEADER_PARAMETERS = "Change Parameters (New Version)"
+ADMIN_SUBHEADER_BACKUP = "Backup / Restore / Destroy"
+ADMIN_SUBHEADER_REPORTS = "Reports"
+ADMIN_SUBHEADER_USERS = "User Management"
+ADMIN_SECTION_BACKUP = "Backup"
+ADMIN_SECTION_RESTORE = "Restore"
+ADMIN_SECTION_DESTROY = "Destroy"
+ADMIN_SECTION_CREATE_USER = "Create User"
+ADMIN_SECTION_LOCK_UNLOCK_USER = "Lock / Unlock User"
+TEAM_TABS = ["Enter Decision", "Results", "History"]
+TEAM_SUBHEADER_ENTER_DECISION = "Enter / Update Decision"
+TEAM_SUBHEADER_RESULTS = "Results"
+TEAM_SUBHEADER_DECISION_HISTORY = "Decision History"
+DASHBOARD_VIEW_SWITCH_LABEL = "View"
+DASHBOARD_VIEW_OPTIONS = ["Admin", "Team"]
 
 
 @dataclass(frozen=True)
@@ -105,9 +133,9 @@ def render_basic_context_sidebar(
 	with st.sidebar:
 		if show_branding:
 			render_branding(st, in_sidebar=True)
-		st.header("Context")
-		simulation_id = st.text_input("Simulation ID", value=default_simulation_id)
-		root_dir = Path(st.text_input("Simulations Root", value=default_root_dir))
+		st.header(SIDEBAR_CONTEXT_HEADER)
+		simulation_id = st.text_input(SIDEBAR_SIMULATION_ID_LABEL, value=default_simulation_id)
+		root_dir = Path(st.text_input(SIDEBAR_SIMULATIONS_ROOT_LABEL, value=default_root_dir))
 
 		admin_user_id: str | None = None
 		team_id: str | None = None
@@ -115,14 +143,14 @@ def render_basic_context_sidebar(
 		archive_dir: Path | None = None
 
 		if include_admin_fields:
-			admin_user_id = st.text_input("Admin User ID", value="U_ADMIN")
+			admin_user_id = st.text_input(SIDEBAR_ADMIN_USER_ID_LABEL, value="U_ADMIN")
 
 		if include_team_field:
-			team_id = st.text_input("Team ID", value="T1")
+			team_id = st.text_input(SIDEBAR_TEAM_ID_LABEL, value="T1")
 
 		if include_storage_fields:
-			backups_dir = Path(st.text_input("Backups Root", value="backups"))
-			archive_dir = Path(st.text_input("Archive Root", value="archive"))
+			backups_dir = Path(st.text_input(SIDEBAR_BACKUPS_ROOT_LABEL, value="backups"))
+			archive_dir = Path(st.text_input(SIDEBAR_ARCHIVE_ROOT_LABEL, value="archive"))
 
 	return UIContext(
 		simulation_id=simulation_id,

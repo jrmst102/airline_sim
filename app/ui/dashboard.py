@@ -4,7 +4,14 @@ from pathlib import Path
 
 from app.ui.components import (
 	DASHBOARD_VIEW_CAPTION,
+	DASHBOARD_VIEW_OPTIONS,
+	DASHBOARD_VIEW_SWITCH_LABEL,
 	get_streamlit,
+	SIDEBAR_CHECK_STATUS_BUTTON,
+	SIDEBAR_QUICK_CHECKS_HEADER,
+	SIDEBAR_QUICK_MARKET_RESULTS_BUTTON,
+	SIDEBAR_SIMULATION_ID_LABEL,
+	SIDEBAR_SIMULATIONS_ROOT_LABEL,
 	SIMULATION_TITLE,
 	render_branding,
 	render_simulation_header,
@@ -25,18 +32,18 @@ def render_dashboard() -> None:
 
 	with st.sidebar:
 		render_branding(st, in_sidebar=True)
-		st.header("Quick Checks")
-		simulation_id = st.text_input("Simulation ID", value="sim_001")
-		root_dir = Path(st.text_input("Simulations Root", value="simulations"))
+		st.header(SIDEBAR_QUICK_CHECKS_HEADER)
+		simulation_id = st.text_input(SIDEBAR_SIMULATION_ID_LABEL, value="sim_001")
+		root_dir = Path(st.text_input(SIDEBAR_SIMULATIONS_ROOT_LABEL, value="simulations"))
 
-		if st.button("Check Status", use_container_width=True):
+		if st.button(SIDEBAR_CHECK_STATUS_BUTTON, use_container_width=True):
 			run_action(
 				st,
 				"Check Simulation Status",
 				lambda: check_simulation_status(simulation_id=simulation_id, root_dir=root_dir),
 			)
 
-		if st.button("Quick Market Results", use_container_width=True):
+		if st.button(SIDEBAR_QUICK_MARKET_RESULTS_BUTTON, use_container_width=True):
 			run_action(
 				st,
 				"Display Market Results",
@@ -47,7 +54,7 @@ def render_dashboard() -> None:
 				),
 			)
 
-	mode = st.radio("View", options=["Admin", "Team"], horizontal=True)
+	mode = st.radio(DASHBOARD_VIEW_SWITCH_LABEL, options=DASHBOARD_VIEW_OPTIONS, horizontal=True)
 
 	if mode == "Admin":
 		render_admin_view()

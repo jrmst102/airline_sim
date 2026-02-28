@@ -3,6 +3,18 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.ui.components import (
+	ADMIN_QUICK_LIFECYCLE_ACTIONS_LABEL,
+	ADMIN_SECTION_BACKUP,
+	ADMIN_SECTION_CREATE_USER,
+	ADMIN_SECTION_DESTROY,
+	ADMIN_SECTION_LOCK_UNLOCK_USER,
+	ADMIN_SECTION_RESTORE,
+	ADMIN_SUBHEADER_BACKUP,
+	ADMIN_SUBHEADER_PARAMETERS,
+	ADMIN_SUBHEADER_REPORTS,
+	ADMIN_SUBHEADER_SETUP,
+	ADMIN_SUBHEADER_USERS,
+	ADMIN_TABS,
 	ADMIN_VIEW_CAPTION,
 	get_streamlit,
 	parse_csv_list,
@@ -58,7 +70,7 @@ def render_admin_view() -> None:
 			)
 
 	with quick_col:
-		st.write("Quick lifecycle actions")
+		st.write(ADMIN_QUICK_LIFECYCLE_ACTIONS_LABEL)
 		c1, c2, c3, c4 = st.columns(4)
 		with c1:
 			if st.button("Start", use_container_width=True):
@@ -105,12 +117,10 @@ def render_admin_view() -> None:
 					),
 				)
 
-	tab_setup, tab_params, tab_backup, tab_reporting, tab_users = st.tabs(
-		["Setup", "Parameters", "Backup / Restore / Destroy", "Reporting", "Users"]
-	)
+	tab_setup, tab_params, tab_backup, tab_reporting, tab_users = st.tabs(ADMIN_TABS)
 
 	with tab_setup:
-		st.subheader("Setup Simulation")
+		st.subheader(ADMIN_SUBHEADER_SETUP)
 		with st.form("setup_form"):
 			simulation_name = st.text_input("Simulation Name", value="Airline Simulation")
 			total_rounds = st.number_input("Total Rounds", min_value=1, value=8, step=1)
@@ -133,7 +143,7 @@ def render_admin_view() -> None:
 				)
 
 	with tab_params:
-		st.subheader("Change Parameters (New Version)")
+		st.subheader(ADMIN_SUBHEADER_PARAMETERS)
 		with st.form("params_form"):
 			days_per_round = st.number_input("days_per_round", min_value=1, value=30, step=1)
 			base_demand_business = st.number_input("base_demand_business", min_value=0.0, value=1200.0)
@@ -162,11 +172,11 @@ def render_admin_view() -> None:
 				)
 
 	with tab_backup:
-		st.subheader("Backup / Restore / Destroy")
+		st.subheader(ADMIN_SUBHEADER_BACKUP)
 		c_backup, c_restore, c_destroy = st.columns(3)
 
 		with c_backup:
-			st.write("Backup")
+			st.write(ADMIN_SECTION_BACKUP)
 			if st.button("Create Backup", use_container_width=True):
 				run_action(
 					st,
@@ -180,7 +190,7 @@ def render_admin_view() -> None:
 				)
 
 		with c_restore:
-			st.write("Restore")
+			st.write(ADMIN_SECTION_RESTORE)
 			restore_backup_path = st.text_input("Backup zip path", value="")
 			restore_as_sim_id = st.text_input("Restore as simulation_id (optional)", value="")
 			restore_overwrite = st.checkbox("Overwrite target if exists", value=False)
@@ -198,7 +208,7 @@ def render_admin_view() -> None:
 				)
 
 		with c_destroy:
-			st.write("Destroy")
+			st.write(ADMIN_SECTION_DESTROY)
 			destroy_mode = st.selectbox("Destroy mode", options=["archive", "delete"], index=0)
 			if st.button("Destroy Simulation", use_container_width=True):
 				run_action(
@@ -215,7 +225,7 @@ def render_admin_view() -> None:
 				)
 
 	with tab_reporting:
-		st.subheader("Reports")
+		st.subheader(ADMIN_SUBHEADER_REPORTS)
 		section = st.selectbox("Results Section", options=["both", "market", "team"], index=0)
 		round_filter_raw = st.text_input("Round filter (optional)", value="")
 		team_filter = st.text_input("Team filter (optional)", value="")
@@ -266,12 +276,12 @@ def render_admin_view() -> None:
 				)
 
 	with tab_users:
-		st.subheader("User Management")
+		st.subheader(ADMIN_SUBHEADER_USERS)
 		left, right = st.columns(2)
 
 		with left:
 			with st.form("create_user_form"):
-				st.write("Create User")
+				st.write(ADMIN_SECTION_CREATE_USER)
 				username = st.text_input("Username")
 				password = st.text_input("Password", type="password")
 				role = st.selectbox("Role", options=["ADMIN", "TEAM_LEAD", "TEAM_MEMBER"], index=1)
@@ -293,7 +303,7 @@ def render_admin_view() -> None:
 					)
 
 		with right:
-			st.write("Lock / Unlock User")
+			st.write(ADMIN_SECTION_LOCK_UNLOCK_USER)
 			target_username = st.text_input("Target username")
 			c_lock, c_unlock = st.columns(2)
 			with c_lock:

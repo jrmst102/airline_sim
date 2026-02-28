@@ -3,6 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.ui.components import (
+	TEAM_SUBHEADER_DECISION_HISTORY,
+	TEAM_SUBHEADER_ENTER_DECISION,
+	TEAM_SUBHEADER_RESULTS,
+	TEAM_TABS,
 	TEAM_VIEW_CAPTION,
 	get_streamlit,
 	parse_optional_int,
@@ -52,10 +56,10 @@ def render_team_view() -> None:
 				),
 			)
 
-	tab_decisions, tab_results, tab_history = st.tabs(["Enter Decision", "Results", "History"])
+	tab_decisions, tab_results, tab_history = st.tabs(TEAM_TABS)
 
 	with tab_decisions:
-		st.subheader("Enter / Update Decision")
+		st.subheader(TEAM_SUBHEADER_ENTER_DECISION)
 		with st.form("team_decision_form"):
 			round_raw = st.text_input("Round (optional, must be OPEN)", value="")
 			flights_per_day = st.number_input("flights_per_day", min_value=1, value=6, step=1)
@@ -81,7 +85,7 @@ def render_team_view() -> None:
 				run_action(st, "Enter Decision", _run_enter_decision)
 
 	with tab_results:
-		st.subheader("Results")
+		st.subheader(TEAM_SUBHEADER_RESULTS)
 		results_section = st.selectbox("Section", options=["team", "market", "both"], index=0)
 		round_filter_raw = st.text_input("Round filter (optional)", value="")
 		if st.button("Display Results", use_container_width=True):
@@ -98,7 +102,7 @@ def render_team_view() -> None:
 			run_action(st, "Display Results", _run_display_results)
 
 	with tab_history:
-		st.subheader("Decision History")
+		st.subheader(TEAM_SUBHEADER_DECISION_HISTORY)
 		if st.button("Show Team Decision History", use_container_width=True):
 			def _run_history():
 				summaries = get_historical_decisions_team(simulation_id=simulation_id, root_dir=root_dir)
