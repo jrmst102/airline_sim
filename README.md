@@ -82,6 +82,38 @@ Use the module CLIs directly for full simulation lifecycle control.
 .venv/bin/python -m app.modules.end_simulation sim_001 --admin-user-id U_ADMIN
 ```
 
+7. **(Optional) Import decision batch from CSV or Google Sheets**
+
+CSV input:
+
+```bash
+.venv/bin/python -m app.modules.import_decisions_batch sim_001 --input-type csv --csv-path decisions_input.csv
+```
+
+Google Sheets input (service account credentials required):
+
+```bash
+.venv/bin/python -m app.modules.import_decisions_batch sim_001 --input-type google-sheet --spreadsheet-id-or-url "<sheet-id-or-url>" --worksheet Decisions --credentials-json /path/to/service_account.json
+```
+
+Expected decision columns: `team_id`, `flights_per_day`, `price_premium`, `price_economy`, `brand_investment`, optional `round_number`.
+
+8. **(Optional) Export results to CSV or Google Sheets**
+
+CSV output:
+
+```bash
+.venv/bin/python -m app.modules.export_results_batch sim_001 --section both --output-type csv --output-dir exports
+```
+
+Google Sheets output:
+
+```bash
+.venv/bin/python -m app.modules.export_results_batch sim_001 --section both --output-type google-sheet --spreadsheet-id-or-url "<sheet-id-or-url>" --worksheet-prefix SimResults --credentials-json /path/to/service_account.json
+```
+
+This writes results to worksheets named `SimResults_Market` and `SimResults_Team`.
+
 ### Option 2: GUI only
 
 1. **Launch Streamlit dashboard**
@@ -102,48 +134,48 @@ Use the module CLIs directly for full simulation lifecycle control.
 
 ## CLI Usage
 
-Run the command router:
+You can run the simulation in two CLI styles:
+
+- **Command router (`main.py`)** for a small set of convenience commands.
+- **Module CLIs (`python -m app.modules.<module>`)** for full lifecycle, batch import, and export workflows.
+
+### Router Commands (`main.py`)
+
+Show available router commands:
 
 ```bash
 .venv/bin/python main.py --help
 ```
 
-Example:
+Examples:
 
 ```bash
 .venv/bin/python main.py display-log sim_001
+.venv/bin/python main.py historical-decisions-team sim_001
 ```
 
-### Common Commands
+### Module CLI Commands (current)
 
 | Task | Command |
 | --- | --- |
-| Show all commands | `.venv/bin/python main.py --help` |
-| Display log | `.venv/bin/python main.py display-log sim_001` |
+| Setup simulation | `.venv/bin/python -m app.modules.setup_simulation sim_001 --name "Airline Simulation" --rounds 8 --teams "Team Alpha" "Team Bravo"` |
+| Start simulation | `.venv/bin/python -m app.modules.start_simulation sim_001 --admin-user-id U_ADMIN` |
+| Enter decision | `.venv/bin/python -m app.modules.enter_decisions sim_001 --team-id T1 --flights-per-day 6 --price-premium 220 --price-economy 160 --brand-investment 1000` |
+| Move to next round | `.venv/bin/python -m app.modules.move_next_round sim_001 --admin-user-id U_ADMIN` |
+| Check status | `.venv/bin/python -m app.modules.check_simulation_status sim_001` |
+| Display results | `.venv/bin/python -m app.modules.display_results sim_001 --section both` |
+| End simulation | `.venv/bin/python -m app.modules.end_simulation sim_001 --admin-user-id U_ADMIN` |
+| Import decisions batch (CSV) | `.venv/bin/python -m app.modules.import_decisions_batch sim_001 --input-type csv --csv-path decisions_input.csv` |
+| Import decisions batch (Google Sheets) | `.venv/bin/python -m app.modules.import_decisions_batch sim_001 --input-type google-sheet --spreadsheet-id-or-url "<sheet-id-or-url>" --worksheet Decisions --credentials-json /path/to/service_account.json` |
+| Export results batch (CSV) | `.venv/bin/python -m app.modules.export_results_batch sim_001 --section both --output-type csv --output-dir exports` |
+| Export results batch (Google Sheets) | `.venv/bin/python -m app.modules.export_results_batch sim_001 --section both --output-type google-sheet --spreadsheet-id-or-url "<sheet-id-or-url>" --worksheet-prefix SimResults --credentials-json /path/to/service_account.json` |
 
-### Team Commands
+### Notes for Google Sheets
 
-| Task | Command |
-| --- | --- |
-| Team decision history summary | `.venv/bin/python main.py historical-decisions-team sim_001` |
-| Team decision history (custom root) | `.venv/bin/python main.py historical-decisions-team sim_001 --root simulations` |
+- Install dependencies from `requirements.txt` (includes `gspread` and `google-auth`).
+- Use a Google service-account JSON key via `--credentials-json`.
+- Share the target spreadsheet with the service-account email so it can read/write.
 
-Current CLI routes are limited to `display-log` and `historical-decisions-team`; lifecycle and decision-entry workflows are available through the Streamlit UI.
-
-### Planned CLI Expansion
-
-To align CLI capabilities with current UI workflows, the next commands to expose are:
-
-| Planned command | Purpose |
-| --- | --- |
-| `check-status` | View simulation status and current round/state |
-| `setup-simulation` | Initialize a simulation with rounds and teams |
-| `start-simulation` | Move simulation from setup to active play |
-| `move-next-round` | Process one round forward |
-| `undo-round` | Revert the most recent round transition |
-| `end-simulation` | Close simulation and finalize state |
-| `display-results` | Show market/team round results |
-| `enter-decision` | Submit or update team decisions for an open round |
 
 ## UI Usage (Streamlit)
 
