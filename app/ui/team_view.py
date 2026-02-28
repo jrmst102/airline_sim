@@ -3,6 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.ui.components import (
+	ACTION_CHECK_SIMULATION_STATUS,
+	ACTION_DISPLAY_RESULTS,
+	ACTION_DISPLAY_TEAM_RESULTS,
+	ACTION_ENTER_DECISION,
+	ACTION_TEAM_DECISION_HISTORY,
 	TEAM_BUTTON_CHECK_SIMULATION_STATUS,
 	TEAM_BUTTON_DISPLAY_RESULTS,
 	TEAM_BUTTON_SHOW_TEAM_DECISION_HISTORY,
@@ -53,14 +58,14 @@ def render_team_view() -> None:
 		if st.button(TEAM_BUTTON_CHECK_SIMULATION_STATUS, use_container_width=True):
 			run_action(
 				st,
-				"Check Simulation Status",
+				ACTION_CHECK_SIMULATION_STATUS,
 				lambda: check_simulation_status(simulation_id=simulation_id, root_dir=root_dir),
 			)
 	with report_col:
 		if st.button(TEAM_BUTTON_SHOW_TEAM_RESULTS, use_container_width=True):
 			run_action(
 				st,
-				"Display Team Results",
+				ACTION_DISPLAY_TEAM_RESULTS,
 				lambda: display_results(
 					simulation_id=simulation_id,
 					team_id=team_id,
@@ -95,7 +100,7 @@ def render_team_view() -> None:
 						root_dir=root_dir,
 					)
 
-				run_action(st, "Enter Decision", _run_enter_decision)
+				run_action(st, ACTION_ENTER_DECISION, _run_enter_decision)
 
 	with tab_results:
 		st.subheader(TEAM_SUBHEADER_RESULTS)
@@ -112,7 +117,7 @@ def render_team_view() -> None:
 					root_dir=root_dir,
 				)
 
-			run_action(st, "Display Results", _run_display_results)
+			run_action(st, ACTION_DISPLAY_RESULTS, _run_display_results)
 
 	with tab_history:
 		st.subheader(TEAM_SUBHEADER_DECISION_HISTORY)
@@ -131,7 +136,7 @@ def render_team_view() -> None:
 						}
 				return f"No decision history found for team {team_id}."
 
-			run_action(st, "Team Decision History", _run_history)
+			run_action(st, ACTION_TEAM_DECISION_HISTORY, _run_history)
 
 
 def main() -> None:

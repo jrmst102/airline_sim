@@ -3,6 +3,23 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.ui.components import (
+	ACTION_BACKUP_SIMULATION,
+	ACTION_CHANGE_PARAMETERS_LIVE,
+	ACTION_CHECK_SIMULATION_STATUS,
+	ACTION_CREATE_USER,
+	ACTION_DESTROY_SIMULATION,
+	ACTION_DISPLAY_LOG,
+	ACTION_DISPLAY_RESULTS,
+	ACTION_END_SIMULATION,
+	ACTION_HISTORICAL_DECISIONS,
+	ACTION_LIST_USERS,
+	ACTION_LOCK_USER,
+	ACTION_MOVE_NEXT_ROUND,
+	ACTION_RESTORE_SIMULATION,
+	ACTION_SETUP_SIMULATION,
+	ACTION_START_SIMULATION,
+	ACTION_UNDO_ROUND,
+	ACTION_UNLOCK_USER,
 	ADMIN_BUTTON_CHECK_STATUS,
 	ADMIN_BUTTON_CREATE_BACKUP,
 	ADMIN_BUTTON_DESTROY_SIMULATION,
@@ -106,7 +123,7 @@ def render_admin_view() -> None:
 		if st.button(ADMIN_BUTTON_REFRESH_STATUS, use_container_width=True):
 			run_action(
 				st,
-				"Check Status",
+				ACTION_CHECK_SIMULATION_STATUS,
 				lambda: check_simulation_status(
 					simulation_id=simulation_id,
 					root_dir=root_dir,
@@ -120,7 +137,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_START, use_container_width=True):
 				run_action(
 					st,
-					"Start Simulation",
+					ACTION_START_SIMULATION,
 					lambda: start_simulation(
 						simulation_id=simulation_id,
 						admin_user_id=admin_user_id,
@@ -131,7 +148,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_MOVE_NEXT, use_container_width=True):
 				run_action(
 					st,
-					"Move Next Round",
+					ACTION_MOVE_NEXT_ROUND,
 					lambda: move_next_round(
 						simulation_id=simulation_id,
 						admin_user_id=admin_user_id,
@@ -142,7 +159,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_UNDO, use_container_width=True):
 				run_action(
 					st,
-					"Undo Round",
+					ACTION_UNDO_ROUND,
 					lambda: undo_round(
 						simulation_id=simulation_id,
 						admin_user_id=admin_user_id,
@@ -153,7 +170,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_END, use_container_width=True):
 				run_action(
 					st,
-					"End Simulation",
+					ACTION_END_SIMULATION,
 					lambda: end_simulation(
 						simulation_id=simulation_id,
 						admin_user_id=admin_user_id,
@@ -175,7 +192,7 @@ def render_admin_view() -> None:
 				team_names = parse_csv_list(raw_team_names)
 				run_action(
 					st,
-					"Setup Simulation",
+					ACTION_SETUP_SIMULATION,
 					lambda: setup_simulation(
 						simulation_id=simulation_id,
 						simulation_name=simulation_name,
@@ -200,7 +217,7 @@ def render_admin_view() -> None:
 			if submit_params:
 				run_action(
 					st,
-					"Change Parameters Live",
+					ACTION_CHANGE_PARAMETERS_LIVE,
 					lambda: change_parameters_live(
 						simulation_id=simulation_id,
 						admin_user_id=admin_user_id,
@@ -224,7 +241,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_CREATE_BACKUP, use_container_width=True):
 				run_action(
 					st,
-					"Backup Simulation",
+					ACTION_BACKUP_SIMULATION,
 					lambda: backup_simulation(
 						simulation_id=simulation_id,
 						admin_user_id=admin_user_id,
@@ -241,7 +258,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_RESTORE_BACKUP, use_container_width=True):
 				run_action(
 					st,
-					"Restore Simulation",
+					ACTION_RESTORE_SIMULATION,
 					lambda: restore_simulation(
 						backup_zip_path=Path(restore_backup_path),
 						restore_as_simulation_id=restore_as_sim_id or None,
@@ -257,7 +274,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_DESTROY_SIMULATION, use_container_width=True):
 				run_action(
 					st,
-					"Destroy Simulation",
+					ACTION_DESTROY_SIMULATION,
 					lambda: destroy_simulation(
 						simulation_id=simulation_id,
 						admin_user_id=admin_user_id,
@@ -279,7 +296,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_DISPLAY_RESULTS, use_container_width=True):
 				run_action(
 					st,
-					"Display Results",
+					ACTION_DISPLAY_RESULTS,
 					lambda: display_results(
 						simulation_id=simulation_id,
 						round_number=parse_optional_int(round_filter_raw, field_name="round"),
@@ -292,7 +309,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_DISPLAY_LOG, use_container_width=True):
 				run_action(
 					st,
-					"Display Log",
+					ACTION_DISPLAY_LOG,
 					lambda: display_log(
 						simulation_id=simulation_id,
 						root_dir=root_dir,
@@ -302,7 +319,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_HISTORICAL_DECISIONS, use_container_width=True):
 				run_action(
 					st,
-					"Historical Decisions",
+					ACTION_HISTORICAL_DECISIONS,
 					lambda: display_historical_decisions_team(
 						simulation_id=simulation_id,
 						root_dir=root_dir,
@@ -312,7 +329,7 @@ def render_admin_view() -> None:
 			if st.button(ADMIN_BUTTON_CHECK_STATUS, use_container_width=True):
 				run_action(
 					st,
-					"Check Simulation Status",
+					ACTION_CHECK_SIMULATION_STATUS,
 					lambda: check_simulation_status(
 						simulation_id=simulation_id,
 						root_dir=root_dir,
@@ -334,7 +351,7 @@ def render_admin_view() -> None:
 				if submit_user:
 					run_action(
 						st,
-						"Create User",
+						ACTION_CREATE_USER,
 						lambda: create_user(
 							simulation_id=simulation_id,
 							username=username,
@@ -354,7 +371,7 @@ def render_admin_view() -> None:
 				if st.button(ADMIN_BUTTON_LOCK, use_container_width=True):
 					run_action(
 						st,
-						"Lock User",
+						ACTION_LOCK_USER,
 						lambda: set_user_lock(
 							simulation_id=simulation_id,
 							username=target_username,
@@ -367,7 +384,7 @@ def render_admin_view() -> None:
 				if st.button(ADMIN_BUTTON_UNLOCK, use_container_width=True):
 					run_action(
 						st,
-						"Unlock User",
+						ACTION_UNLOCK_USER,
 						lambda: set_user_lock(
 							simulation_id=simulation_id,
 							username=target_username,
@@ -380,7 +397,7 @@ def render_admin_view() -> None:
 		if st.button(ADMIN_BUTTON_LIST_USERS):
 			run_action(
 				st,
-				"List Users",
+				ACTION_LIST_USERS,
 				lambda: [
 					{
 						"user_id": user.user_id,

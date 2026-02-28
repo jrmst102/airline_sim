@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.ui.components import (
+	ACTION_CHECK_SIMULATION_STATUS,
+	ACTION_DISPLAY_MARKET_RESULTS,
 	DASHBOARD_VIEW_CAPTION,
 	DASHBOARD_VIEW_OPTIONS,
 	DASHBOARD_VIEW_SWITCH_LABEL,
@@ -39,14 +41,14 @@ def render_dashboard() -> None:
 		if st.button(SIDEBAR_CHECK_STATUS_BUTTON, use_container_width=True):
 			run_action(
 				st,
-				"Check Simulation Status",
+				ACTION_CHECK_SIMULATION_STATUS,
 				lambda: check_simulation_status(simulation_id=simulation_id, root_dir=root_dir),
 			)
 
 		if st.button(SIDEBAR_QUICK_MARKET_RESULTS_BUTTON, use_container_width=True):
 			run_action(
 				st,
-				"Display Market Results",
+				ACTION_DISPLAY_MARKET_RESULTS,
 				lambda: display_results(
 					simulation_id=simulation_id,
 					section="market",
