@@ -8,6 +8,9 @@ from app.ui.components import (
 	ACTION_DISPLAY_TEAM_RESULTS,
 	ACTION_ENTER_DECISION,
 	ACTION_TEAM_DECISION_HISTORY,
+	apply_streamlit_theme,
+	build_ui_snapshot,
+	render_card,
 	TEAM_BUTTON_CHECK_SIMULATION_STATUS,
 	TEAM_BUTTON_DISPLAY_RESULTS,
 	TEAM_BUTTON_SHOW_TEAM_DECISION_HISTORY,
@@ -29,7 +32,9 @@ from app.ui.components import (
 	get_streamlit,
 	parse_optional_int,
 	render_basic_context_sidebar,
-	render_simulation_header,
+	render_right_insight_panel,
+	render_sidebar_navigation,
+	render_top_header_bar,
 	run_action,
 )
 from app.modules.check_simulation_status import check_simulation_status
@@ -40,8 +45,7 @@ from app.modules.historical_decisions_team import get_historical_decisions_team
 
 def render_team_view() -> None:
 	st = get_streamlit()
-	render_simulation_header(st)
-	st.caption(TEAM_VIEW_CAPTION)
+	apply_streamlit_theme(st)
 
 	context = render_basic_context_sidebar(
 		st,
@@ -53,27 +57,39 @@ def render_team_view() -> None:
 	simulation_id = context.simulation_id
 	team_id = context.team_id or "T1"
 	root_dir = context.root_dir
+	snapshot = build_ui_snapshot(simulation_id=simulation_id, root_dir=root_dir, team_id=team_id)
+	render_top_header_bar(st, simulation_id=simulation_id, snapshot=snapshot)
+	st.caption(TEAM_VIEW_CAPTION)
 
-	status_col, report_col = st.columns([1, 1])
-	with status_col:
-		if st.button(TEAM_BUTTON_CHECK_SIMULATION_STATUS, use_container_width=True):
-			run_action(
-				st,
-				ACTION_CHECK_SIMULATION_STATUS,
-				lambda: check_simulation_status(simulation_id=simulation_id, root_dir=root_dir),
-			)
-	with report_col:
-		if st.button(TEAM_BUTTON_SHOW_TEAM_RESULTS, use_container_width=True):
-			run_action(
-				st,
-				ACTION_DISPLAY_TEAM_RESULTS,
-				lambda: display_results(
-					simulation_id=simulation_id,
-					team_id=team_id,
-					section="team",
-					root_dir=root_dir,
-				),
-			)
+	with st.sidebar:
+		render_sidebar_navigation(st, active_item="Enter Decisions")
+
+	main_col, insight_col = st.columns([5, 1], vertical_alignment="top")
+	with main_col:
+		with render_card(st, "Team Actions"):
+			status_col, report_col = st.columns([1, 1])
+			with status_col:
+				if st.button(TEAM_BUTTON_CHECK_SIMULATION_STATUS, use_container_width=True):
+					run_action(
+						st,
+						ACTION_CHECK_SIMULATION_STATUS,
+						lambda: check_simulation_status(simulation_id=simulation_id, root_dir=root_dir),
+					)
+			with report_col:
+				if st.button(TEAM_BUTTON_SHOW_TEAM_RESULTS, use_container_width=True):
+					run_action(
+						st,
+						ACTION_DISPLAY_TEAM_RESULTS,
+						lambda: display_results(
+							simulation_id=simulation_id,
+							team_id=team_id,
+							section="team",
+							root_dir=root_dir,
+						),
+					)
+
+	with insight_col:
+		render_right_insight_panel(st, snapshot=snapshot)
 
 	tab_decisions, tab_results, tab_history = st.tabs(TEAM_TABS)
 

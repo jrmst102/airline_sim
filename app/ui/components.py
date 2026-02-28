@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import csv
 import importlib
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -116,6 +118,28 @@ TEAM_SUBHEADER_ENTER_DECISION = "Enter / Update Decision"
 TEAM_SUBHEADER_RESULTS = "Results"
 TEAM_TABS = ["Enter Decision", "Results", "History"]
 
+PRIMARY_ACCENT = "#2563EB"
+SUCCESS_COLOR = "#16A34A"
+WARNING_COLOR = "#F59E0B"
+DANGER_COLOR = "#DC2626"
+NEUTRAL_BG = "#F3F4F6"
+HEADER_BG = "#1F2937"
+
+PRIMARY_NAV_ITEMS = [
+	"Home",
+	"Enter Decisions",
+	"Display Current Decisions",
+	"Move to Next Round",
+	"Display Round Results",
+	"Display End Results",
+	"Industry Report",
+	"Change Parameters (Live)",
+	"Backup Simulation",
+	"Restore Simulation",
+	"End Simulation",
+	"Destroy Simulation",
+]
+
 ACTION_CHECK_SIMULATION_STATUS = "Check Simulation Status"
 ACTION_BACKUP_SIMULATION = "Backup Simulation"
 ACTION_CHANGE_PARAMETERS_LIVE = "Change Parameters Live"
@@ -149,6 +173,20 @@ class UIContext:
 	archive_dir: Path | None = None
 
 
+@dataclass(frozen=True)
+class UISnapshot:
+	status: str
+	current_round: int
+	total_rounds: int
+	phase: str
+	team_count: int
+	market_share: float | None
+	net_profit: float | None
+	cash_balance: float | None
+	competitor_avg_price: float | None
+	demand_forecast: float | None
+
+
 def get_streamlit():
 	try:
 		return importlib.import_module("streamlit")
@@ -156,6 +194,249 @@ def get_streamlit():
 		raise ModuleNotFoundError(
 			"streamlit is required for UI modules. Install it with: pip install streamlit"
 		) from exc
+
+
+def apply_streamlit_theme(st) -> None:
+	st.markdown(
+		f"""
+		<style>
+		:root {{
+			--acs-primary: {PRIMARY_ACCENT};
+			--acs-success: {SUCCESS_COLOR};
+			--acs-warning: {WARNING_COLOR};
+			--acs-danger: {DANGER_COLOR};
+			--acs-neutral: {NEUTRAL_BG};
+			--acs-header: {HEADER_BG};
+		}}
+		html, body, [class*="css"] {{
+			font-family: Inter, Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+		}}
+		[data-testid="stAppViewContainer"] {{
+			background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+		}}
+		.main .block-container {{
+			max-width: 1140px;
+			padding-top: 0.65rem;
+			padding-bottom: 0.8rem;
+			padding-left: 1rem;
+			padding-right: 1rem;
+		}}
+		[data-testid="stSidebar"] {{
+			min-width: 260px;
+			max-width: 260px;
+			background: #e8eefc;
+			border-right: 1px solid #c9d7f4;
+		}}
+		div[data-testid="stVerticalBlock"] > div:has(> .acs-topbar) {{
+			margin-bottom: 0.6rem;
+		}}
+		.acs-topbar {{
+			height: 90px;
+			background: linear-gradient(90deg, var(--acs-header) 0%, #1e3a8a 55%, #2563eb 100%);
+			border-radius: 12px;
+			padding: 0.5rem 1rem;
+			color: #f8fafc;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 0.75rem;
+		}}
+		.acs-topbar-title {{ font-size: 20px; font-weight: 700; line-height: 1.2; }}
+		.acs-topbar-subtitle {{ font-size: 14px; color: #dbeafe; }}
+		.acs-topbar-mid {{ font-size: 14px; text-align: center; color: #dbeafe; }}
+		.acs-topbar-kpis {{
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: flex-end;
+			gap: 0.4rem;
+		}}
+		.acs-kpi-chip {{
+			background: rgba(255,255,255,0.14);
+			border: 1px solid rgba(255,255,255,0.2);
+			border-radius: 10px;
+			padding: 0.25rem 0.55rem;
+			font-size: 12px;
+			white-space: nowrap;
+		}}
+		.acs-kpi-chip strong {{ font-size: 13px; color: #fff; margin-left: 0.2rem; }}
+		.acs-nav-header {{
+			font-size: 13px;
+			font-weight: 700;
+			letter-spacing: 0.03em;
+			text-transform: uppercase;
+			color: #334155;
+			margin: 0.1rem 0 0.2rem 0;
+		}}
+		.acs-nav-item {{
+			font-size: 14px;
+			line-height: 1.4;
+			padding: 0.25rem 0.35rem;
+			border-radius: 8px;
+			margin-bottom: 0.1rem;
+		}}
+		.acs-nav-item.active {{
+			background: #dbeafe;
+			color: #1d4ed8;
+			font-weight: 600;
+		}}
+		.acs-card-title {{ font-size: 16px; font-weight: 700; margin-bottom: 0.2rem; }}
+		.acs-divider {{ border-top: 1px solid #dbe4f6; margin: 0.2rem 0 0.7rem 0; }}
+		[data-testid="stMetric"] {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.35rem 0.55rem; }}
+		[data-testid="stHorizontalBlock"] {{ gap: 0.55rem; }}
+		.stButton > button {{
+			border-radius: 10px;
+			height: 2.2rem;
+			font-size: 14px;
+			font-weight: 600;
+			border: 1px solid #bfdbfe;
+		}}
+		[data-baseweb="tab-list"] button {{ font-size: 14px; }}
+		[data-testid="stDataFrame"] {{ border-radius: 10px; overflow: hidden; }}
+		.acs-compact-text {{ font-size: 13px; color: #334155; }}
+		</style>
+		""",
+		unsafe_allow_html=True,
+	)
+
+
+def _parse_float(raw: str | None) -> float | None:
+	if raw is None:
+		return None
+	try:
+		return float(raw)
+	except (TypeError, ValueError):
+		return None
+
+
+def _fmt_money(value: float | None) -> str:
+	if value is None:
+		return "--"
+	return f"${value:,.0f}"
+
+
+def _fmt_percent(value: float | None) -> str:
+	if value is None:
+		return "--"
+	return f"{value:.1f}%"
+
+
+def _read_csv_rows(path: Path) -> list[dict[str, str]]:
+	if not path.exists():
+		return []
+	with path.open("r", newline="", encoding="utf-8") as handle:
+		return list(csv.DictReader(handle))
+
+
+def build_ui_snapshot(*, simulation_id: str, root_dir: Path, team_id: str | None = None) -> UISnapshot:
+	simulation_rows = _read_csv_rows(root_dir / simulation_id / "simulation.csv")
+	simulation_row = simulation_rows[0] if simulation_rows else {}
+	status = simulation_row.get("status", "CREATED")
+	current_round = int(simulation_row.get("current_round", "0") or 0)
+	total_rounds = int(simulation_row.get("total_rounds", "0") or 0)
+	phase = "Decision"
+	if status == "ENDED":
+		phase = "Closed"
+	elif status == "STARTED":
+		phase = "Results"
+
+	teams = _read_csv_rows(root_dir / simulation_id / "teams.csv")
+	team_count = len(teams)
+
+	team_rows = _read_csv_rows(root_dir / simulation_id / "round_results_team.csv")
+	if team_id:
+		team_rows = [row for row in team_rows if row.get("team_id") == team_id]
+	team_rows = sorted(team_rows, key=lambda row: int(row.get("round_number", "0") or 0))
+	latest_team = team_rows[-1] if team_rows else {}
+
+	market_rows = _read_csv_rows(root_dir / simulation_id / "round_results_market.csv")
+	market_rows = sorted(market_rows, key=lambda row: int(row.get("round_number", "0") or 0))
+	latest_market = market_rows[-1] if market_rows else {}
+
+	profit = _parse_float(latest_team.get("profit"))
+	market_share_ratio = _parse_float(latest_team.get("market_share_volume"))
+	market_share = market_share_ratio * 100 if market_share_ratio is not None else None
+	forecast = _parse_float(latest_market.get("total_carried"))
+	avg_economy = _parse_float(latest_market.get("avg_price_economy"))
+	avg_premium = _parse_float(latest_market.get("avg_price_premium"))
+	competitor_avg_price = None
+	if avg_economy is not None and avg_premium is not None:
+		competitor_avg_price = (avg_economy + avg_premium) / 2
+
+	return UISnapshot(
+		status=status,
+		current_round=current_round,
+		total_rounds=total_rounds,
+		phase=phase,
+		team_count=team_count,
+		market_share=market_share,
+		net_profit=profit,
+		cash_balance=profit,
+		competitor_avg_price=competitor_avg_price,
+		demand_forecast=forecast,
+	)
+
+
+def render_top_header_bar(st, *, simulation_id: str, snapshot: UISnapshot) -> None:
+	kpi_html = "".join(
+		[
+			f"<span class='acs-kpi-chip'>Cash <strong>{_fmt_money(snapshot.cash_balance)}</strong></span>",
+			f"<span class='acs-kpi-chip'>Mkt Share <strong>{_fmt_percent(snapshot.market_share)}</strong></span>",
+			f"<span class='acs-kpi-chip'>Net Profit <strong>{_fmt_money(snapshot.net_profit)}</strong></span>",
+			"<span class='acs-kpi-chip'>⚠ Alerts <strong>0</strong></span>",
+		]
+	)
+
+	st.markdown(
+		f"""
+		<div class="acs-topbar">
+			<div>
+				<div class="acs-topbar-title">{SIMULATION_SUBTITLE}</div>
+				<div class="acs-topbar-subtitle">Simulation: {simulation_id}</div>
+			</div>
+			<div class="acs-topbar-mid">
+				<div><strong>Round {snapshot.current_round}</strong> / {snapshot.total_rounds} • {snapshot.phase}</div>
+				<div>{snapshot.status}</div>
+			</div>
+			<div class="acs-topbar-kpis">{kpi_html}</div>
+		</div>
+		""",
+		unsafe_allow_html=True,
+	)
+
+
+def render_sidebar_navigation(st, *, active_item: str | None = None) -> None:
+	st.markdown("<div class='acs-nav-header'>Navigation</div>", unsafe_allow_html=True)
+	for item in PRIMARY_NAV_ITEMS:
+		klass = "acs-nav-item active" if item == active_item else "acs-nav-item"
+		st.markdown(f"<div class='{klass}'>{item}</div>", unsafe_allow_html=True)
+
+
+@contextmanager
+def render_card(st, title: str):
+	with st.container(border=True):
+		st.markdown(f"<div class='acs-card-title'>{title}</div>", unsafe_allow_html=True)
+		st.markdown("<div class='acs-divider'></div>", unsafe_allow_html=True)
+		yield
+
+
+def render_right_insight_panel(st, *, snapshot: UISnapshot) -> None:
+	with render_card(st, "Insight Panel"):
+		st.metric("Strategic Position", "Leader" if (snapshot.market_share or 0) >= 30 else "Balanced")
+		st.metric("Competitor Avg Price", _fmt_money(snapshot.competitor_avg_price))
+		demand_delta = None
+		if snapshot.demand_forecast is not None:
+			demand_delta = "Latest round"
+		st.metric(
+			"Demand Forecast",
+			f"{int(snapshot.demand_forecast):,}" if snapshot.demand_forecast is not None else "--",
+			delta=demand_delta,
+		)
+		st.metric("Cost Snapshot", _fmt_money(snapshot.cash_balance))
+
+	with render_card(st, "Market Share"):
+		share_value = snapshot.market_share or 0.0
+		st.progress(min(max(share_value / 100, 0.0), 1.0))
+		st.markdown(f"<div class='acs-compact-text'>{_fmt_percent(snapshot.market_share)} share volume</div>", unsafe_allow_html=True)
 
 
 def run_action(st, action_name: str, callback: Callable[[], Any]) -> Any | None:

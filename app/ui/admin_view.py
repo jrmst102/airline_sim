@@ -77,11 +77,16 @@ from app.ui.components import (
 	ADMIN_SUBHEADER_USERS,
 	ADMIN_TABS,
 	ADMIN_VIEW_CAPTION,
+	apply_streamlit_theme,
+	build_ui_snapshot,
 	get_streamlit,
 	parse_csv_list,
 	parse_optional_int,
+	render_card,
 	render_basic_context_sidebar,
-	render_simulation_header,
+	render_right_insight_panel,
+	render_sidebar_navigation,
+	render_top_header_bar,
 	run_action,
 )
 from app.modules.backup_simulation import backup_simulation
@@ -102,8 +107,7 @@ from app.modules.user_management import create_user, list_users, set_user_lock
 
 def render_admin_view() -> None:
 	st = get_streamlit()
-	render_simulation_header(st)
-	st.caption(ADMIN_VIEW_CAPTION)
+	apply_streamlit_theme(st)
 
 	context = render_basic_context_sidebar(
 		st,
@@ -118,66 +122,78 @@ def render_admin_view() -> None:
 	root_dir = context.root_dir
 	backups_dir = context.backups_dir or Path("backups")
 	archive_dir = context.archive_dir or Path("archive")
+	snapshot = build_ui_snapshot(simulation_id=simulation_id, root_dir=root_dir)
+	render_top_header_bar(st, simulation_id=simulation_id, snapshot=snapshot)
+	st.caption(ADMIN_VIEW_CAPTION)
 
-	status_col, quick_col = st.columns([1, 2])
-	with status_col:
-		if st.button(ADMIN_BUTTON_REFRESH_STATUS, use_container_width=True):
-			run_action(
-				st,
-				ACTION_CHECK_SIMULATION_STATUS,
-				lambda: check_simulation_status(
-					simulation_id=simulation_id,
-					root_dir=root_dir,
-				),
-			)
+	with st.sidebar:
+		render_sidebar_navigation(st, active_item="Change Parameters (Live)")
 
-	with quick_col:
-		st.write(ADMIN_QUICK_LIFECYCLE_ACTIONS_LABEL)
-		c1, c2, c3, c4 = st.columns(4)
-		with c1:
-			if st.button(ADMIN_BUTTON_START, use_container_width=True):
-				run_action(
-					st,
-					ACTION_START_SIMULATION,
-					lambda: start_simulation(
-						simulation_id=simulation_id,
-						admin_user_id=admin_user_id,
-						root_dir=root_dir,
-					),
-				)
-		with c2:
-			if st.button(ADMIN_BUTTON_MOVE_NEXT, use_container_width=True):
-				run_action(
-					st,
-					ACTION_MOVE_NEXT_ROUND,
-					lambda: move_next_round(
-						simulation_id=simulation_id,
-						admin_user_id=admin_user_id,
-						root_dir=root_dir,
-					),
-				)
-		with c3:
-			if st.button(ADMIN_BUTTON_UNDO, use_container_width=True):
-				run_action(
-					st,
-					ACTION_UNDO_ROUND,
-					lambda: undo_round(
-						simulation_id=simulation_id,
-						admin_user_id=admin_user_id,
-						root_dir=root_dir,
-					),
-				)
-		with c4:
-			if st.button(ADMIN_BUTTON_END, use_container_width=True):
-				run_action(
-					st,
-					ACTION_END_SIMULATION,
-					lambda: end_simulation(
-						simulation_id=simulation_id,
-						admin_user_id=admin_user_id,
-						root_dir=root_dir,
-					),
-				)
+	main_col, insight_col = st.columns([5, 1], vertical_alignment="top")
+	with main_col:
+		with render_card(st, "Lifecycle Controls"):
+			status_col, quick_col = st.columns([1, 3])
+			with status_col:
+				if st.button(ADMIN_BUTTON_REFRESH_STATUS, use_container_width=True):
+					run_action(
+						st,
+						ACTION_CHECK_SIMULATION_STATUS,
+						lambda: check_simulation_status(
+							simulation_id=simulation_id,
+							root_dir=root_dir,
+						),
+					)
+
+			with quick_col:
+				st.write(ADMIN_QUICK_LIFECYCLE_ACTIONS_LABEL)
+				c1, c2, c3, c4 = st.columns(4)
+				with c1:
+					if st.button(ADMIN_BUTTON_START, use_container_width=True):
+						run_action(
+							st,
+							ACTION_START_SIMULATION,
+							lambda: start_simulation(
+								simulation_id=simulation_id,
+								admin_user_id=admin_user_id,
+								root_dir=root_dir,
+							),
+						)
+				with c2:
+					if st.button(ADMIN_BUTTON_MOVE_NEXT, use_container_width=True):
+						run_action(
+							st,
+							ACTION_MOVE_NEXT_ROUND,
+							lambda: move_next_round(
+								simulation_id=simulation_id,
+								admin_user_id=admin_user_id,
+								root_dir=root_dir,
+							),
+						)
+				with c3:
+					if st.button(ADMIN_BUTTON_UNDO, use_container_width=True):
+						run_action(
+							st,
+							ACTION_UNDO_ROUND,
+							lambda: undo_round(
+								simulation_id=simulation_id,
+								admin_user_id=admin_user_id,
+								root_dir=root_dir,
+							),
+						)
+				with c4:
+					if st.button(ADMIN_BUTTON_END, use_container_width=True):
+						run_action(
+							st,
+							ACTION_END_SIMULATION,
+							lambda: end_simulation(
+								simulation_id=simulation_id,
+								admin_user_id=admin_user_id,
+								root_dir=root_dir,
+							),
+						)
+
+	with insight_col:
+		render_right_insight_panel(st, snapshot=snapshot)
 
 	tab_setup, tab_params, tab_backup, tab_reporting, tab_users = st.tabs(ADMIN_TABS)
 
