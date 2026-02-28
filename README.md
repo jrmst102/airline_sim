@@ -9,6 +9,23 @@ This repository provides:
 - Core round/state/market computation models
 - Streamlit UI views for admin, team, and dashboard workflows
 
+## Quick Start
+
+```bash
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+.venv/bin/python -m streamlit run app/ui/dashboard.py
+```
+
+Then in the UI:
+
+1. Keep `sim_001` as the simulation ID.
+2. Use **Setup** to initialize teams/rounds.
+3. Use **Start** to begin.
+4. Enter decisions and click **Move Next** each round.
+5. Use **Display Results** and **End** when complete.
+
 ## Setup
 
 From the repository root:
@@ -18,6 +35,70 @@ python -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+## Run the Simulation
+
+Choose one of the following approaches.
+
+### Option 1: CLI only
+
+Use the module CLIs directly for full simulation lifecycle control.
+
+1. **Initialize a simulation**
+
+```bash
+.venv/bin/python -m app.modules.setup_simulation sim_001 --name "Airline Simulation" --rounds 8 --teams "Team Alpha" "Team Bravo"
+```
+
+2. **Start the simulation**
+
+```bash
+.venv/bin/python -m app.modules.start_simulation sim_001 --admin-user-id U_ADMIN
+```
+
+3. **Enter decisions for each team (repeat as needed)**
+
+```bash
+.venv/bin/python -m app.modules.enter_decisions sim_001 --team-id T1 --flights-per-day 6 --price-premium 220 --price-economy 160 --brand-investment 1000
+.venv/bin/python -m app.modules.enter_decisions sim_001 --team-id T2 --flights-per-day 6 --price-premium 215 --price-economy 155 --brand-investment 900
+```
+
+4. **Advance to next round**
+
+```bash
+.venv/bin/python -m app.modules.move_next_round sim_001 --admin-user-id U_ADMIN
+```
+
+5. **Inspect status and results**
+
+```bash
+.venv/bin/python -m app.modules.check_simulation_status sim_001
+.venv/bin/python -m app.modules.display_results sim_001 --section both
+```
+
+6. **End the simulation when finished**
+
+```bash
+.venv/bin/python -m app.modules.end_simulation sim_001 --admin-user-id U_ADMIN
+```
+
+### Option 2: GUI only
+
+1. **Launch Streamlit dashboard**
+
+```bash
+.venv/bin/python -m streamlit run app/ui/dashboard.py
+```
+
+2. **Open the local URL shown by Streamlit** (usually `http://localhost:8501`).
+
+3. **Run the lifecycle from the UI**
+	- Use **Setup** to initialize simulation/team data.
+	- Use **Start** to begin round processing.
+	- Use **Enter Decision** (team workflow) to submit team decisions.
+	- Use **Move Next** to compute and advance rounds.
+	- Use **Display Results** / insights to review outcomes.
+	- Use **End** when the simulation is complete.
 
 ## CLI Usage
 

@@ -231,7 +231,7 @@ def render_standard_header(*, simulation_id: str, snapshot: UISnapshot) -> None:
 		"Net Profit": _fmt_money(snapshot.net_profit),
 		"Alerts": "0",
 	}
-	render_header(simulation_id=simulation_id, round_label=round_label, phase=snapshot.phase, kpis=kpis)
+	render_header(sim_id=simulation_id, round_label=round_label, phase=snapshot.phase, kpis=kpis)
 
 
 def apply_streamlit_theme(st, *, compact_layout: bool = False) -> None:
