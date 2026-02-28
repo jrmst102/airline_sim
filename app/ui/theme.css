@@ -1,0 +1,157 @@
+/* ===== Global Layout Overrides ===== */
+:root{
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --primary: #1d4ed8;
+  --primary-2: #2563eb;
+  --border: rgba(15, 23, 42, .10);
+  --shadow: 0 8px 24px rgba(15,23,42,.08);
+  --radius: 16px;
+
+  --header-h: 90px;
+  --sidebar-w: 260px;
+  --insight-w: 190px;
+}
+
+/* remove Streamlit default wide container max-width */
+.main .block-container{
+  max-width: none !important;
+  padding-top: calc(var(--header-h) + 18px) !important;
+  padding-left: 22px !important;
+  padding-right: 22px !important;
+  background: var(--bg);
+}
+
+/* sidebar width */
+section[data-testid="stSidebar"]{
+  width: var(--sidebar-w) !important;
+  min-width: var(--sidebar-w) !important;
+  background: #eef2ff;
+  border-right: 1px solid var(--border);
+}
+section[data-testid="stSidebar"] .block-container{
+  padding-top: 18px !important;
+}
+
+/* hide Streamlit top chrome spacing */
+header[data-testid="stHeader"]{
+  visibility: hidden;
+  height: 0px;
+}
+div[data-testid="stToolbar"]{
+  visibility: hidden;
+  height: 0px;
+}
+
+/* ===== Fixed Header (custom) ===== */
+.air-header{
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: var(--sidebar-w);
+  right: 0;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  background: linear-gradient(135deg, #0f2a5c, #1d4ed8);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 6px 22px rgba(15,23,42,.18);
+  border-radius: 0 0 18px 18px;
+}
+
+.air-header .title{
+  color: #fff;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.1;
+}
+.air-header .sub{
+  color: rgba(255,255,255,.80);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.air-kpis{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.kpi-pill{
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.18);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  min-width: 92px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+.kpi-pill b{
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: .85;
+}
+.kpi-pill span{
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ===== Cards ===== */
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 16px;
+}
+.card-title{
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.card-sub{
+  color: var(--muted);
+  font-size: 13px;
+}
+.card-divider{
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0 12px 0;
+}
+
+/* ===== Sticky Insight Panel ===== */
+.sticky{
+  position: sticky;
+  top: calc(var(--header-h) + 18px);
+}
+
+.air-main{
+  width: 100%;
+}
+
+.air-insight{
+  width: var(--insight-w);
+  max-width: var(--insight-w);
+  margin-left: auto;
+}
+
+/* ===== Buttons (make Streamlit look less “default”) ===== */
+.stButton>button{
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  font-weight: 600;
+}
+.stButton>button[kind="primary"]{
+  background: var(--primary);
+  border: 1px solid rgba(255,255,255,.14);
+}

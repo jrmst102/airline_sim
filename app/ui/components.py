@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import csv
+import html
 import importlib
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
+
+from app.ui.layout import load_css, render_header
 
 
 APP_DIR = Path(__file__).resolve().parents[1]
@@ -171,6 +174,7 @@ class UIContext:
 	team_id: str | None = None
 	backups_dir: Path | None = None
 	archive_dir: Path | None = None
+	compact_layout: bool = False
 
 
 @dataclass(frozen=True)
@@ -196,7 +200,44 @@ def get_streamlit():
 		) from exc
 
 
-def apply_streamlit_theme(st) -> None:
+def configure_page(st, *, page_title: str = SIMULATION_TITLE) -> None:
+	if st.session_state.get("_airline_sim_page_configured"):
+		return
+	st.set_page_config(page_title=page_title, layout="wide", initial_sidebar_state="expanded")
+	st.session_state["_airline_sim_page_configured"] = True
+
+
+def card(title: str, subtitle: str | None = None) -> None:
+	st = get_streamlit()
+	safe_title = html.escape(title)
+	safe_subtitle = html.escape(subtitle) if subtitle is not None else None
+	st.markdown('<div class="card">', unsafe_allow_html=True)
+	st.markdown(f'<div class="card-title">{safe_title}</div>', unsafe_allow_html=True)
+	if safe_subtitle:
+		st.markdown(f'<div class="card-sub">{safe_subtitle}</div>', unsafe_allow_html=True)
+	st.markdown('<div class="card-divider"></div>', unsafe_allow_html=True)
+
+
+def card_end() -> None:
+	st = get_streamlit()
+	st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_standard_header(*, simulation_id: str, snapshot: UISnapshot) -> None:
+	round_label = f"Round {snapshot.current_round}/{snapshot.total_rounds}"
+	kpis = {
+		"Cash": _fmt_money(snapshot.cash_balance),
+		"Mkt Share": _fmt_percent(snapshot.market_share),
+		"Net Profit": _fmt_money(snapshot.net_profit),
+		"Alerts": "0",
+	}
+	render_header(simulation_id=simulation_id, round_label=round_label, phase=snapshot.phase, kpis=kpis)
+
+
+def apply_streamlit_theme(st, *, compact_layout: bool = False) -> None:
+	sidebar_width = 220 if compact_layout else 260
+	container_max_width = 1060 if compact_layout else 1140
+	card_gap = "0.45rem" if compact_layout else "0.55rem"
 	st.markdown(
 		f"""
 		<style>
@@ -215,15 +256,15 @@ def apply_streamlit_theme(st) -> None:
 			background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
 		}}
 		.main .block-container {{
-			max-width: 1140px;
+			max-width: {container_max_width}px;
 			padding-top: 0.65rem;
 			padding-bottom: 0.8rem;
-			padding-left: 1rem;
-			padding-right: 1rem;
+			padding-left: 0.85rem;
+			padding-right: 0.85rem;
 		}}
 		[data-testid="stSidebar"] {{
-			min-width: 260px;
-			max-width: 260px;
+			min-width: {sidebar_width}px;
+			max-width: {sidebar_width}px;
 			background: #e8eefc;
 			border-right: 1px solid #c9d7f4;
 		}}
@@ -282,7 +323,7 @@ def apply_streamlit_theme(st) -> None:
 		.acs-card-title {{ font-size: 16px; font-weight: 700; margin-bottom: 0.2rem; }}
 		.acs-divider {{ border-top: 1px solid #dbe4f6; margin: 0.2rem 0 0.7rem 0; }}
 		[data-testid="stMetric"] {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.35rem 0.55rem; }}
-		[data-testid="stHorizontalBlock"] {{ gap: 0.55rem; }}
+		[data-testid="stHorizontalBlock"] {{ gap: {card_gap}; }}
 		.stButton > button {{
 			border-radius: 10px;
 			height: 2.2rem;
@@ -293,6 +334,10 @@ def apply_streamlit_theme(st) -> None:
 		[data-baseweb="tab-list"] button {{ font-size: 14px; }}
 		[data-testid="stDataFrame"] {{ border-radius: 10px; overflow: hidden; }}
 		.acs-compact-text {{ font-size: 13px; color: #334155; }}
+		@media (max-width: 1280px) {{
+			.main .block-container {{ max-width: 980px; padding-left: 0.65rem; padding-right: 0.65rem; }}
+			[data-testid="stSidebar"] {{ min-width: 220px; max-width: 220px; }}
+		}}
 		</style>
 		""",
 		unsafe_allow_html=True,
@@ -377,66 +422,51 @@ def build_ui_snapshot(*, simulation_id: str, root_dir: Path, team_id: str | None
 
 
 def render_top_header_bar(st, *, simulation_id: str, snapshot: UISnapshot) -> None:
-	kpi_html = "".join(
-		[
-			f"<span class='acs-kpi-chip'>Cash <strong>{_fmt_money(snapshot.cash_balance)}</strong></span>",
-			f"<span class='acs-kpi-chip'>Mkt Share <strong>{_fmt_percent(snapshot.market_share)}</strong></span>",
-			f"<span class='acs-kpi-chip'>Net Profit <strong>{_fmt_money(snapshot.net_profit)}</strong></span>",
-			"<span class='acs-kpi-chip'>⚠ Alerts <strong>0</strong></span>",
-		]
-	)
-
-	st.markdown(
-		f"""
-		<div class="acs-topbar">
-			<div>
-				<div class="acs-topbar-title">{SIMULATION_SUBTITLE}</div>
-				<div class="acs-topbar-subtitle">Simulation: {simulation_id}</div>
-			</div>
-			<div class="acs-topbar-mid">
-				<div><strong>Round {snapshot.current_round}</strong> / {snapshot.total_rounds} • {snapshot.phase}</div>
-				<div>{snapshot.status}</div>
-			</div>
-			<div class="acs-topbar-kpis">{kpi_html}</div>
-		</div>
-		""",
-		unsafe_allow_html=True,
-	)
+	render_standard_header(simulation_id=simulation_id, snapshot=snapshot)
 
 
 def render_sidebar_navigation(st, *, active_item: str | None = None) -> None:
-	st.markdown("<div class='acs-nav-header'>Navigation</div>", unsafe_allow_html=True)
+	card("Navigation")
 	for item in PRIMARY_NAV_ITEMS:
-		klass = "acs-nav-item active" if item == active_item else "acs-nav-item"
-		st.markdown(f"<div class='{klass}'>{item}</div>", unsafe_allow_html=True)
+		prefix = "• " if item != active_item else "➤ "
+		st.write(f"{prefix}{item}")
+	card_end()
 
 
 @contextmanager
 def render_card(st, title: str):
-	with st.container(border=True):
-		st.markdown(f"<div class='acs-card-title'>{title}</div>", unsafe_allow_html=True)
-		st.markdown("<div class='acs-divider'></div>", unsafe_allow_html=True)
+	card(title)
+	try:
 		yield
+	finally:
+		card_end()
 
 
 def render_right_insight_panel(st, *, snapshot: UISnapshot) -> None:
-	with render_card(st, "Insight Panel"):
-		st.metric("Strategic Position", "Leader" if (snapshot.market_share or 0) >= 30 else "Balanced")
-		st.metric("Competitor Avg Price", _fmt_money(snapshot.competitor_avg_price))
-		demand_delta = None
-		if snapshot.demand_forecast is not None:
-			demand_delta = "Latest round"
-		st.metric(
-			"Demand Forecast",
-			f"{int(snapshot.demand_forecast):,}" if snapshot.demand_forecast is not None else "--",
-			delta=demand_delta,
-		)
-		st.metric("Cost Snapshot", _fmt_money(snapshot.cash_balance))
+	card("Insight Panel")
+	st.metric("Strategic Position", "Leader" if (snapshot.market_share or 0) >= 30 else "Balanced")
+	st.metric("Competitor Avg Price", _fmt_money(snapshot.competitor_avg_price))
+	demand_delta = None
+	if snapshot.demand_forecast is not None:
+		demand_delta = "Latest round"
+	st.metric(
+		"Demand Forecast",
+		f"{int(snapshot.demand_forecast):,}" if snapshot.demand_forecast is not None else "--",
+		delta=demand_delta,
+	)
+	st.metric("Cost Snapshot", _fmt_money(snapshot.cash_balance))
+	card_end()
 
-	with render_card(st, "Market Share"):
-		share_value = snapshot.market_share or 0.0
-		st.progress(min(max(share_value / 100, 0.0), 1.0))
-		st.markdown(f"<div class='acs-compact-text'>{_fmt_percent(snapshot.market_share)} share volume</div>", unsafe_allow_html=True)
+	card("Market Share")
+	share_value = snapshot.market_share or 0.0
+	st.progress(min(max(share_value / 100, 0.0), 1.0))
+	st.caption(f"{_fmt_percent(snapshot.market_share)} share volume")
+	card_end()
+
+
+def render_insight_drawer(st, *, snapshot: UISnapshot) -> None:
+	with st.expander("Insight Panel", expanded=False):
+		render_right_insight_panel(st, snapshot=snapshot)
 
 
 def run_action(st, action_name: str, callback: Callable[[], Any]) -> Any | None:
@@ -472,8 +502,9 @@ def get_brand_logo_paths() -> dict[str, Path]:
 
 
 def render_simulation_header(st) -> None:
-	st.title(SIMULATION_TITLE)
-	st.caption(SIMULATION_SUBTITLE)
+	load_css()
+	card(SIMULATION_TITLE, SIMULATION_SUBTITLE)
+	card_end()
 
 
 def render_branding(st, *, in_sidebar: bool = False, show_caption: bool = False) -> None:
@@ -503,9 +534,18 @@ def render_basic_context_sidebar(
 	include_admin_fields: bool = False,
 	include_team_field: bool = False,
 	include_storage_fields: bool = False,
+	include_layout_toggle: bool = False,
 	show_branding: bool = True,
 ) -> UIContext:
 	with st.sidebar:
+		compact_layout = False
+		if include_layout_toggle:
+			compact_layout = st.toggle(
+				"Compact 1280×800 layout",
+				value=False,
+				key=f"{key_prefix}_compact_layout",
+			)
+
 		if show_branding:
 			render_branding(st, in_sidebar=True)
 		st.header(SIDEBAR_CONTEXT_HEADER)
@@ -564,4 +604,5 @@ def render_basic_context_sidebar(
 		team_id=team_id,
 		backups_dir=backups_dir,
 		archive_dir=archive_dir,
+		compact_layout=compact_layout,
 	)

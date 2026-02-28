@@ -77,18 +77,21 @@ from app.ui.components import (
 	ADMIN_SUBHEADER_USERS,
 	ADMIN_TABS,
 	ADMIN_VIEW_CAPTION,
-	apply_streamlit_theme,
 	build_ui_snapshot,
+	configure_page,
 	get_streamlit,
 	parse_csv_list,
 	parse_optional_int,
+	card,
+	card_end,
 	render_card,
 	render_basic_context_sidebar,
 	render_right_insight_panel,
 	render_sidebar_navigation,
-	render_top_header_bar,
+	render_standard_header,
 	run_action,
 )
+from app.ui.layout import load_css, shell
 from app.modules.backup_simulation import backup_simulation
 from app.modules.change_parameters_live import change_parameters_live
 from app.modules.check_simulation_status import check_simulation_status
@@ -107,7 +110,8 @@ from app.modules.user_management import create_user, list_users, set_user_lock
 
 def render_admin_view() -> None:
 	st = get_streamlit()
-	apply_streamlit_theme(st)
+	configure_page(st)
+	load_css()
 
 	context = render_basic_context_sidebar(
 		st,
@@ -123,14 +127,12 @@ def render_admin_view() -> None:
 	backups_dir = context.backups_dir or Path("backups")
 	archive_dir = context.archive_dir or Path("archive")
 	snapshot = build_ui_snapshot(simulation_id=simulation_id, root_dir=root_dir)
-	render_top_header_bar(st, simulation_id=simulation_id, snapshot=snapshot)
-	st.caption(ADMIN_VIEW_CAPTION)
+	render_standard_header(simulation_id=simulation_id, snapshot=snapshot)
 
 	with st.sidebar:
 		render_sidebar_navigation(st, active_item="Change Parameters (Live)")
 
-	main_col, insight_col = st.columns([5, 1], vertical_alignment="top")
-	with main_col:
+	def _render_lifecycle_controls() -> None:
 		with render_card(st, "Lifecycle Controls"):
 			status_col, quick_col = st.columns([1, 3])
 			with status_col:
@@ -192,240 +194,253 @@ def render_admin_view() -> None:
 							),
 						)
 
-	with insight_col:
+	def _render_admin_tabs() -> None:
+		tab_setup, tab_params, tab_backup, tab_reporting, tab_users = st.tabs(ADMIN_TABS)
+
+		with tab_setup:
+			with render_card(st, ADMIN_SUBHEADER_SETUP):
+				with st.form("setup_form"):
+					simulation_name = st.text_input(ADMIN_LABEL_SIMULATION_NAME, value="Airline Simulation")
+					total_rounds = st.number_input(ADMIN_LABEL_TOTAL_ROUNDS, min_value=1, value=8, step=1)
+					raw_team_names = st.text_input(ADMIN_LABEL_TEAM_NAMES, value="Team Alpha, Team Bravo")
+					overwrite = st.checkbox(ADMIN_LABEL_OVERWRITE_SIMULATION, value=False)
+					submitted = st.form_submit_button(ADMIN_FORM_SUBMIT_SETUP)
+					if submitted:
+						team_names = parse_csv_list(raw_team_names)
+						run_action(
+							st,
+							ACTION_SETUP_SIMULATION,
+							lambda: setup_simulation(
+								simulation_id=simulation_id,
+								simulation_name=simulation_name,
+								total_rounds=int(total_rounds),
+								team_names=team_names,
+								root_dir=root_dir,
+								overwrite=overwrite,
+							),
+						)
+
+		with tab_params:
+			with render_card(st, ADMIN_SUBHEADER_PARAMETERS):
+				with st.form("params_form"):
+					days_per_round = st.number_input(ADMIN_LABEL_DAYS_PER_ROUND, min_value=1, value=30, step=1)
+					base_demand_business = st.number_input(ADMIN_LABEL_BASE_DEMAND_BUSINESS, min_value=0.0, value=1200.0)
+					base_demand_leisure = st.number_input(ADMIN_LABEL_BASE_DEMAND_LEISURE, min_value=0.0, value=3600.0)
+					base_fuel_cost_per_flight = st.number_input(ADMIN_LABEL_BASE_FUEL_COST_PER_FLIGHT, min_value=0.0, value=2500.0)
+					base_fixed_cost_per_round = st.number_input(ADMIN_LABEL_BASE_FIXED_COST_PER_ROUND, min_value=0.0, value=50000.0)
+					base_variable_cost_per_pax = st.number_input(ADMIN_LABEL_BASE_VARIABLE_COST_PER_PAX, min_value=0.0, value=40.0)
+					brand_effectiveness = st.number_input(ADMIN_LABEL_BRAND_EFFECTIVENESS, min_value=0.0, value=0.02)
+					submit_params = st.form_submit_button(ADMIN_FORM_SUBMIT_PARAMETERS)
+					if submit_params:
+						run_action(
+							st,
+							ACTION_CHANGE_PARAMETERS_LIVE,
+							lambda: change_parameters_live(
+								simulation_id=simulation_id,
+								admin_user_id=admin_user_id,
+								root_dir=root_dir,
+								days_per_round=int(days_per_round),
+								base_demand_business=float(base_demand_business),
+								base_demand_leisure=float(base_demand_leisure),
+								base_fuel_cost_per_flight=float(base_fuel_cost_per_flight),
+								base_fixed_cost_per_round=float(base_fixed_cost_per_round),
+								base_variable_cost_per_pax=float(base_variable_cost_per_pax),
+								brand_effectiveness=float(brand_effectiveness),
+							),
+						)
+
+		with tab_backup:
+			with render_card(st, ADMIN_SUBHEADER_BACKUP):
+				c_backup, c_restore, c_destroy = st.columns(3)
+
+				with c_backup:
+					card(ADMIN_SECTION_BACKUP)
+					if st.button(ADMIN_BUTTON_CREATE_BACKUP, use_container_width=True):
+						run_action(
+							st,
+							ACTION_BACKUP_SIMULATION,
+							lambda: backup_simulation(
+								simulation_id=simulation_id,
+								admin_user_id=admin_user_id,
+								root_dir=root_dir,
+								backups_dir=backups_dir,
+							),
+						)
+					card_end()
+
+				with c_restore:
+					card(ADMIN_SECTION_RESTORE)
+					restore_backup_path = st.text_input(ADMIN_LABEL_BACKUP_ZIP_PATH, value="")
+					restore_as_sim_id = st.text_input(ADMIN_LABEL_RESTORE_AS_SIMULATION_ID, value="")
+					restore_overwrite = st.checkbox(ADMIN_LABEL_OVERWRITE_TARGET, value=False)
+					if st.button(ADMIN_BUTTON_RESTORE_BACKUP, use_container_width=True):
+						run_action(
+							st,
+							ACTION_RESTORE_SIMULATION,
+							lambda: restore_simulation(
+								backup_zip_path=Path(restore_backup_path),
+								restore_as_simulation_id=restore_as_sim_id or None,
+								admin_user_id=admin_user_id,
+								root_dir=root_dir,
+								overwrite=restore_overwrite,
+							),
+						)
+					card_end()
+
+				with c_destroy:
+					card(ADMIN_SECTION_DESTROY)
+					destroy_mode = st.selectbox(ADMIN_LABEL_DESTROY_MODE, options=ADMIN_DESTROY_MODE_OPTIONS, index=0)
+					if st.button(ADMIN_BUTTON_DESTROY_SIMULATION, use_container_width=True):
+						run_action(
+							st,
+							ACTION_DESTROY_SIMULATION,
+							lambda: destroy_simulation(
+								simulation_id=simulation_id,
+								admin_user_id=admin_user_id,
+								mode=destroy_mode,
+								root_dir=root_dir,
+								backups_dir=backups_dir,
+								archive_dir=archive_dir,
+							),
+						)
+					card_end()
+
+		with tab_reporting:
+			with render_card(st, ADMIN_SUBHEADER_REPORTS):
+				section = st.selectbox(ADMIN_LABEL_RESULTS_SECTION, options=ADMIN_RESULTS_SECTION_OPTIONS, index=0)
+				round_filter_raw = st.text_input(ADMIN_LABEL_ROUND_FILTER, value="")
+				team_filter = st.text_input(ADMIN_LABEL_TEAM_FILTER, value="")
+
+				r1, r2, r3, r4 = st.columns(4)
+				with r1:
+					if st.button(ADMIN_BUTTON_DISPLAY_RESULTS, use_container_width=True):
+						run_action(
+							st,
+							ACTION_DISPLAY_RESULTS,
+							lambda: display_results(
+								simulation_id=simulation_id,
+								round_number=parse_optional_int(round_filter_raw, field_name="round"),
+								team_id=team_filter or None,
+								section=section,
+								root_dir=root_dir,
+							),
+						)
+				with r2:
+					if st.button(ADMIN_BUTTON_DISPLAY_LOG, use_container_width=True):
+						run_action(
+							st,
+							ACTION_DISPLAY_LOG,
+							lambda: display_log(
+								simulation_id=simulation_id,
+								root_dir=root_dir,
+							),
+						)
+				with r3:
+					if st.button(ADMIN_BUTTON_HISTORICAL_DECISIONS, use_container_width=True):
+						run_action(
+							st,
+							ACTION_HISTORICAL_DECISIONS,
+							lambda: display_historical_decisions_team(
+								simulation_id=simulation_id,
+								root_dir=root_dir,
+							),
+						)
+				with r4:
+					if st.button(ADMIN_BUTTON_CHECK_STATUS, use_container_width=True):
+						run_action(
+							st,
+							ACTION_CHECK_SIMULATION_STATUS,
+							lambda: check_simulation_status(
+								simulation_id=simulation_id,
+								root_dir=root_dir,
+							),
+						)
+
+		with tab_users:
+			with render_card(st, ADMIN_SUBHEADER_USERS):
+				left, right = st.columns(2)
+
+				with left:
+					with st.form("create_user_form"):
+						st.write(ADMIN_SECTION_CREATE_USER)
+						username = st.text_input(ADMIN_LABEL_USERNAME)
+						password = st.text_input(ADMIN_LABEL_PASSWORD, type="password")
+						role = st.selectbox(ADMIN_LABEL_ROLE, options=ADMIN_ROLE_OPTIONS, index=1)
+						team_id = st.text_input(ADMIN_LABEL_TEAM_ID_FOR_ROLE, value="")
+						submit_user = st.form_submit_button(ADMIN_FORM_SUBMIT_CREATE_USER)
+						if submit_user:
+							run_action(
+								st,
+								ACTION_CREATE_USER,
+								lambda: create_user(
+									simulation_id=simulation_id,
+									username=username,
+									password=password,
+									role=role,
+									team_id=team_id,
+									root_dir=root_dir,
+									admin_user_id=admin_user_id,
+								),
+							)
+
+				with right:
+					card(ADMIN_SECTION_LOCK_UNLOCK_USER)
+					target_username = st.text_input(ADMIN_LABEL_TARGET_USERNAME)
+					c_lock, c_unlock = st.columns(2)
+					with c_lock:
+						if st.button(ADMIN_BUTTON_LOCK, use_container_width=True):
+							run_action(
+								st,
+								ACTION_LOCK_USER,
+								lambda: set_user_lock(
+									simulation_id=simulation_id,
+									username=target_username,
+									is_locked=True,
+									root_dir=root_dir,
+									admin_user_id=admin_user_id,
+								),
+							)
+					with c_unlock:
+						if st.button(ADMIN_BUTTON_UNLOCK, use_container_width=True):
+							run_action(
+								st,
+								ACTION_UNLOCK_USER,
+								lambda: set_user_lock(
+									simulation_id=simulation_id,
+									username=target_username,
+									is_locked=False,
+									root_dir=root_dir,
+									admin_user_id=admin_user_id,
+								),
+							)
+					card_end()
+
+				if st.button(ADMIN_BUTTON_LIST_USERS):
+					run_action(
+						st,
+						ACTION_LIST_USERS,
+						lambda: [
+							{
+								"user_id": user.user_id,
+								"username": user.username,
+								"role": user.role,
+								"team_id": user.team_id,
+								"locked": user.locked,
+							}
+							for user in list_users(simulation_id=simulation_id, root_dir=root_dir)
+						],
+					)
+
+	def main_renderer() -> None:
+		card("Admin Workspace", ADMIN_VIEW_CAPTION)
+		card_end()
+		_render_lifecycle_controls()
+		_render_admin_tabs()
+
+	def insight_renderer() -> None:
 		render_right_insight_panel(st, snapshot=snapshot)
 
-	tab_setup, tab_params, tab_backup, tab_reporting, tab_users = st.tabs(ADMIN_TABS)
-
-	with tab_setup:
-		st.subheader(ADMIN_SUBHEADER_SETUP)
-		with st.form("setup_form"):
-			simulation_name = st.text_input(ADMIN_LABEL_SIMULATION_NAME, value="Airline Simulation")
-			total_rounds = st.number_input(ADMIN_LABEL_TOTAL_ROUNDS, min_value=1, value=8, step=1)
-			raw_team_names = st.text_input(ADMIN_LABEL_TEAM_NAMES, value="Team Alpha, Team Bravo")
-			overwrite = st.checkbox(ADMIN_LABEL_OVERWRITE_SIMULATION, value=False)
-			submitted = st.form_submit_button(ADMIN_FORM_SUBMIT_SETUP)
-			if submitted:
-				team_names = parse_csv_list(raw_team_names)
-				run_action(
-					st,
-					ACTION_SETUP_SIMULATION,
-					lambda: setup_simulation(
-						simulation_id=simulation_id,
-						simulation_name=simulation_name,
-						total_rounds=int(total_rounds),
-						team_names=team_names,
-						root_dir=root_dir,
-						overwrite=overwrite,
-					),
-				)
-
-	with tab_params:
-		st.subheader(ADMIN_SUBHEADER_PARAMETERS)
-		with st.form("params_form"):
-			days_per_round = st.number_input(ADMIN_LABEL_DAYS_PER_ROUND, min_value=1, value=30, step=1)
-			base_demand_business = st.number_input(ADMIN_LABEL_BASE_DEMAND_BUSINESS, min_value=0.0, value=1200.0)
-			base_demand_leisure = st.number_input(ADMIN_LABEL_BASE_DEMAND_LEISURE, min_value=0.0, value=3600.0)
-			base_fuel_cost_per_flight = st.number_input(ADMIN_LABEL_BASE_FUEL_COST_PER_FLIGHT, min_value=0.0, value=2500.0)
-			base_fixed_cost_per_round = st.number_input(ADMIN_LABEL_BASE_FIXED_COST_PER_ROUND, min_value=0.0, value=50000.0)
-			base_variable_cost_per_pax = st.number_input(ADMIN_LABEL_BASE_VARIABLE_COST_PER_PAX, min_value=0.0, value=40.0)
-			brand_effectiveness = st.number_input(ADMIN_LABEL_BRAND_EFFECTIVENESS, min_value=0.0, value=0.02)
-			submit_params = st.form_submit_button(ADMIN_FORM_SUBMIT_PARAMETERS)
-			if submit_params:
-				run_action(
-					st,
-					ACTION_CHANGE_PARAMETERS_LIVE,
-					lambda: change_parameters_live(
-						simulation_id=simulation_id,
-						admin_user_id=admin_user_id,
-						root_dir=root_dir,
-						days_per_round=int(days_per_round),
-						base_demand_business=float(base_demand_business),
-						base_demand_leisure=float(base_demand_leisure),
-						base_fuel_cost_per_flight=float(base_fuel_cost_per_flight),
-						base_fixed_cost_per_round=float(base_fixed_cost_per_round),
-						base_variable_cost_per_pax=float(base_variable_cost_per_pax),
-						brand_effectiveness=float(brand_effectiveness),
-					),
-				)
-
-	with tab_backup:
-		st.subheader(ADMIN_SUBHEADER_BACKUP)
-		c_backup, c_restore, c_destroy = st.columns(3)
-
-		with c_backup:
-			st.write(ADMIN_SECTION_BACKUP)
-			if st.button(ADMIN_BUTTON_CREATE_BACKUP, use_container_width=True):
-				run_action(
-					st,
-					ACTION_BACKUP_SIMULATION,
-					lambda: backup_simulation(
-						simulation_id=simulation_id,
-						admin_user_id=admin_user_id,
-						root_dir=root_dir,
-						backups_dir=backups_dir,
-					),
-				)
-
-		with c_restore:
-			st.write(ADMIN_SECTION_RESTORE)
-			restore_backup_path = st.text_input(ADMIN_LABEL_BACKUP_ZIP_PATH, value="")
-			restore_as_sim_id = st.text_input(ADMIN_LABEL_RESTORE_AS_SIMULATION_ID, value="")
-			restore_overwrite = st.checkbox(ADMIN_LABEL_OVERWRITE_TARGET, value=False)
-			if st.button(ADMIN_BUTTON_RESTORE_BACKUP, use_container_width=True):
-				run_action(
-					st,
-					ACTION_RESTORE_SIMULATION,
-					lambda: restore_simulation(
-						backup_zip_path=Path(restore_backup_path),
-						restore_as_simulation_id=restore_as_sim_id or None,
-						admin_user_id=admin_user_id,
-						root_dir=root_dir,
-						overwrite=restore_overwrite,
-					),
-				)
-
-		with c_destroy:
-			st.write(ADMIN_SECTION_DESTROY)
-			destroy_mode = st.selectbox(ADMIN_LABEL_DESTROY_MODE, options=ADMIN_DESTROY_MODE_OPTIONS, index=0)
-			if st.button(ADMIN_BUTTON_DESTROY_SIMULATION, use_container_width=True):
-				run_action(
-					st,
-					ACTION_DESTROY_SIMULATION,
-					lambda: destroy_simulation(
-						simulation_id=simulation_id,
-						admin_user_id=admin_user_id,
-						mode=destroy_mode,
-						root_dir=root_dir,
-						backups_dir=backups_dir,
-						archive_dir=archive_dir,
-					),
-				)
-
-	with tab_reporting:
-		st.subheader(ADMIN_SUBHEADER_REPORTS)
-		section = st.selectbox(ADMIN_LABEL_RESULTS_SECTION, options=ADMIN_RESULTS_SECTION_OPTIONS, index=0)
-		round_filter_raw = st.text_input(ADMIN_LABEL_ROUND_FILTER, value="")
-		team_filter = st.text_input(ADMIN_LABEL_TEAM_FILTER, value="")
-
-		r1, r2, r3, r4 = st.columns(4)
-		with r1:
-			if st.button(ADMIN_BUTTON_DISPLAY_RESULTS, use_container_width=True):
-				run_action(
-					st,
-					ACTION_DISPLAY_RESULTS,
-					lambda: display_results(
-						simulation_id=simulation_id,
-						round_number=parse_optional_int(round_filter_raw, field_name="round"),
-						team_id=team_filter or None,
-						section=section,
-						root_dir=root_dir,
-					),
-				)
-		with r2:
-			if st.button(ADMIN_BUTTON_DISPLAY_LOG, use_container_width=True):
-				run_action(
-					st,
-					ACTION_DISPLAY_LOG,
-					lambda: display_log(
-						simulation_id=simulation_id,
-						root_dir=root_dir,
-					),
-				)
-		with r3:
-			if st.button(ADMIN_BUTTON_HISTORICAL_DECISIONS, use_container_width=True):
-				run_action(
-					st,
-					ACTION_HISTORICAL_DECISIONS,
-					lambda: display_historical_decisions_team(
-						simulation_id=simulation_id,
-						root_dir=root_dir,
-					),
-				)
-		with r4:
-			if st.button(ADMIN_BUTTON_CHECK_STATUS, use_container_width=True):
-				run_action(
-					st,
-					ACTION_CHECK_SIMULATION_STATUS,
-					lambda: check_simulation_status(
-						simulation_id=simulation_id,
-						root_dir=root_dir,
-					),
-				)
-
-	with tab_users:
-		st.subheader(ADMIN_SUBHEADER_USERS)
-		left, right = st.columns(2)
-
-		with left:
-			with st.form("create_user_form"):
-				st.write(ADMIN_SECTION_CREATE_USER)
-				username = st.text_input(ADMIN_LABEL_USERNAME)
-				password = st.text_input(ADMIN_LABEL_PASSWORD, type="password")
-				role = st.selectbox(ADMIN_LABEL_ROLE, options=ADMIN_ROLE_OPTIONS, index=1)
-				team_id = st.text_input(ADMIN_LABEL_TEAM_ID_FOR_ROLE, value="")
-				submit_user = st.form_submit_button(ADMIN_FORM_SUBMIT_CREATE_USER)
-				if submit_user:
-					run_action(
-						st,
-						ACTION_CREATE_USER,
-						lambda: create_user(
-							simulation_id=simulation_id,
-							username=username,
-							password=password,
-							role=role,
-							team_id=team_id,
-							root_dir=root_dir,
-							admin_user_id=admin_user_id,
-						),
-					)
-
-		with right:
-			st.write(ADMIN_SECTION_LOCK_UNLOCK_USER)
-			target_username = st.text_input(ADMIN_LABEL_TARGET_USERNAME)
-			c_lock, c_unlock = st.columns(2)
-			with c_lock:
-				if st.button(ADMIN_BUTTON_LOCK, use_container_width=True):
-					run_action(
-						st,
-						ACTION_LOCK_USER,
-						lambda: set_user_lock(
-							simulation_id=simulation_id,
-							username=target_username,
-							is_locked=True,
-							root_dir=root_dir,
-							admin_user_id=admin_user_id,
-						),
-					)
-			with c_unlock:
-				if st.button(ADMIN_BUTTON_UNLOCK, use_container_width=True):
-					run_action(
-						st,
-						ACTION_UNLOCK_USER,
-						lambda: set_user_lock(
-							simulation_id=simulation_id,
-							username=target_username,
-							is_locked=False,
-							root_dir=root_dir,
-							admin_user_id=admin_user_id,
-						),
-					)
-
-		if st.button(ADMIN_BUTTON_LIST_USERS):
-			run_action(
-				st,
-				ACTION_LIST_USERS,
-				lambda: [
-					{
-						"user_id": user.user_id,
-						"username": user.username,
-						"role": user.role,
-						"team_id": user.team_id,
-						"locked": user.locked,
-					}
-					for user in list_users(simulation_id=simulation_id, root_dir=root_dir)
-				],
-			)
+	shell(main_renderer, insight_renderer)
 
 
 def main() -> None:
