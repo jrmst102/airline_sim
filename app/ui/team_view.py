@@ -3,9 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.ui.components import (
+	TEAM_VIEW_CAPTION,
 	get_streamlit,
 	parse_optional_int,
 	render_basic_context_sidebar,
+	render_simulation_header,
 	run_action,
 )
 from app.modules.check_simulation_status import check_simulation_status
@@ -16,8 +18,8 @@ from app.modules.historical_decisions_team import get_historical_decisions_team
 
 def render_team_view() -> None:
 	st = get_streamlit()
-	st.title("Airline Simulation Team View")
-	st.caption("Team decision entry and results tracking")
+	render_simulation_header(st)
+	st.caption(TEAM_VIEW_CAPTION)
 
 	context = render_basic_context_sidebar(
 		st,

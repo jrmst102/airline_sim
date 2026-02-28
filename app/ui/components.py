@@ -10,6 +10,12 @@ APP_DIR = Path(__file__).resolve().parents[1]
 IMAGES_DIR = APP_DIR / "images"
 NYU_LOGO_PATH = IMAGES_DIR / "nyu_logo.png"
 SIM_LOGO_PATH = IMAGES_DIR / "sim_logo.png"
+SIMULATION_TITLE = "Airlines"
+SIMULATION_SUBTITLE = "Competitive Strategy Simulation"
+SIMULATION_COPYRIGHT = "Copyright 2026 by Dr. Jose Mendoza"
+ADMIN_VIEW_CAPTION = "Admin operations for setup, lifecycle, backups, restore, results, logs, and users"
+TEAM_VIEW_CAPTION = "Team decision entry and results tracking"
+DASHBOARD_VIEW_CAPTION = "Unified entry point for Admin and Team operations"
 
 
 @dataclass(frozen=True)
@@ -63,6 +69,11 @@ def get_brand_logo_paths() -> dict[str, Path]:
 	}
 
 
+def render_simulation_header(st) -> None:
+	st.title(SIMULATION_TITLE)
+	st.caption(SIMULATION_SUBTITLE)
+
+
 def render_branding(st, *, in_sidebar: bool = False, show_caption: bool = False) -> None:
 	target = st.sidebar if in_sidebar else st
 	logo_paths = get_brand_logo_paths()
@@ -76,7 +87,9 @@ def render_branding(st, *, in_sidebar: bool = False, show_caption: bool = False)
 		target.image(str(sim_logo), use_container_width=True)
 
 	if show_caption:
-		target.caption("Airline Competitive Strategy Simulation")
+		target.caption(SIMULATION_SUBTITLE)
+
+	target.caption(SIMULATION_COPYRIGHT)
 
 
 def render_basic_context_sidebar(

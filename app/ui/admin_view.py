@@ -3,10 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.ui.components import (
+	ADMIN_VIEW_CAPTION,
 	get_streamlit,
 	parse_csv_list,
 	parse_optional_int,
 	render_basic_context_sidebar,
+	render_simulation_header,
 	run_action,
 )
 from app.modules.backup_simulation import backup_simulation
@@ -27,8 +29,8 @@ from app.modules.user_management import create_user, list_users, set_user_lock
 
 def render_admin_view() -> None:
 	st = get_streamlit()
-	st.title("Airline Simulation Admin")
-	st.caption("Admin operations for setup, lifecycle, backups, restore, results, logs, and users")
+	render_simulation_header(st)
+	st.caption(ADMIN_VIEW_CAPTION)
 
 	context = render_basic_context_sidebar(
 		st,

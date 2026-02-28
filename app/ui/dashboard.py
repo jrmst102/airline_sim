@@ -3,8 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.ui.components import (
+	DASHBOARD_VIEW_CAPTION,
 	get_streamlit,
+	SIMULATION_TITLE,
 	render_branding,
+	render_simulation_header,
 	run_action,
 )
 from app.modules.check_simulation_status import check_simulation_status
@@ -15,10 +18,10 @@ from app.ui.team_view import render_team_view
 
 def render_dashboard() -> None:
 	st = get_streamlit()
-	st.set_page_config(page_title="Airline Simulation Dashboard", layout="wide")
+	st.set_page_config(page_title=SIMULATION_TITLE, layout="wide")
 	render_branding(st, in_sidebar=False, show_caption=False)
-	st.title("Airline Simulation Dashboard")
-	st.caption("Unified entry point for Admin and Team operations")
+	render_simulation_header(st)
+	st.caption(DASHBOARD_VIEW_CAPTION)
 
 	with st.sidebar:
 		render_branding(st, in_sidebar=True)
