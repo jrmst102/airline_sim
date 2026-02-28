@@ -1,8 +1,14 @@
 from __future__ import annotations
 
-import importlib
 from pathlib import Path
 
+from app.ui.components import (
+	get_streamlit,
+	parse_csv_list,
+	parse_optional_int,
+	render_basic_context_sidebar,
+	run_action,
+)
 from app.modules.backup_simulation import backup_simulation
 from app.modules.change_parameters_live import change_parameters_live
 from app.modules.check_simulation_status import check_simulation_status
@@ -19,46 +25,28 @@ from app.modules.undo_round import undo_round
 from app.modules.user_management import create_user, list_users, set_user_lock
 
 
-def _get_streamlit():
-	try:
-		return importlib.import_module("streamlit")
-	except ModuleNotFoundError as exc:  # pragma: no cover
-		raise ModuleNotFoundError(
-			"streamlit is required for admin_view.py. Install it with: pip install streamlit"
-		) from exc
-
-
-def _handle_action(st, action_name: str, callback) -> None:
-	try:
-		result = callback()
-		st.success(f"{action_name} completed")
-		st.write(result)
-	except Exception as error:
-		st.error(f"{action_name} failed: {error}")
-
-
-def _parse_team_names(raw_team_names: str) -> list[str]:
-	teams = [name.strip() for name in raw_team_names.split(",") if name.strip()]
-	return teams
-
-
 def render_admin_view() -> None:
-	st = _get_streamlit()
+	st = get_streamlit()
 	st.title("Airline Simulation Admin")
 	st.caption("Admin operations for setup, lifecycle, backups, restore, results, logs, and users")
 
-	with st.sidebar:
-		st.header("Context")
-		simulation_id = st.text_input("Simulation ID", value="sim_001")
-		admin_user_id = st.text_input("Admin User ID", value="U_ADMIN")
-		root_dir = Path(st.text_input("Simulations Root", value="simulations"))
-		backups_dir = Path(st.text_input("Backups Root", value="backups"))
-		archive_dir = Path(st.text_input("Archive Root", value="archive"))
+	context = render_basic_context_sidebar(
+		st,
+		default_simulation_id="sim_001",
+		default_root_dir="simulations",
+		include_admin_fields=True,
+		include_storage_fields=True,
+	)
+	simulation_id = context.simulation_id
+	admin_user_id = context.admin_user_id or "U_ADMIN"
+	root_dir = context.root_dir
+	backups_dir = context.backups_dir or Path("backups")
+	archive_dir = context.archive_dir or Path("archive")
 
 	status_col, quick_col = st.columns([1, 2])
 	with status_col:
 		if st.button("Refresh Status", use_container_width=True):
-			_handle_action(
+			run_action(
 				st,
 				"Check Status",
 				lambda: check_simulation_status(
@@ -72,7 +60,7 @@ def render_admin_view() -> None:
 		c1, c2, c3, c4 = st.columns(4)
 		with c1:
 			if st.button("Start", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"Start Simulation",
 					lambda: start_simulation(
@@ -83,7 +71,7 @@ def render_admin_view() -> None:
 				)
 		with c2:
 			if st.button("Move Next", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"Move Next Round",
 					lambda: move_next_round(
@@ -94,7 +82,7 @@ def render_admin_view() -> None:
 				)
 		with c3:
 			if st.button("Undo", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"Undo Round",
 					lambda: undo_round(
@@ -105,7 +93,7 @@ def render_admin_view() -> None:
 				)
 		with c4:
 			if st.button("End", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"End Simulation",
 					lambda: end_simulation(
@@ -128,8 +116,8 @@ def render_admin_view() -> None:
 			overwrite = st.checkbox("Overwrite if simulation folder exists", value=False)
 			submitted = st.form_submit_button("Run Setup")
 			if submitted:
-				team_names = _parse_team_names(raw_team_names)
-				_handle_action(
+				team_names = parse_csv_list(raw_team_names)
+				run_action(
 					st,
 					"Setup Simulation",
 					lambda: setup_simulation(
@@ -154,7 +142,7 @@ def render_admin_view() -> None:
 			brand_effectiveness = st.number_input("brand_effectiveness", min_value=0.0, value=0.02)
 			submit_params = st.form_submit_button("Apply Parameter Version")
 			if submit_params:
-				_handle_action(
+				run_action(
 					st,
 					"Change Parameters Live",
 					lambda: change_parameters_live(
@@ -178,7 +166,7 @@ def render_admin_view() -> None:
 		with c_backup:
 			st.write("Backup")
 			if st.button("Create Backup", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"Backup Simulation",
 					lambda: backup_simulation(
@@ -195,7 +183,7 @@ def render_admin_view() -> None:
 			restore_as_sim_id = st.text_input("Restore as simulation_id (optional)", value="")
 			restore_overwrite = st.checkbox("Overwrite target if exists", value=False)
 			if st.button("Restore Backup", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"Restore Simulation",
 					lambda: restore_simulation(
@@ -211,7 +199,7 @@ def render_admin_view() -> None:
 			st.write("Destroy")
 			destroy_mode = st.selectbox("Destroy mode", options=["archive", "delete"], index=0)
 			if st.button("Destroy Simulation", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"Destroy Simulation",
 					lambda: destroy_simulation(
@@ -230,17 +218,15 @@ def render_admin_view() -> None:
 		round_filter_raw = st.text_input("Round filter (optional)", value="")
 		team_filter = st.text_input("Team filter (optional)", value="")
 
-		round_filter = int(round_filter_raw) if round_filter_raw.strip().isdigit() else None
-
 		r1, r2, r3, r4 = st.columns(4)
 		with r1:
 			if st.button("Display Results", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"Display Results",
 					lambda: display_results(
 						simulation_id=simulation_id,
-						round_number=round_filter,
+						round_number=parse_optional_int(round_filter_raw, field_name="round"),
 						team_id=team_filter or None,
 						section=section,
 						root_dir=root_dir,
@@ -248,7 +234,7 @@ def render_admin_view() -> None:
 				)
 		with r2:
 			if st.button("Display Log", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"Display Log",
 					lambda: display_log(
@@ -258,7 +244,7 @@ def render_admin_view() -> None:
 				)
 		with r3:
 			if st.button("Historical Decisions", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"Historical Decisions",
 					lambda: display_historical_decisions_team(
@@ -268,7 +254,7 @@ def render_admin_view() -> None:
 				)
 		with r4:
 			if st.button("Check Status", use_container_width=True):
-				_handle_action(
+				run_action(
 					st,
 					"Check Simulation Status",
 					lambda: check_simulation_status(
@@ -290,7 +276,7 @@ def render_admin_view() -> None:
 				team_id = st.text_input("Team ID (for TEAM_* roles)", value="")
 				submit_user = st.form_submit_button("Create User")
 				if submit_user:
-					_handle_action(
+					run_action(
 						st,
 						"Create User",
 						lambda: create_user(
@@ -310,7 +296,7 @@ def render_admin_view() -> None:
 			c_lock, c_unlock = st.columns(2)
 			with c_lock:
 				if st.button("Lock", use_container_width=True):
-					_handle_action(
+					run_action(
 						st,
 						"Lock User",
 						lambda: set_user_lock(
@@ -323,7 +309,7 @@ def render_admin_view() -> None:
 					)
 			with c_unlock:
 				if st.button("Unlock", use_container_width=True):
-					_handle_action(
+					run_action(
 						st,
 						"Unlock User",
 						lambda: set_user_lock(
@@ -336,7 +322,7 @@ def render_admin_view() -> None:
 					)
 
 		if st.button("List Users"):
-			_handle_action(
+			run_action(
 				st,
 				"List Users",
 				lambda: [

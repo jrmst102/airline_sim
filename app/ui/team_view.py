@@ -1,63 +1,45 @@
 from __future__ import annotations
 
-import importlib
 from pathlib import Path
 
+from app.ui.components import (
+	get_streamlit,
+	parse_optional_int,
+	render_basic_context_sidebar,
+	run_action,
+)
 from app.modules.check_simulation_status import check_simulation_status
 from app.modules.display_results import display_results
 from app.modules.enter_decisions import enter_decision
 from app.modules.historical_decisions_team import get_historical_decisions_team
 
 
-def _get_streamlit():
-	try:
-		return importlib.import_module("streamlit")
-	except ModuleNotFoundError as exc:  # pragma: no cover
-		raise ModuleNotFoundError(
-			"streamlit is required for team_view.py. Install it with: pip install streamlit"
-		) from exc
-
-
-def _handle_action(st, action_name: str, callback) -> None:
-	try:
-		result = callback()
-		st.success(f"{action_name} completed")
-		st.write(result)
-	except Exception as error:
-		st.error(f"{action_name} failed: {error}")
-
-
-def _to_optional_int(raw_value: str) -> int | None:
-	raw = raw_value.strip()
-	if not raw:
-		return None
-	if raw.isdigit():
-		return int(raw)
-	raise ValueError("Round must be a positive integer when provided")
-
-
 def render_team_view() -> None:
-	st = _get_streamlit()
+	st = get_streamlit()
 	st.title("Airline Simulation Team View")
 	st.caption("Team decision entry and results tracking")
 
-	with st.sidebar:
-		st.header("Context")
-		simulation_id = st.text_input("Simulation ID", value="sim_001")
-		team_id = st.text_input("Team ID", value="T1")
-		root_dir = Path(st.text_input("Simulations Root", value="simulations"))
+	context = render_basic_context_sidebar(
+		st,
+		default_simulation_id="sim_001",
+		default_root_dir="simulations",
+		include_team_field=True,
+	)
+	simulation_id = context.simulation_id
+	team_id = context.team_id or "T1"
+	root_dir = context.root_dir
 
 	status_col, report_col = st.columns([1, 1])
 	with status_col:
 		if st.button("Check Simulation Status", use_container_width=True):
-			_handle_action(
+			run_action(
 				st,
 				"Check Simulation Status",
 				lambda: check_simulation_status(simulation_id=simulation_id, root_dir=root_dir),
 			)
 	with report_col:
 		if st.button("Show Team Results", use_container_width=True):
-			_handle_action(
+			run_action(
 				st,
 				"Display Team Results",
 				lambda: display_results(
@@ -82,7 +64,7 @@ def render_team_view() -> None:
 
 			if submit_decision:
 				def _run_enter_decision():
-					round_number = _to_optional_int(round_raw)
+					round_number = parse_optional_int(round_raw, field_name="round")
 					return enter_decision(
 						simulation_id=simulation_id,
 						team_id=team_id,
@@ -94,7 +76,7 @@ def render_team_view() -> None:
 						root_dir=root_dir,
 					)
 
-				_handle_action(st, "Enter Decision", _run_enter_decision)
+				run_action(st, "Enter Decision", _run_enter_decision)
 
 	with tab_results:
 		st.subheader("Results")
@@ -102,7 +84,7 @@ def render_team_view() -> None:
 		round_filter_raw = st.text_input("Round filter (optional)", value="")
 		if st.button("Display Results", use_container_width=True):
 			def _run_display_results():
-				round_number = _to_optional_int(round_filter_raw)
+				round_number = parse_optional_int(round_filter_raw, field_name="round")
 				return display_results(
 					simulation_id=simulation_id,
 					round_number=round_number,
@@ -111,7 +93,7 @@ def render_team_view() -> None:
 					root_dir=root_dir,
 				)
 
-			_handle_action(st, "Display Results", _run_display_results)
+			run_action(st, "Display Results", _run_display_results)
 
 	with tab_history:
 		st.subheader("Decision History")
@@ -130,7 +112,7 @@ def render_team_view() -> None:
 						}
 				return f"No decision history found for team {team_id}."
 
-			_handle_action(st, "Team Decision History", _run_history)
+			run_action(st, "Team Decision History", _run_history)
 
 
 def main() -> None:

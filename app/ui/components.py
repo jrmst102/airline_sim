@@ -6,6 +6,12 @@ from pathlib import Path
 from typing import Any, Callable
 
 
+APP_DIR = Path(__file__).resolve().parents[1]
+IMAGES_DIR = APP_DIR / "images"
+NYU_LOGO_PATH = IMAGES_DIR / "nyu_logo.png"
+SIM_LOGO_PATH = IMAGES_DIR / "sim_logo.png"
+
+
 @dataclass(frozen=True)
 class UIContext:
 	simulation_id: str
@@ -50,6 +56,29 @@ def parse_csv_list(raw_value: str) -> list[str]:
 	return [chunk.strip() for chunk in raw_value.split(",") if chunk.strip()]
 
 
+def get_brand_logo_paths() -> dict[str, Path]:
+	return {
+		"nyu": NYU_LOGO_PATH,
+		"simulation": SIM_LOGO_PATH,
+	}
+
+
+def render_branding(st, *, in_sidebar: bool = False, show_caption: bool = False) -> None:
+	target = st.sidebar if in_sidebar else st
+	logo_paths = get_brand_logo_paths()
+
+	nyu_logo = logo_paths["nyu"]
+	sim_logo = logo_paths["simulation"]
+
+	if nyu_logo.exists():
+		target.image(str(nyu_logo), use_container_width=True)
+	if sim_logo.exists():
+		target.image(str(sim_logo), use_container_width=True)
+
+	if show_caption:
+		target.caption("Airline Competitive Strategy Simulation")
+
+
 def render_basic_context_sidebar(
 	st,
 	*,
@@ -58,8 +87,11 @@ def render_basic_context_sidebar(
 	include_admin_fields: bool = False,
 	include_team_field: bool = False,
 	include_storage_fields: bool = False,
+	show_branding: bool = True,
 ) -> UIContext:
 	with st.sidebar:
+		if show_branding:
+			render_branding(st, in_sidebar=True)
 		st.header("Context")
 		simulation_id = st.text_input("Simulation ID", value=default_simulation_id)
 		root_dir = Path(st.text_input("Simulations Root", value=default_root_dir))
