@@ -38,13 +38,16 @@ Example:
 | Task | Command |
 | --- | --- |
 | Show all commands | `.venv/bin/python main.py --help` |
-| Check simulation status | `.venv/bin/python main.py check-status sim_001` |
-| Start simulation | `.venv/bin/python main.py start-simulation sim_001 U_ADMIN` |
-| Move to next round | `.venv/bin/python main.py move-next-round sim_001 U_ADMIN` |
-| Undo current round | `.venv/bin/python main.py undo-round sim_001 U_ADMIN` |
-| End simulation | `.venv/bin/python main.py end-simulation sim_001 U_ADMIN` |
-| Display results | `.venv/bin/python main.py display-results sim_001` |
 | Display log | `.venv/bin/python main.py display-log sim_001` |
+
+### Team Commands
+
+| Task | Command |
+| --- | --- |
+| Team decision history summary | `.venv/bin/python main.py historical-decisions-team sim_001` |
+| Team decision history (custom root) | `.venv/bin/python main.py historical-decisions-team sim_001 --root simulations` |
+
+Current CLI routes are limited to `display-log` and `historical-decisions-team`; lifecycle and decision-entry workflows are available through the Streamlit UI.
 
 ## UI Usage (Streamlit)
 
