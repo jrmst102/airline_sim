@@ -9,6 +9,8 @@ from typing import Any
 
 import bcrypt
 
+from app.data.log_manager import append_log_event
+
 
 VALID_ROLES = {"ADMIN", "TEAM_LEAD", "TEAM_MEMBER"}
 
@@ -124,6 +126,7 @@ def create_user(
 	role: str,
 	team_id: str = "",
 	root_dir: Path | str = Path("simulations"),
+	admin_user_id: str = "U_ADMIN",
 ) -> UserRecord:
 	normalized_role = role.upper()
 	if normalized_role not in VALID_ROLES:
@@ -160,6 +163,14 @@ def create_user(
 	}
 	rows.append(new_row)
 	_write_csv_rows(users_csv, fieldnames, rows)
+	append_log_event(
+		simulation_dir=simulation_dir,
+		simulation_id=simulation_id,
+		actor_user_id=admin_user_id,
+		action="CREATE_USER",
+		details=f"user_id={new_user_id}; username={username}; role={normalized_role}; team_id={team_id}",
+		event_at_utc=now,
+	)
 
 	return UserRecord(**new_row)
 
@@ -169,6 +180,7 @@ def set_user_lock(
 	username: str,
 	is_locked: bool,
 	root_dir: Path | str = Path("simulations"),
+	admin_user_id: str = "U_ADMIN",
 ) -> UserRecord:
 	simulation_dir = _simulation_path(root_dir, simulation_id)
 	users_csv = simulation_dir / "users.csv"
@@ -184,8 +196,19 @@ def set_user_lock(
 		raise ValueError(f"username '{username}' not found")
 
 	rows[target_index]["is_locked"] = "1" if is_locked else "0"
+	now = _utc_now()
 	_write_csv_rows(users_csv, fieldnames, rows)
-	return UserRecord(**rows[target_index])
+	updated = UserRecord(**rows[target_index])
+	append_log_event(
+		simulation_dir=simulation_dir,
+		simulation_id=simulation_id,
+		actor_user_id=admin_user_id,
+		action="LOCK_USER" if is_locked else "UNLOCK_USER",
+		details=f"user_id={updated.user_id}; username={updated.username}",
+		event_at_utc=now,
+	)
+
+	return updated
 
 
 def authenticate_user(
@@ -199,23 +222,68 @@ def authenticate_user(
 
 	matched = next((user for user in users if user.username.casefold() == username.casefold()), None)
 	if matched is None:
+		now = _utc_now()
 		_append_login_event(simulation_dir, simulation_id, "", username, "LOGIN_FAILURE_UNKNOWN_USER")
+		append_log_event(
+			simulation_dir=simulation_dir,
+			simulation_id=simulation_id,
+			actor_user_id="UNKNOWN",
+			action="LOGIN_FAILURE_UNKNOWN_USER",
+			details=f"username={username}",
+			event_at_utc=now,
+		)
 		return None
 
 	if matched.locked:
+		now = _utc_now()
 		_append_login_event(simulation_dir, simulation_id, matched.user_id, matched.username, "LOGIN_FAILURE_LOCKED")
+		append_log_event(
+			simulation_dir=simulation_dir,
+			simulation_id=simulation_id,
+			actor_user_id=matched.user_id,
+			action="LOGIN_FAILURE_LOCKED",
+			details=f"username={matched.username}",
+			event_at_utc=now,
+		)
 		return None
 
 	if not matched.password_hash:
+		now = _utc_now()
 		_append_login_event(simulation_dir, simulation_id, matched.user_id, matched.username, "LOGIN_FAILURE_NO_PASSWORD")
+		append_log_event(
+			simulation_dir=simulation_dir,
+			simulation_id=simulation_id,
+			actor_user_id=matched.user_id,
+			action="LOGIN_FAILURE_NO_PASSWORD",
+			details=f"username={matched.username}",
+			event_at_utc=now,
+		)
 		return None
 
 	password_ok = bcrypt.checkpw(password.encode("utf-8"), matched.password_hash.encode("utf-8"))
 	if password_ok:
+		now = _utc_now()
 		_append_login_event(simulation_dir, simulation_id, matched.user_id, matched.username, "LOGIN_SUCCESS")
+		append_log_event(
+			simulation_dir=simulation_dir,
+			simulation_id=simulation_id,
+			actor_user_id=matched.user_id,
+			action="LOGIN_SUCCESS",
+			details=f"username={matched.username}",
+			event_at_utc=now,
+		)
 		return matched
 
+	now = _utc_now()
 	_append_login_event(simulation_dir, simulation_id, matched.user_id, matched.username, "LOGIN_FAILURE_BAD_PASSWORD")
+	append_log_event(
+		simulation_dir=simulation_dir,
+		simulation_id=simulation_id,
+		actor_user_id=matched.user_id,
+		action="LOGIN_FAILURE_BAD_PASSWORD",
+		details=f"username={matched.username}",
+		event_at_utc=now,
+	)
 	return None
 
 

@@ -122,6 +122,14 @@ CSV_SCHEMAS: dict[str, list[str]] = {
 		"details",
 		"event_at_utc",
 	],
+	"log.csv": [
+		"event_id",
+		"simulation_id",
+		"actor_user_id",
+		"action",
+		"details",
+		"event_at_utc",
+	],
 }
 
 
@@ -255,6 +263,16 @@ def setup_simulation(
 				"event_id": "E1",
 				"simulation_id": simulation_id,
 				"admin_user_id": "U_ADMIN",
+				"action": "SETUP_SIMULATION",
+				"details": f"Created simulation with {len(team_names)} teams and {total_rounds} rounds",
+				"event_at_utc": now,
+			}
+		],
+		"log.csv": [
+			{
+				"event_id": "E1",
+				"simulation_id": simulation_id,
+				"actor_user_id": "U_ADMIN",
 				"action": "SETUP_SIMULATION",
 				"details": f"Created simulation with {len(team_names)} teams and {total_rounds} rounds",
 				"event_at_utc": now,
