@@ -1,0 +1,2 @@
+simulation_id,version,days_per_round,base_demand_business,base_demand_leisure,base_fuel_cost_per_flight,base_fixed_cost_per_round,base_variable_cost_per_pax,brand_effectiveness,created_at_utc
+sim_001,1,30,1200,3600,2500,50000,40,0.02,2026-02-28T17:22:47.549851+00:00

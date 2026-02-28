@@ -1,0 +1,2 @@
+event_id,simulation_id,admin_user_id,action,details,event_at_utc
+E1,sim_001,U_ADMIN,SETUP_SIMULATION,Created simulation with 2 teams and 6 rounds,2026-02-28T17:22:47.549851+00:00
