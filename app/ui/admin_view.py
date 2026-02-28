@@ -3,6 +3,50 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.ui.components import (
+	ADMIN_BUTTON_CHECK_STATUS,
+	ADMIN_BUTTON_CREATE_BACKUP,
+	ADMIN_BUTTON_DESTROY_SIMULATION,
+	ADMIN_BUTTON_DISPLAY_LOG,
+	ADMIN_BUTTON_DISPLAY_RESULTS,
+	ADMIN_BUTTON_END,
+	ADMIN_BUTTON_HISTORICAL_DECISIONS,
+	ADMIN_BUTTON_LIST_USERS,
+	ADMIN_BUTTON_LOCK,
+	ADMIN_BUTTON_MOVE_NEXT,
+	ADMIN_BUTTON_REFRESH_STATUS,
+	ADMIN_BUTTON_RESTORE_BACKUP,
+	ADMIN_BUTTON_START,
+	ADMIN_BUTTON_UNDO,
+	ADMIN_BUTTON_UNLOCK,
+	ADMIN_DESTROY_MODE_OPTIONS,
+	ADMIN_FORM_SUBMIT_CREATE_USER,
+	ADMIN_FORM_SUBMIT_PARAMETERS,
+	ADMIN_FORM_SUBMIT_SETUP,
+	ADMIN_LABEL_BACKUP_ZIP_PATH,
+	ADMIN_LABEL_BASE_DEMAND_BUSINESS,
+	ADMIN_LABEL_BASE_DEMAND_LEISURE,
+	ADMIN_LABEL_BASE_FIXED_COST_PER_ROUND,
+	ADMIN_LABEL_BASE_FUEL_COST_PER_FLIGHT,
+	ADMIN_LABEL_BASE_VARIABLE_COST_PER_PAX,
+	ADMIN_LABEL_BRAND_EFFECTIVENESS,
+	ADMIN_LABEL_DAYS_PER_ROUND,
+	ADMIN_LABEL_DESTROY_MODE,
+	ADMIN_LABEL_OVERWRITE_SIMULATION,
+	ADMIN_LABEL_OVERWRITE_TARGET,
+	ADMIN_LABEL_PASSWORD,
+	ADMIN_LABEL_RESTORE_AS_SIMULATION_ID,
+	ADMIN_LABEL_RESULTS_SECTION,
+	ADMIN_LABEL_ROLE,
+	ADMIN_LABEL_ROUND_FILTER,
+	ADMIN_LABEL_SIMULATION_NAME,
+	ADMIN_LABEL_TARGET_USERNAME,
+	ADMIN_LABEL_TEAM_FILTER,
+	ADMIN_LABEL_TEAM_ID_FOR_ROLE,
+	ADMIN_LABEL_TEAM_NAMES,
+	ADMIN_LABEL_TOTAL_ROUNDS,
+	ADMIN_LABEL_USERNAME,
+	ADMIN_RESULTS_SECTION_OPTIONS,
+	ADMIN_ROLE_OPTIONS,
 	ADMIN_QUICK_LIFECYCLE_ACTIONS_LABEL,
 	ADMIN_SECTION_BACKUP,
 	ADMIN_SECTION_CREATE_USER,
@@ -59,7 +103,7 @@ def render_admin_view() -> None:
 
 	status_col, quick_col = st.columns([1, 2])
 	with status_col:
-		if st.button("Refresh Status", use_container_width=True):
+		if st.button(ADMIN_BUTTON_REFRESH_STATUS, use_container_width=True):
 			run_action(
 				st,
 				"Check Status",
@@ -73,7 +117,7 @@ def render_admin_view() -> None:
 		st.write(ADMIN_QUICK_LIFECYCLE_ACTIONS_LABEL)
 		c1, c2, c3, c4 = st.columns(4)
 		with c1:
-			if st.button("Start", use_container_width=True):
+			if st.button(ADMIN_BUTTON_START, use_container_width=True):
 				run_action(
 					st,
 					"Start Simulation",
@@ -84,7 +128,7 @@ def render_admin_view() -> None:
 					),
 				)
 		with c2:
-			if st.button("Move Next", use_container_width=True):
+			if st.button(ADMIN_BUTTON_MOVE_NEXT, use_container_width=True):
 				run_action(
 					st,
 					"Move Next Round",
@@ -95,7 +139,7 @@ def render_admin_view() -> None:
 					),
 				)
 		with c3:
-			if st.button("Undo", use_container_width=True):
+			if st.button(ADMIN_BUTTON_UNDO, use_container_width=True):
 				run_action(
 					st,
 					"Undo Round",
@@ -106,7 +150,7 @@ def render_admin_view() -> None:
 					),
 				)
 		with c4:
-			if st.button("End", use_container_width=True):
+			if st.button(ADMIN_BUTTON_END, use_container_width=True):
 				run_action(
 					st,
 					"End Simulation",
@@ -122,11 +166,11 @@ def render_admin_view() -> None:
 	with tab_setup:
 		st.subheader(ADMIN_SUBHEADER_SETUP)
 		with st.form("setup_form"):
-			simulation_name = st.text_input("Simulation Name", value="Airline Simulation")
-			total_rounds = st.number_input("Total Rounds", min_value=1, value=8, step=1)
-			raw_team_names = st.text_input("Team Names (comma-separated)", value="Team Alpha, Team Bravo")
-			overwrite = st.checkbox("Overwrite if simulation folder exists", value=False)
-			submitted = st.form_submit_button("Run Setup")
+			simulation_name = st.text_input(ADMIN_LABEL_SIMULATION_NAME, value="Airline Simulation")
+			total_rounds = st.number_input(ADMIN_LABEL_TOTAL_ROUNDS, min_value=1, value=8, step=1)
+			raw_team_names = st.text_input(ADMIN_LABEL_TEAM_NAMES, value="Team Alpha, Team Bravo")
+			overwrite = st.checkbox(ADMIN_LABEL_OVERWRITE_SIMULATION, value=False)
+			submitted = st.form_submit_button(ADMIN_FORM_SUBMIT_SETUP)
 			if submitted:
 				team_names = parse_csv_list(raw_team_names)
 				run_action(
@@ -145,14 +189,14 @@ def render_admin_view() -> None:
 	with tab_params:
 		st.subheader(ADMIN_SUBHEADER_PARAMETERS)
 		with st.form("params_form"):
-			days_per_round = st.number_input("days_per_round", min_value=1, value=30, step=1)
-			base_demand_business = st.number_input("base_demand_business", min_value=0.0, value=1200.0)
-			base_demand_leisure = st.number_input("base_demand_leisure", min_value=0.0, value=3600.0)
-			base_fuel_cost_per_flight = st.number_input("base_fuel_cost_per_flight", min_value=0.0, value=2500.0)
-			base_fixed_cost_per_round = st.number_input("base_fixed_cost_per_round", min_value=0.0, value=50000.0)
-			base_variable_cost_per_pax = st.number_input("base_variable_cost_per_pax", min_value=0.0, value=40.0)
-			brand_effectiveness = st.number_input("brand_effectiveness", min_value=0.0, value=0.02)
-			submit_params = st.form_submit_button("Apply Parameter Version")
+			days_per_round = st.number_input(ADMIN_LABEL_DAYS_PER_ROUND, min_value=1, value=30, step=1)
+			base_demand_business = st.number_input(ADMIN_LABEL_BASE_DEMAND_BUSINESS, min_value=0.0, value=1200.0)
+			base_demand_leisure = st.number_input(ADMIN_LABEL_BASE_DEMAND_LEISURE, min_value=0.0, value=3600.0)
+			base_fuel_cost_per_flight = st.number_input(ADMIN_LABEL_BASE_FUEL_COST_PER_FLIGHT, min_value=0.0, value=2500.0)
+			base_fixed_cost_per_round = st.number_input(ADMIN_LABEL_BASE_FIXED_COST_PER_ROUND, min_value=0.0, value=50000.0)
+			base_variable_cost_per_pax = st.number_input(ADMIN_LABEL_BASE_VARIABLE_COST_PER_PAX, min_value=0.0, value=40.0)
+			brand_effectiveness = st.number_input(ADMIN_LABEL_BRAND_EFFECTIVENESS, min_value=0.0, value=0.02)
+			submit_params = st.form_submit_button(ADMIN_FORM_SUBMIT_PARAMETERS)
 			if submit_params:
 				run_action(
 					st,
@@ -177,7 +221,7 @@ def render_admin_view() -> None:
 
 		with c_backup:
 			st.write(ADMIN_SECTION_BACKUP)
-			if st.button("Create Backup", use_container_width=True):
+			if st.button(ADMIN_BUTTON_CREATE_BACKUP, use_container_width=True):
 				run_action(
 					st,
 					"Backup Simulation",
@@ -191,10 +235,10 @@ def render_admin_view() -> None:
 
 		with c_restore:
 			st.write(ADMIN_SECTION_RESTORE)
-			restore_backup_path = st.text_input("Backup zip path", value="")
-			restore_as_sim_id = st.text_input("Restore as simulation_id (optional)", value="")
-			restore_overwrite = st.checkbox("Overwrite target if exists", value=False)
-			if st.button("Restore Backup", use_container_width=True):
+			restore_backup_path = st.text_input(ADMIN_LABEL_BACKUP_ZIP_PATH, value="")
+			restore_as_sim_id = st.text_input(ADMIN_LABEL_RESTORE_AS_SIMULATION_ID, value="")
+			restore_overwrite = st.checkbox(ADMIN_LABEL_OVERWRITE_TARGET, value=False)
+			if st.button(ADMIN_BUTTON_RESTORE_BACKUP, use_container_width=True):
 				run_action(
 					st,
 					"Restore Simulation",
@@ -209,8 +253,8 @@ def render_admin_view() -> None:
 
 		with c_destroy:
 			st.write(ADMIN_SECTION_DESTROY)
-			destroy_mode = st.selectbox("Destroy mode", options=["archive", "delete"], index=0)
-			if st.button("Destroy Simulation", use_container_width=True):
+			destroy_mode = st.selectbox(ADMIN_LABEL_DESTROY_MODE, options=ADMIN_DESTROY_MODE_OPTIONS, index=0)
+			if st.button(ADMIN_BUTTON_DESTROY_SIMULATION, use_container_width=True):
 				run_action(
 					st,
 					"Destroy Simulation",
@@ -226,13 +270,13 @@ def render_admin_view() -> None:
 
 	with tab_reporting:
 		st.subheader(ADMIN_SUBHEADER_REPORTS)
-		section = st.selectbox("Results Section", options=["both", "market", "team"], index=0)
-		round_filter_raw = st.text_input("Round filter (optional)", value="")
-		team_filter = st.text_input("Team filter (optional)", value="")
+		section = st.selectbox(ADMIN_LABEL_RESULTS_SECTION, options=ADMIN_RESULTS_SECTION_OPTIONS, index=0)
+		round_filter_raw = st.text_input(ADMIN_LABEL_ROUND_FILTER, value="")
+		team_filter = st.text_input(ADMIN_LABEL_TEAM_FILTER, value="")
 
 		r1, r2, r3, r4 = st.columns(4)
 		with r1:
-			if st.button("Display Results", use_container_width=True):
+			if st.button(ADMIN_BUTTON_DISPLAY_RESULTS, use_container_width=True):
 				run_action(
 					st,
 					"Display Results",
@@ -245,7 +289,7 @@ def render_admin_view() -> None:
 					),
 				)
 		with r2:
-			if st.button("Display Log", use_container_width=True):
+			if st.button(ADMIN_BUTTON_DISPLAY_LOG, use_container_width=True):
 				run_action(
 					st,
 					"Display Log",
@@ -255,7 +299,7 @@ def render_admin_view() -> None:
 					),
 				)
 		with r3:
-			if st.button("Historical Decisions", use_container_width=True):
+			if st.button(ADMIN_BUTTON_HISTORICAL_DECISIONS, use_container_width=True):
 				run_action(
 					st,
 					"Historical Decisions",
@@ -265,7 +309,7 @@ def render_admin_view() -> None:
 					),
 				)
 		with r4:
-			if st.button("Check Status", use_container_width=True):
+			if st.button(ADMIN_BUTTON_CHECK_STATUS, use_container_width=True):
 				run_action(
 					st,
 					"Check Simulation Status",
@@ -282,11 +326,11 @@ def render_admin_view() -> None:
 		with left:
 			with st.form("create_user_form"):
 				st.write(ADMIN_SECTION_CREATE_USER)
-				username = st.text_input("Username")
-				password = st.text_input("Password", type="password")
-				role = st.selectbox("Role", options=["ADMIN", "TEAM_LEAD", "TEAM_MEMBER"], index=1)
-				team_id = st.text_input("Team ID (for TEAM_* roles)", value="")
-				submit_user = st.form_submit_button("Create User")
+				username = st.text_input(ADMIN_LABEL_USERNAME)
+				password = st.text_input(ADMIN_LABEL_PASSWORD, type="password")
+				role = st.selectbox(ADMIN_LABEL_ROLE, options=ADMIN_ROLE_OPTIONS, index=1)
+				team_id = st.text_input(ADMIN_LABEL_TEAM_ID_FOR_ROLE, value="")
+				submit_user = st.form_submit_button(ADMIN_FORM_SUBMIT_CREATE_USER)
 				if submit_user:
 					run_action(
 						st,
@@ -304,10 +348,10 @@ def render_admin_view() -> None:
 
 		with right:
 			st.write(ADMIN_SECTION_LOCK_UNLOCK_USER)
-			target_username = st.text_input("Target username")
+			target_username = st.text_input(ADMIN_LABEL_TARGET_USERNAME)
 			c_lock, c_unlock = st.columns(2)
 			with c_lock:
-				if st.button("Lock", use_container_width=True):
+				if st.button(ADMIN_BUTTON_LOCK, use_container_width=True):
 					run_action(
 						st,
 						"Lock User",
@@ -320,7 +364,7 @@ def render_admin_view() -> None:
 						),
 					)
 			with c_unlock:
-				if st.button("Unlock", use_container_width=True):
+				if st.button(ADMIN_BUTTON_UNLOCK, use_container_width=True):
 					run_action(
 						st,
 						"Unlock User",
@@ -333,7 +377,7 @@ def render_admin_view() -> None:
 						),
 					)
 
-		if st.button("List Users"):
+		if st.button(ADMIN_BUTTON_LIST_USERS):
 			run_action(
 				st,
 				"List Users",

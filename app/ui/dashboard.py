@@ -55,8 +55,9 @@ def render_dashboard() -> None:
 			)
 
 	mode = st.radio(DASHBOARD_VIEW_SWITCH_LABEL, options=DASHBOARD_VIEW_OPTIONS, horizontal=True)
+	admin_mode = DASHBOARD_VIEW_OPTIONS[0]
 
-	if mode == "Admin":
+	if mode == admin_mode:
 		render_admin_view()
 	else:
 		render_team_view()

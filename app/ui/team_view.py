@@ -3,6 +3,19 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.ui.components import (
+	TEAM_BUTTON_CHECK_SIMULATION_STATUS,
+	TEAM_BUTTON_DISPLAY_RESULTS,
+	TEAM_BUTTON_SHOW_TEAM_DECISION_HISTORY,
+	TEAM_BUTTON_SHOW_TEAM_RESULTS,
+	TEAM_FORM_SUBMIT_DECISION,
+	TEAM_LABEL_BRAND_INVESTMENT,
+	TEAM_LABEL_FLIGHTS_PER_DAY,
+	TEAM_LABEL_PRICE_ECONOMY,
+	TEAM_LABEL_PRICE_PREMIUM,
+	TEAM_LABEL_ROUND_FILTER,
+	TEAM_LABEL_ROUND_OPTIONAL_OPEN,
+	TEAM_LABEL_SECTION,
+	TEAM_SECTION_OPTIONS,
 	TEAM_SUBHEADER_DECISION_HISTORY,
 	TEAM_SUBHEADER_ENTER_DECISION,
 	TEAM_SUBHEADER_RESULTS,
@@ -37,14 +50,14 @@ def render_team_view() -> None:
 
 	status_col, report_col = st.columns([1, 1])
 	with status_col:
-		if st.button("Check Simulation Status", use_container_width=True):
+		if st.button(TEAM_BUTTON_CHECK_SIMULATION_STATUS, use_container_width=True):
 			run_action(
 				st,
 				"Check Simulation Status",
 				lambda: check_simulation_status(simulation_id=simulation_id, root_dir=root_dir),
 			)
 	with report_col:
-		if st.button("Show Team Results", use_container_width=True):
+		if st.button(TEAM_BUTTON_SHOW_TEAM_RESULTS, use_container_width=True):
 			run_action(
 				st,
 				"Display Team Results",
@@ -61,12 +74,12 @@ def render_team_view() -> None:
 	with tab_decisions:
 		st.subheader(TEAM_SUBHEADER_ENTER_DECISION)
 		with st.form("team_decision_form"):
-			round_raw = st.text_input("Round (optional, must be OPEN)", value="")
-			flights_per_day = st.number_input("flights_per_day", min_value=1, value=6, step=1)
-			price_premium = st.number_input("price_premium", min_value=0.01, value=220.0)
-			price_economy = st.number_input("price_economy", min_value=0.01, value=160.0)
-			brand_investment = st.number_input("brand_investment", min_value=0.0, value=1000.0)
-			submit_decision = st.form_submit_button("Submit Decision")
+			round_raw = st.text_input(TEAM_LABEL_ROUND_OPTIONAL_OPEN, value="")
+			flights_per_day = st.number_input(TEAM_LABEL_FLIGHTS_PER_DAY, min_value=1, value=6, step=1)
+			price_premium = st.number_input(TEAM_LABEL_PRICE_PREMIUM, min_value=0.01, value=220.0)
+			price_economy = st.number_input(TEAM_LABEL_PRICE_ECONOMY, min_value=0.01, value=160.0)
+			brand_investment = st.number_input(TEAM_LABEL_BRAND_INVESTMENT, min_value=0.0, value=1000.0)
+			submit_decision = st.form_submit_button(TEAM_FORM_SUBMIT_DECISION)
 
 			if submit_decision:
 				def _run_enter_decision():
@@ -86,9 +99,9 @@ def render_team_view() -> None:
 
 	with tab_results:
 		st.subheader(TEAM_SUBHEADER_RESULTS)
-		results_section = st.selectbox("Section", options=["team", "market", "both"], index=0)
-		round_filter_raw = st.text_input("Round filter (optional)", value="")
-		if st.button("Display Results", use_container_width=True):
+		results_section = st.selectbox(TEAM_LABEL_SECTION, options=TEAM_SECTION_OPTIONS, index=0)
+		round_filter_raw = st.text_input(TEAM_LABEL_ROUND_FILTER, value="")
+		if st.button(TEAM_BUTTON_DISPLAY_RESULTS, use_container_width=True):
 			def _run_display_results():
 				round_number = parse_optional_int(round_filter_raw, field_name="round")
 				return display_results(
@@ -103,7 +116,7 @@ def render_team_view() -> None:
 
 	with tab_history:
 		st.subheader(TEAM_SUBHEADER_DECISION_HISTORY)
-		if st.button("Show Team Decision History", use_container_width=True):
+		if st.button(TEAM_BUTTON_SHOW_TEAM_DECISION_HISTORY, use_container_width=True):
 			def _run_history():
 				summaries = get_historical_decisions_team(simulation_id=simulation_id, root_dir=root_dir)
 				for summary in summaries:
