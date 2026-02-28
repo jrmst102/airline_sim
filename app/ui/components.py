@@ -218,6 +218,7 @@ def render_basic_context_sidebar(
 	*,
 	default_simulation_id: str = "sim_001",
 	default_root_dir: str = "simulations",
+	key_prefix: str = "context",
 	include_admin_fields: bool = False,
 	include_team_field: bool = False,
 	include_storage_fields: bool = False,
@@ -227,8 +228,18 @@ def render_basic_context_sidebar(
 		if show_branding:
 			render_branding(st, in_sidebar=True)
 		st.header(SIDEBAR_CONTEXT_HEADER)
-		simulation_id = st.text_input(SIDEBAR_SIMULATION_ID_LABEL, value=default_simulation_id)
-		root_dir = Path(st.text_input(SIDEBAR_SIMULATIONS_ROOT_LABEL, value=default_root_dir))
+		simulation_id = st.text_input(
+			SIDEBAR_SIMULATION_ID_LABEL,
+			value=default_simulation_id,
+			key=f"{key_prefix}_simulation_id",
+		)
+		root_dir = Path(
+			st.text_input(
+				SIDEBAR_SIMULATIONS_ROOT_LABEL,
+				value=default_root_dir,
+				key=f"{key_prefix}_root_dir",
+			)
+		)
 
 		admin_user_id: str | None = None
 		team_id: str | None = None
@@ -236,14 +247,34 @@ def render_basic_context_sidebar(
 		archive_dir: Path | None = None
 
 		if include_admin_fields:
-			admin_user_id = st.text_input(SIDEBAR_ADMIN_USER_ID_LABEL, value="U_ADMIN")
+			admin_user_id = st.text_input(
+				SIDEBAR_ADMIN_USER_ID_LABEL,
+				value="U_ADMIN",
+				key=f"{key_prefix}_admin_user_id",
+			)
 
 		if include_team_field:
-			team_id = st.text_input(SIDEBAR_TEAM_ID_LABEL, value="T1")
+			team_id = st.text_input(
+				SIDEBAR_TEAM_ID_LABEL,
+				value="T1",
+				key=f"{key_prefix}_team_id",
+			)
 
 		if include_storage_fields:
-			backups_dir = Path(st.text_input(SIDEBAR_BACKUPS_ROOT_LABEL, value="backups"))
-			archive_dir = Path(st.text_input(SIDEBAR_ARCHIVE_ROOT_LABEL, value="archive"))
+			backups_dir = Path(
+				st.text_input(
+					SIDEBAR_BACKUPS_ROOT_LABEL,
+					value="backups",
+					key=f"{key_prefix}_backups_dir",
+				)
+			)
+			archive_dir = Path(
+				st.text_input(
+					SIDEBAR_ARCHIVE_ROOT_LABEL,
+					value="archive",
+					key=f"{key_prefix}_archive_dir",
+				)
+			)
 
 	return UIContext(
 		simulation_id=simulation_id,

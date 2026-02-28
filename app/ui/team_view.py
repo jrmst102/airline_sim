@@ -47,6 +47,7 @@ def render_team_view() -> None:
 		st,
 		default_simulation_id="sim_001",
 		default_root_dir="simulations",
+		key_prefix="team_context",
 		include_team_field=True,
 	)
 	simulation_id = context.simulation_id

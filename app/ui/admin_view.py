@@ -109,6 +109,7 @@ def render_admin_view() -> None:
 		st,
 		default_simulation_id="sim_001",
 		default_root_dir="simulations",
+		key_prefix="admin_context",
 		include_admin_fields=True,
 		include_storage_fields=True,
 	)

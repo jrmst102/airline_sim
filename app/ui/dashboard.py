@@ -35,17 +35,31 @@ def render_dashboard() -> None:
 	with st.sidebar:
 		render_branding(st, in_sidebar=True)
 		st.header(SIDEBAR_QUICK_CHECKS_HEADER)
-		simulation_id = st.text_input(SIDEBAR_SIMULATION_ID_LABEL, value="sim_001")
-		root_dir = Path(st.text_input(SIDEBAR_SIMULATIONS_ROOT_LABEL, value="simulations"))
+		simulation_id = st.text_input(
+			SIDEBAR_SIMULATION_ID_LABEL,
+			value="sim_001",
+			key="dashboard_quick_simulation_id",
+		)
+		root_dir = Path(
+			st.text_input(
+				SIDEBAR_SIMULATIONS_ROOT_LABEL,
+				value="simulations",
+				key="dashboard_quick_root_dir",
+			)
+		)
 
-		if st.button(SIDEBAR_CHECK_STATUS_BUTTON, use_container_width=True):
+		if st.button(SIDEBAR_CHECK_STATUS_BUTTON, use_container_width=True, key="dashboard_quick_check_status"):
 			run_action(
 				st,
 				ACTION_CHECK_SIMULATION_STATUS,
 				lambda: check_simulation_status(simulation_id=simulation_id, root_dir=root_dir),
 			)
 
-		if st.button(SIDEBAR_QUICK_MARKET_RESULTS_BUTTON, use_container_width=True):
+		if st.button(
+			SIDEBAR_QUICK_MARKET_RESULTS_BUTTON,
+			use_container_width=True,
+			key="dashboard_quick_market_results",
+		):
 			run_action(
 				st,
 				ACTION_DISPLAY_MARKET_RESULTS,

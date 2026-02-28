@@ -69,7 +69,7 @@ To align CLI capabilities with current UI workflows, the next commands to expose
 Launch the dashboard UI:
 
 ```bash
-streamlit run app/ui/dashboard.py
+.venv/bin/python -m streamlit run app/ui/dashboard.py
 ```
 
 The UI also includes dedicated views in:
