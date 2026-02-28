@@ -49,6 +49,21 @@ Example:
 
 Current CLI routes are limited to `display-log` and `historical-decisions-team`; lifecycle and decision-entry workflows are available through the Streamlit UI.
 
+### Planned CLI Expansion
+
+To align CLI capabilities with current UI workflows, the next commands to expose are:
+
+| Planned command | Purpose |
+| --- | --- |
+| `check-status` | View simulation status and current round/state |
+| `setup-simulation` | Initialize a simulation with rounds and teams |
+| `start-simulation` | Move simulation from setup to active play |
+| `move-next-round` | Process one round forward |
+| `undo-round` | Revert the most recent round transition |
+| `end-simulation` | Close simulation and finalize state |
+| `display-results` | Show market/team round results |
+| `enter-decision` | Submit or update team decisions for an open round |
+
 ## UI Usage (Streamlit)
 
 Launch the dashboard UI:
