@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.core.state_machine import can_enter_decisions, validate_round_state, validate_simulation_state
 from app.data.log_manager import append_log_event
 
 
@@ -80,6 +81,7 @@ def _ensure_simulation_started(simulation_csv: Path) -> None:
 	if len(sim_rows) != 1:
 		raise ValueError(f"Expected exactly 1 simulation row in {simulation_csv}")
 	status = sim_rows[0].get("status", "")
+	validate_simulation_state(status)
 	if status != "STARTED":
 		raise ValueError(f"Simulation must be STARTED to enter decisions (found '{status}')")
 
@@ -119,16 +121,18 @@ def _resolve_open_round(rounds_csv: Path, requested_round: int | None) -> int:
 		)
 		if matched is None:
 			raise ValueError(f"Round {requested_round} not found")
-		if matched.get("status", "") != "OPEN":
+		round_status = matched.get("status", "")
+		validate_round_state(round_status)
+		if not can_enter_decisions("STARTED", round_status):
 			raise ValueError(
-				f"Round {requested_round} is not OPEN (status='{matched.get('status', '')}')"
+				f"Round {requested_round} is not OPEN (status='{round_status}')"
 			)
 		return requested_round
 
 	open_rounds = [
 		_as_int(row.get("round_number", "0"))
 		for row in round_rows
-		if row.get("status", "") == "OPEN"
+		if can_enter_decisions("STARTED", row.get("status", ""))
 	]
 	if not open_rounds:
 		raise ValueError("No OPEN round available for decision entry")

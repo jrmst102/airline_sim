@@ -7,6 +7,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.core.round_manager import close_open_round_and_advance, resolve_open_round
+from app.core.simulation_engine import (
+	SimulationParameters,
+	TeamDecisionInput,
+	compute_round_results,
+)
+from app.core.state_machine import can_move_next_round, validate_simulation_state
 from app.data.log_manager import append_log_event
 
 
@@ -18,21 +25,6 @@ class MoveNextRoundResult:
 	simulation_status: str
 	processed_team_count: int
 	event_at_utc: str
-
-
-@dataclass(frozen=True)
-class _TeamComputation:
-	team_id: str
-	capacity: float
-	carried_business: float
-	carried_leisure: float
-	revenue: float
-	cost: float
-	profit: float
-	market_share_volume: float
-	market_share_profit: float
-	price_premium: float
-	price_economy: float
 
 
 def _utc_now() -> str:
@@ -91,148 +83,8 @@ def _next_event_id(admin_action_rows: list[dict[str, str]]) -> str:
 	return f"E{max_suffix + 1}"
 
 
-def _require_started(simulation_row: dict[str, str]) -> None:
-	status = simulation_row.get("status", "")
-	if status != "STARTED":
-		raise ValueError(f"Simulation must be STARTED to move rounds (found '{status}')")
-
-
 def _active_team_ids(teams_rows: list[dict[str, str]]) -> list[str]:
 	return [row["team_id"] for row in teams_rows if row.get("is_active", "0") == "1"]
-
-
-def _resolve_open_round(round_rows: list[dict[str, str]], expected_round: int) -> tuple[int, int]:
-	open_indices = [index for index, row in enumerate(round_rows) if row.get("status", "") == "OPEN"]
-	if len(open_indices) != 1:
-		raise ValueError(f"Expected exactly one OPEN round, found {len(open_indices)}")
-
-	open_index = open_indices[0]
-	open_round = _as_int(round_rows[open_index].get("round_number", "0"))
-	if open_round != expected_round:
-		raise ValueError(
-			f"Simulation current_round={expected_round} does not match OPEN round={open_round}"
-		)
-	return open_index, open_round
-
-
-def _compute_team_results(
-	decision_rows: list[dict[str, str]],
-	active_team_ids: list[str],
-	days_per_round: int,
-	seats_per_flight: int,
-	base_demand_business: float,
-	base_demand_leisure: float,
-	base_fuel_cost_per_flight: float,
-	base_fixed_cost_per_round: float,
-	base_variable_cost_per_pax: float,
-	brand_effectiveness: float,
-) -> list[_TeamComputation]:
-	decision_by_team = {row["team_id"]: row for row in decision_rows}
-	missing = [team_id for team_id in active_team_ids if team_id not in decision_by_team]
-	if missing:
-		raise ValueError(f"Missing decisions for active team(s): {', '.join(missing)}")
-
-	team_ids = [team_id for team_id in active_team_ids]
-	brand_factors: dict[str, float] = {}
-	biz_scores: dict[str, float] = {}
-	lei_scores: dict[str, float] = {}
-	capacities: dict[str, float] = {}
-	prices_prem: dict[str, float] = {}
-	prices_econ: dict[str, float] = {}
-
-	for team_id in team_ids:
-		decision = decision_by_team[team_id]
-		flights_per_day = _as_int(decision.get("flights_per_day", "0"))
-		price_premium = _as_float(decision.get("price_premium", "0"))
-		price_economy = _as_float(decision.get("price_economy", "0"))
-		brand_investment = _as_float(decision.get("brand_investment", "0"))
-
-		if flights_per_day < 0 or price_premium <= 0 or price_economy <= 0 or brand_investment < 0:
-			raise ValueError(f"Invalid decision values for team '{team_id}'")
-
-		brand_factor = 1.0 + (brand_investment * brand_effectiveness)
-		capacity = flights_per_day * days_per_round * seats_per_flight
-		biz_score = brand_factor / price_premium
-		lei_score = brand_factor / price_economy
-
-		brand_factors[team_id] = brand_factor
-		capacities[team_id] = capacity
-		biz_scores[team_id] = biz_score
-		lei_scores[team_id] = lei_score
-		prices_prem[team_id] = price_premium
-		prices_econ[team_id] = price_economy
-
-	total_biz_score = sum(biz_scores.values())
-	total_lei_score = sum(lei_scores.values())
-
-	computed_rows: list[_TeamComputation] = []
-	for team_id in team_ids:
-		capacity = capacities[team_id]
-
-		if total_biz_score > 0:
-			demand_business = base_demand_business * (biz_scores[team_id] / total_biz_score)
-		else:
-			demand_business = 0.0
-
-		if total_lei_score > 0:
-			demand_leisure = base_demand_leisure * (lei_scores[team_id] / total_lei_score)
-		else:
-			demand_leisure = 0.0
-
-		carried_business = min(capacity, demand_business)
-		remaining_capacity = max(0.0, capacity - carried_business)
-		carried_leisure = min(remaining_capacity, demand_leisure)
-		carried_total = carried_business + carried_leisure
-
-		revenue = (carried_business * prices_prem[team_id]) + (carried_leisure * prices_econ[team_id])
-		fuel_cost = _as_int(decision_by_team[team_id].get("flights_per_day", "0")) * days_per_round * base_fuel_cost_per_flight
-		fixed_cost = base_fixed_cost_per_round
-		variable_cost = carried_total * base_variable_cost_per_pax
-		brand_cost = _as_float(decision_by_team[team_id].get("brand_investment", "0"))
-		cost = fuel_cost + fixed_cost + variable_cost + brand_cost
-		profit = revenue - cost
-
-		computed_rows.append(
-			_TeamComputation(
-				team_id=team_id,
-				capacity=capacity,
-				carried_business=carried_business,
-				carried_leisure=carried_leisure,
-				revenue=revenue,
-				cost=cost,
-				profit=profit,
-				market_share_volume=0.0,
-				market_share_profit=0.0,
-				price_premium=prices_prem[team_id],
-				price_economy=prices_econ[team_id],
-			)
-		)
-
-	total_carried = sum(row.carried_business + row.carried_leisure for row in computed_rows)
-	total_positive_profit = sum(max(row.profit, 0.0) for row in computed_rows)
-
-	with_shares: list[_TeamComputation] = []
-	for row in computed_rows:
-		carried_total = row.carried_business + row.carried_leisure
-		ms_volume = (carried_total / total_carried) if total_carried > 0 else 0.0
-		ms_profit = (max(row.profit, 0.0) / total_positive_profit) if total_positive_profit > 0 else 0.0
-		with_shares.append(
-			_TeamComputation(
-				team_id=row.team_id,
-				capacity=row.capacity,
-				carried_business=row.carried_business,
-				carried_leisure=row.carried_leisure,
-				revenue=row.revenue,
-				cost=row.cost,
-				profit=row.profit,
-				market_share_volume=ms_volume,
-				market_share_profit=ms_profit,
-				price_premium=row.price_premium,
-				price_economy=row.price_economy,
-			)
-		)
-
-	return with_shares
 
 
 def move_next_round(
@@ -255,7 +107,10 @@ def move_next_round(
 	if len(sim_rows) != 1:
 		raise ValueError(f"Expected exactly 1 simulation row in {simulation_csv}")
 	sim_row = sim_rows[0]
-	_require_started(sim_row)
+	status = sim_row.get("status", "")
+	validate_simulation_state(status)
+	if not can_move_next_round(status, open_round_count=1):
+		raise ValueError(f"Simulation must be STARTED to move rounds (found '{status}')")
 
 	current_round = _as_int(sim_row.get("current_round", "0"))
 	if current_round < 1:
@@ -272,7 +127,8 @@ def move_next_round(
 		raise ValueError("No active teams found")
 
 	round_fieldnames, round_rows = _load_csv(rounds_csv)
-	open_round_index, open_round_number = _resolve_open_round(round_rows, expected_round=current_round)
+	open_resolution = resolve_open_round(round_rows, expected_round=current_round)
+	open_round_number = open_resolution.open_round_number
 
 	_, airplane_rows = _load_csv(airplane_types_csv)
 	if not airplane_rows:
@@ -289,9 +145,7 @@ def move_next_round(
 		and _as_int(row.get("round_number", "0")) == open_round_number
 	]
 
-	computed = _compute_team_results(
-		decision_rows=round_decisions,
-		active_team_ids=active_team_ids,
+	engine_parameters = SimulationParameters(
 		days_per_round=_as_int(latest_parameters.get("days_per_round", "0")),
 		seats_per_flight=seats_per_flight,
 		base_demand_business=_as_float(latest_parameters.get("base_demand_business", "0")),
@@ -301,6 +155,22 @@ def move_next_round(
 		base_variable_cost_per_pax=_as_float(latest_parameters.get("base_variable_cost_per_pax", "0")),
 		brand_effectiveness=_as_float(latest_parameters.get("brand_effectiveness", "0")),
 	)
+	engine_decisions = [
+		TeamDecisionInput(
+			team_id=row.get("team_id", ""),
+			flights_per_day=_as_int(row.get("flights_per_day", "0")),
+			price_premium=_as_float(row.get("price_premium", "0")),
+			price_economy=_as_float(row.get("price_economy", "0")),
+			brand_investment=_as_float(row.get("brand_investment", "0")),
+		)
+		for row in round_decisions
+	]
+	engine_result = compute_round_results(
+		decisions=engine_decisions,
+		parameters=engine_parameters,
+		active_team_ids=active_team_ids,
+	)
+	computed = engine_result.team_results
 
 	now = _utc_now()
 
@@ -326,13 +196,13 @@ def move_next_round(
 			}
 		)
 
-	total_capacity = sum(row.capacity for row in computed)
-	total_carried = sum(row.carried_business + row.carried_leisure for row in computed)
-	total_revenue = sum(row.revenue for row in computed)
-	total_cost = sum(row.cost for row in computed)
-	total_profit = sum(row.profit for row in computed)
-	avg_price_premium = sum(row.price_premium for row in computed) / len(computed)
-	avg_price_economy = sum(row.price_economy for row in computed) / len(computed)
+	total_capacity = engine_result.market_result.total_capacity
+	total_carried = engine_result.market_result.total_carried
+	total_revenue = engine_result.market_result.total_revenue
+	total_cost = engine_result.market_result.total_cost
+	total_profit = engine_result.market_result.total_profit
+	avg_price_premium = engine_result.market_result.avg_price_premium
+	avg_price_economy = engine_result.market_result.avg_price_economy
 
 	market_result_fieldnames, market_result_rows = _load_csv(round_results_market_csv)
 	market_result_rows = [
@@ -353,36 +223,16 @@ def move_next_round(
 		}
 	)
 
-	closed_round = open_round_number
-	round_rows[open_round_index]["status"] = "CLOSED"
-	round_rows[open_round_index]["closed_at_utc"] = now
-
-	next_round = open_round_number + 1
-	next_round_index = next(
-		(
-			index
-			for index, row in enumerate(round_rows)
-			if _as_int(row.get("round_number", "0")) == next_round
-		),
-		None,
+	advance_result = close_open_round_and_advance(
+		round_rows,
+		current_round=current_round,
+		event_at_utc=now,
 	)
-
-	opened_round: int | None = None
-	new_status = "STARTED"
-	if next_round_index is not None:
-		if round_rows[next_round_index].get("status", "") != "PLANNED":
-			raise ValueError(
-				f"Next round {next_round} must be PLANNED to open (found '{round_rows[next_round_index].get('status', '')}')"
-			)
-		round_rows[next_round_index]["status"] = "OPEN"
-		round_rows[next_round_index]["opened_at_utc"] = now
-		round_rows[next_round_index]["closed_at_utc"] = ""
-		sim_row["current_round"] = str(next_round)
-		opened_round = next_round
-	else:
-		sim_row["current_round"] = str(closed_round)
-		new_status = "ENDED"
-
+	round_rows = advance_result.updated_round_rows
+	closed_round = advance_result.closed_round
+	opened_round = advance_result.opened_round
+	new_status = advance_result.simulation_status
+	sim_row["current_round"] = str(advance_result.current_round)
 	sim_row["status"] = new_status
 	sim_row["updated_at_utc"] = now
 

@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.core.round_manager import undo_latest_round_transition
+from app.core.state_machine import can_undo_round, validate_simulation_state
 from app.data.log_manager import append_log_event
 
 
@@ -64,11 +66,6 @@ def _next_event_id(admin_action_rows: list[dict[str, str]]) -> str:
 	return f"E{max_suffix + 1}"
 
 
-def _highest_closed_round(rows: list[dict[str, str]]) -> int | None:
-	closed = [_as_int(row.get("round_number", "0")) for row in rows if row.get("status", "") == "CLOSED"]
-	return max(closed) if closed else None
-
-
 def undo_round(
 	simulation_id: str,
 	admin_user_id: str = "U_ADMIN",
@@ -87,73 +84,21 @@ def undo_round(
 		raise ValueError(f"Expected exactly 1 simulation row in {simulation_csv}")
 	sim_row = sim_rows[0]
 	status = sim_row.get("status", "")
-	if status not in {"STARTED", "ENDED"}:
+	validate_simulation_state(status)
+	if not can_undo_round(status):
 		raise ValueError(f"Simulation must be STARTED or ENDED to undo round (found '{status}')")
 
 	round_fieldnames, round_rows = _load_csv(rounds_csv)
 	if not round_rows:
 		raise ValueError("No rounds configured")
 
-	open_indices = [index for index, row in enumerate(round_rows) if row.get("status", "") == "OPEN"]
-	rolled_back_open_round: int | None = None
-
-	if status == "STARTED":
-		if len(open_indices) != 1:
-			raise ValueError(f"Expected exactly one OPEN round in STARTED state (found {len(open_indices)})")
-		open_index = open_indices[0]
-		rolled_back_open_round = _as_int(round_rows[open_index].get("round_number", "0"))
-		reopened_round = rolled_back_open_round - 1
-		if reopened_round < 1:
-			raise ValueError("No previous closed round available to undo")
-
-		target_index = next(
-			(
-				index
-				for index, row in enumerate(round_rows)
-				if _as_int(row.get("round_number", "0")) == reopened_round
-			),
-			None,
-		)
-		if target_index is None:
-			raise ValueError(f"Round {reopened_round} not found")
-		if round_rows[target_index].get("status", "") != "CLOSED":
-			raise ValueError(
-				f"Round {reopened_round} must be CLOSED to undo (found '{round_rows[target_index].get('status', '')}')"
-			)
-
-		round_rows[open_index]["status"] = "PLANNED"
-		round_rows[open_index]["opened_at_utc"] = ""
-		round_rows[open_index]["closed_at_utc"] = ""
-		round_rows[target_index]["status"] = "OPEN"
-		round_rows[target_index]["closed_at_utc"] = ""
-		sim_row["current_round"] = str(reopened_round)
-		sim_row["status"] = "STARTED"
-		new_status = "STARTED"
-
-	else:
-		if open_indices:
-			raise ValueError("ENDED simulation cannot have OPEN rounds")
-
-		reopened_round = _highest_closed_round(round_rows)
-		if reopened_round is None:
-			raise ValueError("No CLOSED round available to undo")
-
-		target_index = next(
-			(
-				index
-				for index, row in enumerate(round_rows)
-				if _as_int(row.get("round_number", "0")) == reopened_round
-			),
-			None,
-		)
-		if target_index is None:
-			raise ValueError(f"Round {reopened_round} not found")
-
-		round_rows[target_index]["status"] = "OPEN"
-		round_rows[target_index]["closed_at_utc"] = ""
-		sim_row["current_round"] = str(reopened_round)
-		sim_row["status"] = "STARTED"
-		new_status = "STARTED"
+	undo_result = undo_latest_round_transition(round_rows, simulation_status=status)
+	round_rows = undo_result.updated_round_rows
+	reopened_round = undo_result.reopened_round
+	rolled_back_open_round = undo_result.rolled_back_open_round
+	new_status = undo_result.simulation_status
+	sim_row["current_round"] = str(undo_result.current_round)
+	sim_row["status"] = new_status
 
 	now = _utc_now()
 	sim_row["updated_at_utc"] = now

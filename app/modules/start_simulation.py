@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.core.round_manager import open_first_round
+from app.core.state_machine import validate_simulation_state
 from app.data.log_manager import append_log_event
 
 
@@ -73,6 +75,7 @@ def start_simulation(
 
 	sim_row = sim_rows[0]
 	current_status = sim_row.get("status", "")
+	validate_simulation_state(current_status)
 	if current_status == "STARTED":
 		raise ValueError(f"Simulation '{simulation_id}' is already STARTED")
 	if current_status != "CREATED":
@@ -84,28 +87,12 @@ def start_simulation(
 	if not round_rows:
 		raise ValueError(f"No rounds found in {rounds_csv}")
 
-	first_round_index = -1
-	for index, row in enumerate(round_rows):
-		if row.get("round_number") == "1":
-			first_round_index = index
-			break
-	if first_round_index < 0:
-		raise ValueError("Round 1 not found in rounds.csv")
-
-	first_round_status = round_rows[first_round_index].get("status", "")
-	if first_round_status != "PLANNED":
-		raise ValueError(
-			f"Round 1 must be PLANNED to start simulation (found '{first_round_status}')"
-		)
-
 	now = _utc_now()
+	start_result = open_first_round(round_rows, event_at_utc=now)
+	round_rows = start_result.updated_round_rows
 	sim_row["status"] = "STARTED"
 	sim_row["current_round"] = "1"
 	sim_row["updated_at_utc"] = now
-
-	round_rows[first_round_index]["status"] = "OPEN"
-	round_rows[first_round_index]["opened_at_utc"] = now
-	round_rows[first_round_index]["closed_at_utc"] = ""
 
 	admin_fieldnames, admin_rows = _load_csv(admin_actions_csv)
 	admin_rows.append(
@@ -135,7 +122,7 @@ def start_simulation(
 		simulation_id=simulation_id,
 		status="STARTED",
 		current_round=1,
-		round_1_status="OPEN",
+		round_1_status="OPEN" if start_result.opened_round == 1 else "UNKNOWN",
 		started_at_utc=now,
 	)
 

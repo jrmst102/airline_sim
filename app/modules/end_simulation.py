@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.core.round_manager import end_simulation_rounds
+from app.core.state_machine import can_end_simulation, validate_round_state, validate_simulation_state
 from app.data.log_manager import append_log_event
 
 
@@ -81,9 +83,10 @@ def end_simulation(
 	sim_row = sim_rows[0]
 
 	current_status = sim_row.get("status", "")
+	validate_simulation_state(current_status)
 	if current_status == "ENDED":
 		raise ValueError(f"Simulation '{simulation_id}' is already ENDED")
-	if current_status not in {"STARTED", "CREATED"}:
+	if not can_end_simulation(current_status):
 		raise ValueError(
 			f"Simulation must be CREATED or STARTED to end (found '{current_status}')"
 		)
@@ -93,34 +96,16 @@ def end_simulation(
 		raise ValueError("No rounds configured")
 
 	now = _utc_now()
+	current_round = _as_int(sim_row.get("current_round", "0"))
 	closed_rounds = 0
 	locked_rounds = 0
-	current_round = _as_int(sim_row.get("current_round", "0"))
 
 	for row in round_rows:
-		status = row.get("status", "")
+		validate_round_state(row.get("status", ""))
 
-		if status == "OPEN":
-			row["status"] = "CLOSED"
-			row["closed_at_utc"] = now
-			closed_rounds += 1
-			continue
-
-		if status == "PLANNED":
-			row["status"] = "LOCKED"
-			row["opened_at_utc"] = row.get("opened_at_utc", "")
-			row["closed_at_utc"] = row.get("closed_at_utc", "")
-			locked_rounds += 1
-			continue
-
-		if status == "CLOSED":
-			continue
-
-		if status == "LOCKED":
-			locked_rounds += 1
-			continue
-
-		raise ValueError(f"Unsupported round status '{status}' in rounds.csv")
+	closed_rounds = sum(1 for row in round_rows if row.get("status", "") == "OPEN")
+	locked_rounds = sum(1 for row in round_rows if row.get("status", "") in {"PLANNED", "LOCKED"})
+	round_rows = end_simulation_rounds(round_rows, event_at_utc=now)
 
 	sim_row["status"] = "ENDED"
 	sim_row["current_round"] = str(current_round)
