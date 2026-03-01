@@ -1,4 +1,5 @@
 # airline_sim
+
 Airlines simulation for the Competitive Strategy course.
 
 ## Overview
@@ -7,24 +8,27 @@ This repository provides:
 
 - CSV-backed simulation state and lifecycle modules
 - Core round/state/market computation models
-- Streamlit UI views for admin, team, and dashboard workflows
+- Streamlit UI views for admin and team workflows
+- Standalone FastAPI web dashboard with Plotly.js charts
+- 32-scenario test suite with dual-layer verification (engine + independent calculator)
 
 ## Quick Start
 
 ```bash
 python -m venv .venv
-. .venv/bin/activate
+source .venv/bin/activate
 pip install -r requirements.txt
-.venv/bin/python -m streamlit run app/ui/dashboard.py
 ```
 
-Then in the UI:
+Then choose how to run:
 
-1. Keep `sim_001` as the simulation ID.
-2. Use **Setup** to initialize teams/rounds.
-3. Use **Start** to begin.
-4. Enter decisions and click **Move Next** each round.
-5. Use **Display Results** and **End** when complete.
+```bash
+# Streamlit admin/team UI
+python -m streamlit run app/ui/dashboard.py
+
+# Standalone web dashboard (FastAPI + Plotly.js)
+python run_dashboard.py
+```
 
 ## Setup
 
@@ -32,9 +36,39 @@ From the repository root:
 
 ```bash
 python -m venv .venv
-. .venv/bin/activate
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+Dependencies: `bcrypt`, `gspread`, `google-auth`, `fastapi`, `uvicorn`, `jinja2`.
+
+## Decision Variables
+
+Each team submits five decisions per round:
+
+| Variable | Values |
+| --- | --- |
+| `flights_per_day` | `0–5` |
+| `price_business` | `$50–$1000` |
+| `price_leisure` | `$50–$1000` |
+| `branding_level` | `Low`, `Medium`, `High` |
+| `product_strategy` | `High`, `Medium`, `Low` |
+
+### Product Strategy Costs (per month)
+
+| Level | Cost |
+| --- | --- |
+| High | $4,000,000 |
+| Medium | $3,000,000 |
+| Low | $2,000,000 |
+
+### Branding Costs (per month)
+
+| Level | Cost |
+| --- | --- |
+| Low | $1,000,000 |
+| Medium | $3,000,000 |
+| High | $5,000,000 |
 
 ## Run the Simulation
 
@@ -47,39 +81,39 @@ Use the module CLIs directly for full simulation lifecycle control.
 1. **Initialize a simulation**
 
 ```bash
-.venv/bin/python -m app.modules.setup_simulation sim_001 --name "Airline Simulation" --rounds 8 --teams "Team Alpha" "Team Bravo"
+python -m app.modules.setup_simulation sim_001 --name "Airline Simulation" --rounds 8 --teams "Team Alpha" "Team Bravo"
 ```
 
 2. **Start the simulation**
 
 ```bash
-.venv/bin/python -m app.modules.start_simulation sim_001 --admin-user-id U_ADMIN
+python -m app.modules.start_simulation sim_001 --admin-user-id U_ADMIN
 ```
 
 3. **Enter decisions for each team (repeat as needed)**
 
 ```bash
-.venv/bin/python -m app.modules.enter_decisions sim_001 --team-id T1 --flights-per-day 6 --price-premium 220 --price-economy 160 --brand-investment 1000
-.venv/bin/python -m app.modules.enter_decisions sim_001 --team-id T2 --flights-per-day 6 --price-premium 215 --price-economy 155 --brand-investment 900
+python -m app.modules.enter_decisions sim_001 --team-id T1 --flights-per-day 4 --price-business 360 --price-leisure 180 --branding-level Medium --product-strategy High
+python -m app.modules.enter_decisions sim_001 --team-id T2 --flights-per-day 3 --price-business 290 --price-leisure 140 --branding-level Low --product-strategy Low
 ```
 
 4. **Advance to next round**
 
 ```bash
-.venv/bin/python -m app.modules.move_next_round sim_001 --admin-user-id U_ADMIN
+python -m app.modules.move_next_round sim_001 --admin-user-id U_ADMIN
 ```
 
 5. **Inspect status and results**
 
 ```bash
-.venv/bin/python -m app.modules.check_simulation_status sim_001
-.venv/bin/python -m app.modules.display_results sim_001 --section both
+python -m app.modules.check_simulation_status sim_001
+python -m app.modules.display_results sim_001 --section both
 ```
 
 6. **End the simulation when finished**
 
 ```bash
-.venv/bin/python -m app.modules.end_simulation sim_001 --admin-user-id U_ADMIN
+python -m app.modules.end_simulation sim_001 --admin-user-id U_ADMIN
 ```
 
 7. **(Optional) Import decision batch from CSV or Google Sheets**
@@ -87,39 +121,39 @@ Use the module CLIs directly for full simulation lifecycle control.
 CSV input:
 
 ```bash
-.venv/bin/python -m app.modules.import_decisions_batch sim_001 --input-type csv --csv-path decisions_input.csv
+python -m app.modules.import_decisions_batch sim_001 --input-type csv --csv-path decisions_input.csv
 ```
 
 Google Sheets input (service account credentials required):
 
 ```bash
-.venv/bin/python -m app.modules.import_decisions_batch sim_001 --input-type google-sheet --spreadsheet-id-or-url "<sheet-id-or-url>" --worksheet Decisions --credentials-json /path/to/service_account.json
+python -m app.modules.import_decisions_batch sim_001 --input-type google-sheet --spreadsheet-id-or-url "<sheet-id-or-url>" --worksheet Decisions --credentials-json /path/to/service_account.json
 ```
 
-Expected decision columns: `team_id`, `flights_per_day`, `price_premium`, `price_economy`, `brand_investment`, optional `round_number`.
+Expected decision columns: `team_id`, `flights_per_day`, `price_business`, `price_leisure`, `branding_level`, `product_strategy`, optional `round_number`.
 
 8. **(Optional) Export results to CSV or Google Sheets**
 
 CSV output:
 
 ```bash
-.venv/bin/python -m app.modules.export_results_batch sim_001 --section both --output-type csv --output-dir exports
+python -m app.modules.export_results_batch sim_001 --section both --output-type csv --output-dir exports
 ```
 
 Google Sheets output:
 
 ```bash
-.venv/bin/python -m app.modules.export_results_batch sim_001 --section both --output-type google-sheet --spreadsheet-id-or-url "<sheet-id-or-url>" --worksheet-prefix SimResults --credentials-json /path/to/service_account.json
+python -m app.modules.export_results_batch sim_001 --section both --output-type google-sheet --spreadsheet-id-or-url "<sheet-id-or-url>" --worksheet-prefix SimResults --credentials-json /path/to/service_account.json
 ```
 
 This writes results to worksheets named `SimResults_Market` and `SimResults_Team`.
 
-### Option 2: GUI only
+### Option 2: Streamlit GUI
 
 1. **Launch Streamlit dashboard**
 
 ```bash
-.venv/bin/python -m streamlit run app/ui/dashboard.py
+python -m streamlit run app/ui/dashboard.py
 ```
 
 2. **Open the local URL shown by Streamlit** (usually `http://localhost:8501`).
@@ -131,6 +165,32 @@ This writes results to worksheets named `SimResults_Market` and `SimResults_Team
 	- Use **Move Next** to compute and advance rounds.
 	- Use **Display Results** / insights to review outcomes.
 	- Use **End** when the simulation is complete.
+
+### Option 3: Web Dashboard (FastAPI)
+
+A standalone web dashboard for viewing simulation results. Uses FastAPI on the backend and Plotly.js for interactive charts. No Streamlit required.
+
+```bash
+# From the project root:
+python run_dashboard.py                # default: http://0.0.0.0:8000
+python run_dashboard.py --port 8050    # custom port
+python run_dashboard.py --reload       # auto-reload for development
+```
+
+The dashboard displays:
+- Current round number and rankings table
+- Horizontal bar charts for Revenue, Profit, Load Factor, Market Share, CSI, and OEI
+- Auto-refreshes every 60 seconds (or click Refresh manually)
+- NYU-themed styling
+
+Dashboard files live in `dashboard_web/`:
+
+| File | Purpose |
+| --- | --- |
+| `dashboard_web/app.py` | FastAPI application, routes |
+| `dashboard_web/dashboard_data.py` | CSV reader, server-side calculations |
+| `dashboard_web/templates/index.html` | Single-page HTML with Plotly.js |
+| `dashboard_web/static/styles.css` | NYU-themed CSS |
 
 ## CLI Usage
 
@@ -144,31 +204,31 @@ You can run the simulation in two CLI styles:
 Show available router commands:
 
 ```bash
-.venv/bin/python main.py --help
+python main.py --help
 ```
 
 Examples:
 
 ```bash
-.venv/bin/python main.py display-log sim_001
-.venv/bin/python main.py historical-decisions-team sim_001
+python main.py display-log sim_001
+python main.py historical-decisions-team sim_001
 ```
 
-### Module CLI Commands (current)
+### Module CLI Commands
 
 | Task | Command |
 | --- | --- |
-| Setup simulation | `.venv/bin/python -m app.modules.setup_simulation sim_001 --name "Airline Simulation" --rounds 8 --teams "Team Alpha" "Team Bravo"` |
-| Start simulation | `.venv/bin/python -m app.modules.start_simulation sim_001 --admin-user-id U_ADMIN` |
-| Enter decision | `.venv/bin/python -m app.modules.enter_decisions sim_001 --team-id T1 --flights-per-day 6 --price-premium 220 --price-economy 160 --brand-investment 1000` |
-| Move to next round | `.venv/bin/python -m app.modules.move_next_round sim_001 --admin-user-id U_ADMIN` |
-| Check status | `.venv/bin/python -m app.modules.check_simulation_status sim_001` |
-| Display results | `.venv/bin/python -m app.modules.display_results sim_001 --section both` |
-| End simulation | `.venv/bin/python -m app.modules.end_simulation sim_001 --admin-user-id U_ADMIN` |
-| Import decisions batch (CSV) | `.venv/bin/python -m app.modules.import_decisions_batch sim_001 --input-type csv --csv-path decisions_input.csv` |
-| Import decisions batch (Google Sheets) | `.venv/bin/python -m app.modules.import_decisions_batch sim_001 --input-type google-sheet --spreadsheet-id-or-url "<sheet-id-or-url>" --worksheet Decisions --credentials-json /path/to/service_account.json` |
-| Export results batch (CSV) | `.venv/bin/python -m app.modules.export_results_batch sim_001 --section both --output-type csv --output-dir exports` |
-| Export results batch (Google Sheets) | `.venv/bin/python -m app.modules.export_results_batch sim_001 --section both --output-type google-sheet --spreadsheet-id-or-url "<sheet-id-or-url>" --worksheet-prefix SimResults --credentials-json /path/to/service_account.json` |
+| Setup simulation | `python -m app.modules.setup_simulation sim_001 --name "Airline Simulation" --rounds 8 --teams "Team Alpha" "Team Bravo"` |
+| Start simulation | `python -m app.modules.start_simulation sim_001 --admin-user-id U_ADMIN` |
+| Enter decision | `python -m app.modules.enter_decisions sim_001 --team-id T1 --flights-per-day 4 --price-business 360 --price-leisure 180 --branding-level Medium --product-strategy High` |
+| Move to next round | `python -m app.modules.move_next_round sim_001 --admin-user-id U_ADMIN` |
+| Check status | `python -m app.modules.check_simulation_status sim_001` |
+| Display results | `python -m app.modules.display_results sim_001 --section both` |
+| End simulation | `python -m app.modules.end_simulation sim_001 --admin-user-id U_ADMIN` |
+| Import decisions (CSV) | `python -m app.modules.import_decisions_batch sim_001 --input-type csv --csv-path decisions_input.csv` |
+| Import decisions (Google Sheets) | `python -m app.modules.import_decisions_batch sim_001 --input-type google-sheet --spreadsheet-id-or-url "<id>" --worksheet Decisions --credentials-json creds.json` |
+| Export results (CSV) | `python -m app.modules.export_results_batch sim_001 --section both --output-type csv --output-dir exports` |
+| Export results (Google Sheets) | `python -m app.modules.export_results_batch sim_001 --section both --output-type google-sheet --spreadsheet-id-or-url "<id>" --worksheet-prefix SimResults --credentials-json creds.json` |
 
 ### Notes for Google Sheets
 
@@ -176,19 +236,79 @@ Examples:
 - Use a Google service-account JSON key via `--credentials-json`.
 - Share the target spreadsheet with the service-account email so it can read/write.
 
-
 ## UI Usage (Streamlit)
 
 Launch the dashboard UI:
 
 ```bash
-.venv/bin/python -m streamlit run app/ui/dashboard.py
+python -m streamlit run app/ui/dashboard.py
 ```
 
 The UI also includes dedicated views in:
 
-- `app/ui/admin_view.py`
-- `app/ui/team_view.py`
+- `app/ui/admin_view.py` — Admin controls (setup, start, move, end, parameter changes)
+- `app/ui/team_view.py` — Team decision entry and historical results
+
+## Test Suite
+
+A 32-scenario test suite verifies simulation correctness with dual-layer verification:
+
+1. **Engine-based comparison** — re-computes expected results through the engine's pure functions and compares against actual CSV output.
+2. **Independent cross-check** — reimplements all formulas from scratch in `tests/helpers/independent_calculator.py` using only `csv`, `dataclasses`, and `pathlib` (zero `app.*` imports), ensuring formula correctness independently of the engine code.
+
+### Running Tests
+
+```bash
+# Run all 32 scenarios
+python -m tests.simulation_test_suite
+
+# Save report to file
+python -m tests.simulation_test_suite --out ./tests/reports/simulation_test_report.txt
+
+# Stop on first failure
+python -m tests.simulation_test_suite --stop-on-fail
+
+# Custom RNG seed
+python -m tests.simulation_test_suite --seed 42
+```
+
+### Test Helpers
+
+| File | Purpose |
+| --- | --- |
+| `tests/helpers/scenarios.py` | 32 scenario generators (pricing, branding, product, capacity variations) |
+| `tests/helpers/constraints.py` | Reads valid ranges from simulation config |
+| `tests/helpers/expected_calculator.py` | Engine-based expected value calculator |
+| `tests/helpers/independent_calculator.py` | From-scratch formula reimplementation (no engine imports) |
+| `tests/helpers/comparator.py` | Comparison logic and diff reporting |
+
+## Project Structure
+
+```
+airline_sim/
+├── main.py                  # CLI command router
+├── run_dashboard.py         # Web dashboard launcher
+├── requirements.txt
+├── app/
+│   ├── main.py              # CLI entry point
+│   ├── config.py
+│   ├── auth/                # Login, password, permissions
+│   ├── core/                # Simulation engine, demand/cost/pricing models
+│   ├── data/                # CSV I/O, schema validation, backups
+│   ├── modules/             # Lifecycle modules (setup, start, decisions, etc.)
+│   └── ui/                  # Streamlit views (admin, team, dashboard)
+├── dashboard_web/           # Standalone FastAPI web dashboard
+│   ├── app.py
+│   ├── dashboard_data.py
+│   ├── templates/
+│   └── static/
+├── simulations/             # Simulation data (CSV files)
+│   └── sim_001/
+├── tests/                   # Test suite
+│   ├── simulation_test_suite.py
+│   └── helpers/
+└── docs/                    # Specifications
+```
 
 ## UI Messaging Standard
 

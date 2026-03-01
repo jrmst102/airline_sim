@@ -4,7 +4,8 @@ Dashboard Web – FastAPI backend for the Airline Simulation dashboard.
 Serves a single HTML page and a REST endpoint for dashboard data.
 
 Run with:
-    cd dashboard_web && uvicorn app:app --reload
+    python run_dashboard.py              # from project root
+    python run_dashboard.py --reload     # with auto-reload
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from dashboard_data import get_dashboard_data
+from dashboard_web.dashboard_data import get_dashboard_data
 
 # ── Paths ──────────────────────────────────────────────────────────────
 _THIS_DIR = Path(__file__).resolve().parent

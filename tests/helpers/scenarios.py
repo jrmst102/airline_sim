@@ -277,7 +277,7 @@ def _s05_two_prices(
 def _s06_two_brand_product(
     decs: list[Decision], c: Constraints, rng: random.Random,
 ) -> list[Decision]:
-    """Scenario 6: Two airlines change Brand+Product: High vs Low, Premium vs Economy."""
+    """Scenario 6: Two airlines change Brand+Product: High vs Low brand, High vs Medium product."""
     decs[0].branding_level = pick_high_brand(c)
     decs[0].product_strategy = pick_premium_product(c)
     decs[1].branding_level = pick_low_brand(c)
@@ -629,7 +629,7 @@ ALL_SCENARIOS: list[ScenarioSpec] = [
         "Two airlines change prices: one lowest, one highest. No other changes.",
         _s05_two_prices),
     ScenarioSpec(6, "Two airlines: High vs Low brand+product",
-        "Two airlines change Brand+Product: High branding + Premium vs Low + Economy.",
+        "Two airlines change Brand+Product: High branding + High product vs Low + Medium.",
         _s06_two_brand_product),
     ScenarioSpec(7, "Two airlines: mid prices + brand+product",
         "Two airlines change prices+brand+product; mid prices, random brand/product.",

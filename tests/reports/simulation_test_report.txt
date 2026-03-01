@@ -2,13 +2,13 @@
   Airline Simulation Test Suite Report
 ========================================================================
 
-  Timestamp  : 2026-03-01T15:11:59.809054+00:00
+  Timestamp  : 2026-03-01T16:06:41.799895+00:00
   RNG Seed   : 12345
-  Git Commit : ecf29c5
+  Git Commit : e0ca3c1
   Total Run  : 32 / 32 scenarios
   PASSED     : 32
   FAILED     : 0
-  Runtime    : 0.50s
+  Runtime    : 0.68s
 
 ------------------------------------------------------------------------
    ID  Scenario Name                                    Status  Notes
@@ -50,7 +50,7 @@
 ========================================================================
   Scenario 01: No changes
   STATUS: PASS
-  Elapsed: 0.020s
+  Elapsed: 0.038s
 
   Inputs applied (changes from baseline):
     (no changes from baseline)
@@ -81,7 +81,7 @@
 ========================================================================
   Scenario 02: One airline lowest prices
   STATUS: PASS
-  Elapsed: 0.021s
+  Elapsed: 0.034s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=280, Price_L=130
@@ -112,7 +112,7 @@
 ========================================================================
   Scenario 03: One airline highest prices
   STATUS: PASS
-  Elapsed: 0.020s
+  Elapsed: 0.023s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=460, Price_L=230
@@ -143,10 +143,10 @@
 ========================================================================
   Scenario 04: One airline brand+product only
   STATUS: PASS
-  Elapsed: 0.016s
+  Elapsed: 0.023s
 
   Inputs applied (changes from baseline):
-    Team A: Brand=Medium
+    Team A: Brand=Medium, Product=Low
 
   Decision Overwrite Check: PASS
 
@@ -174,7 +174,7 @@
 ========================================================================
   Scenario 05: Two airlines: lowest vs highest prices
   STATUS: PASS
-  Elapsed: 0.026s
+  Elapsed: 0.024s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=280, Price_L=130
@@ -206,10 +206,10 @@
 ========================================================================
   Scenario 06: Two airlines: High vs Low brand+product
   STATUS: PASS
-  Elapsed: 0.020s
+  Elapsed: 0.022s
 
   Inputs applied (changes from baseline):
-    Team B: Brand=Low, Product=Basic Economy
+    Team B: Brand=Low, Product=Medium
 
   Decision Overwrite Check: PASS
 
@@ -237,11 +237,11 @@
 ========================================================================
   Scenario 07: Two airlines: mid prices + brand+product
   STATUS: PASS
-  Elapsed: 0.017s
+  Elapsed: 0.028s
 
   Inputs applied (changes from baseline):
-    Team A: Price_B=397, Price_L=142, Brand=Medium, Product=Digital/Loyalty
-    Team B: Price_B=340, Price_L=175, Brand=High, Product=None
+    Team A: Price_B=397, Price_L=142, Brand=Medium, Product=Medium
+    Team B: Price_B=340, Price_L=175, Brand=High, Product=Medium
 
   Decision Overwrite Check: PASS
 
@@ -269,7 +269,7 @@
 ========================================================================
   Scenario 08: Three airlines: highest/lowest/random prices
   STATUS: PASS
-  Elapsed: 0.021s
+  Elapsed: 0.022s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=460, Price_L=230
@@ -302,12 +302,12 @@
 ========================================================================
   Scenario 09: Three airlines: prices+brand+product (no extremes)
   STATUS: PASS
-  Elapsed: 0.012s
+  Elapsed: 0.015s
 
   Inputs applied (changes from baseline):
-    Team A: Price_B=397, Price_L=142, Brand=Medium, Product=Digital/Loyalty
-    Team B: Price_B=340, Price_L=175, Brand=High, Product=None
-    Team C: Price_B=332, Price_L=188, Brand=Low, Product=None
+    Team A: Price_B=397, Price_L=142, Brand=Medium, Product=Medium
+    Team B: Price_B=340, Price_L=175, Brand=High, Product=Medium
+    Team C: Price_B=332, Price_L=188, Brand=Low
 
   Decision Overwrite Check: PASS
 
@@ -335,7 +335,7 @@
 ========================================================================
   Scenario 10: Four airlines: random prices
   STATUS: PASS
-  Elapsed: 0.011s
+  Elapsed: 0.026s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=396, Price_L=141
@@ -369,7 +369,7 @@
 ========================================================================
   Scenario 11: Five airlines: random prices
   STATUS: PASS
-  Elapsed: 0.010s
+  Elapsed: 0.025s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=396, Price_L=141
@@ -404,14 +404,14 @@
 ========================================================================
   Scenario 12: Five airlines: prices+brand+product
   STATUS: PASS
-  Elapsed: 0.011s
+  Elapsed: 0.029s
 
   Inputs applied (changes from baseline):
-    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Digital/Loyalty
-    Team B: Price_B=339, Price_L=174, Brand=High, Product=None
-    Team C: Price_B=331, Price_L=187, Brand=Low, Product=None
-    Team D: Price_B=356, Price_L=211, Brand=High, Product=Basic Economy
-    Team E: Price_B=409, Price_L=211, Product=Digital/Loyalty
+    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Medium
+    Team B: Price_B=339, Price_L=174, Brand=High, Product=Medium
+    Team C: Price_B=331, Price_L=187, Brand=Low
+    Team D: Price_B=356, Price_L=211, Brand=High, Product=High
+    Team E: Price_B=409, Price_L=211
 
   Decision Overwrite Check: PASS
 
@@ -439,14 +439,14 @@
 ========================================================================
   Scenario 13: All prices; five brand+product
   STATUS: PASS
-  Elapsed: 0.010s
+  Elapsed: 0.017s
 
   Inputs applied (changes from baseline):
-    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Basic Economy
-    Team B: Price_B=366, Price_L=187, Brand=High, Product=Basic Economy
-    Team C: Price_B=339, Price_L=174, Product=Premium Cabin
-    Team D: Price_B=434, Price_L=195, Brand=High, Product=None
-    Team E: Price_B=359, Price_L=188, Brand=High
+    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Low
+    Team B: Price_B=366, Price_L=187, Brand=High, Product=High
+    Team C: Price_B=339, Price_L=174, Brand=High, Product=Low
+    Team D: Price_B=434, Price_L=195, Product=Medium
+    Team E: Price_B=359, Price_L=188, Brand=High, Product=Low
     Team F: Price_B=354, Price_L=168
 
   Decision Overwrite Check: PASS
@@ -475,15 +475,15 @@
 ========================================================================
   Scenario 14: All prices+brand+product
   STATUS: PASS
-  Elapsed: 0.011s
+  Elapsed: 0.014s
 
   Inputs applied (changes from baseline):
-    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Digital/Loyalty
-    Team B: Price_B=339, Price_L=174, Brand=High, Product=None
-    Team C: Price_B=331, Price_L=187, Brand=Low, Product=None
-    Team D: Price_B=356, Price_L=211, Brand=High, Product=Basic Economy
-    Team E: Price_B=409, Price_L=211, Product=Digital/Loyalty
-    Team F: Price_B=342, Price_L=208, Brand=High, Product=None
+    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Medium
+    Team B: Price_B=339, Price_L=174, Brand=High, Product=Medium
+    Team C: Price_B=331, Price_L=187, Brand=Low
+    Team D: Price_B=356, Price_L=211, Brand=High, Product=High
+    Team E: Price_B=409, Price_L=211
+    Team F: Price_B=342, Price_L=208, Brand=High, Product=Medium
 
   Decision Overwrite Check: PASS
 
@@ -511,7 +511,7 @@
 ========================================================================
   Scenario 15: One airline: flights only
   STATUS: PASS
-  Elapsed: 0.013s
+  Elapsed: 0.015s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=4
@@ -542,7 +542,7 @@
 ========================================================================
   Scenario 16: Two airlines: flights only
   STATUS: PASS
-  Elapsed: 0.018s
+  Elapsed: 0.016s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=4
@@ -574,7 +574,7 @@
 ========================================================================
   Scenario 17: Three airlines: flights only
   STATUS: PASS
-  Elapsed: 0.016s
+  Elapsed: 0.028s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3
@@ -607,7 +607,7 @@
 ========================================================================
   Scenario 18: Four airlines: flights only
   STATUS: PASS
-  Elapsed: 0.017s
+  Elapsed: 0.015s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3
@@ -676,7 +676,7 @@
 ========================================================================
   Scenario 20: Six airlines: flights only
   STATUS: PASS
-  Elapsed: 0.015s
+  Elapsed: 0.014s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3
@@ -712,7 +712,7 @@
 ========================================================================
   Scenario 21: One airline: flights+prices
   STATUS: PASS
-  Elapsed: 0.017s
+  Elapsed: 0.014s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -743,7 +743,7 @@
 ========================================================================
   Scenario 22: Two airlines: flights+prices
   STATUS: PASS
-  Elapsed: 0.016s
+  Elapsed: 0.015s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -775,7 +775,7 @@
 ========================================================================
   Scenario 23: Three airlines: flights+prices
   STATUS: PASS
-  Elapsed: 0.015s
+  Elapsed: 0.014s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -808,7 +808,7 @@
 ========================================================================
   Scenario 24: Four airlines: flights+prices
   STATUS: PASS
-  Elapsed: 0.015s
+  Elapsed: 0.013s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -842,7 +842,7 @@
 ========================================================================
   Scenario 25: Five airlines: flights+prices
   STATUS: PASS
-  Elapsed: 0.016s
+  Elapsed: 0.034s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -877,7 +877,7 @@
 ========================================================================
   Scenario 26: All airlines: flights+prices
   STATUS: PASS
-  Elapsed: 0.012s
+  Elapsed: 0.019s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -913,15 +913,15 @@
 ========================================================================
   Scenario 27: All airlines: flights+prices+brand+product
   STATUS: PASS
-  Elapsed: 0.010s
+  Elapsed: 0.020s
 
   Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Brand=Medium, Product=Basic Economy
-    Team B: FlightsPerDay=2, Price_B=434, Price_L=195, Brand=Low
-    Team C: FlightsPerDay=0, Price_B=400, Price_L=173, Brand=High
-    Team D: FlightsPerDay=5, Price_B=431, Price_L=163, Brand=Medium, Product=Premium Cabin
-    Team E: FlightsPerDay=5, Price_B=397, Price_L=200, Brand=High
-    Team F: FlightsPerDay=1, Price_B=344, Price_L=167, Brand=Low
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Brand=Medium
+    Team B: FlightsPerDay=2, Price_B=434, Price_L=195, Brand=Low, Product=Medium
+    Team C: FlightsPerDay=0, Price_B=400, Price_L=173, Brand=High, Product=Low
+    Team D: FlightsPerDay=1, Price_B=446, Price_L=210, Product=Medium
+    Team E: FlightsPerDay=0, Price_B=427, Price_L=220, Brand=Medium, Product=Low
+    Team F: FlightsPerDay=5, Price_B=334, Price_L=182, Brand=Low
 
   Decision Overwrite Check: PASS
 
@@ -949,14 +949,14 @@
 ========================================================================
   Scenario 28: Five airlines: flights+prices+product
   STATUS: PASS
-  Elapsed: 0.013s
+  Elapsed: 0.021s
 
   Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
-    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=None
-    Team C: FlightsPerDay=1, Price_B=385, Price_L=155, Product=None
-    Team D: FlightsPerDay=2, Price_B=433, Price_L=220, Product=Basic Economy
-    Team E: FlightsPerDay=5, Price_B=433, Price_L=178, Product=Digital/Loyalty
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Medium
+    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=Medium
+    Team C: FlightsPerDay=1, Price_B=385, Price_L=155
+    Team D: FlightsPerDay=2, Price_B=433, Price_L=220, Product=High
+    Team E: FlightsPerDay=5, Price_B=433, Price_L=178
 
   Decision Overwrite Check: PASS
 
@@ -984,13 +984,13 @@
 ========================================================================
   Scenario 29: Four airlines: flights+prices+product
   STATUS: PASS
-  Elapsed: 0.015s
+  Elapsed: 0.019s
 
   Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
-    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=None
-    Team C: FlightsPerDay=1, Price_B=385, Price_L=155, Product=None
-    Team D: FlightsPerDay=2, Price_B=433, Price_L=220, Product=Basic Economy
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Medium
+    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=Medium
+    Team C: FlightsPerDay=1, Price_B=385, Price_L=155
+    Team D: FlightsPerDay=2, Price_B=433, Price_L=220, Product=High
 
   Decision Overwrite Check: PASS
 
@@ -1018,12 +1018,12 @@
 ========================================================================
   Scenario 30: Three airlines: flights+prices+product
   STATUS: PASS
-  Elapsed: 0.012s
+  Elapsed: 0.014s
 
   Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
-    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=None
-    Team C: FlightsPerDay=1, Price_B=385, Price_L=155, Product=None
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Medium
+    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=Medium
+    Team C: FlightsPerDay=1, Price_B=385, Price_L=155
 
   Decision Overwrite Check: PASS
 
@@ -1051,11 +1051,11 @@
 ========================================================================
   Scenario 31: Two airlines: flights+prices+product
   STATUS: PASS
-  Elapsed: 0.012s
+  Elapsed: 0.011s
 
   Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
-    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=None
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Medium
+    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=Medium
 
   Decision Overwrite Check: PASS
 
@@ -1086,7 +1086,7 @@
   Elapsed: 0.010s
 
   Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Medium
 
   Decision Overwrite Check: PASS
 
@@ -1113,5 +1113,5 @@
 
 ========================================================================
   Skipped scenarios: 0
-  Total runtime: 0.50s
+  Total runtime: 0.68s
 ========================================================================
