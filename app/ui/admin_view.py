@@ -324,7 +324,7 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
         table = teams_df[list(pick.keys())].rename(columns=pick) if pick else teams_df.copy()
         for col in ("Round", "Revenue", "Cost", "Profit", "Market Share"):
             if col not in table.columns:
-                table[col] = "\u2014"
+                table[col] = latest_round if col == "Round" and latest_round > 0 else "\u2014"
         return table.reset_index(drop=True)
 
     return pd.DataFrame()
