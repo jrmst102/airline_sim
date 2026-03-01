@@ -4,10 +4,11 @@ Enter Decisions – Airlines Competitive Strategy Simulation
 Record or update a team's monthly decisions for an OPEN round.
 
 Decision variables (Case Appendix):
-  1. flights_per_day : int 0–5
-  2. pricing_posture : Premium | Match | Discount
-  3. branding_level  : Low | Medium | High
-  4. product_strategy: Premium Cabin | Basic Economy | Digital/Loyalty | None
+  1. flights_per_day  : int 0–5
+  2. price_business   : float – business seat price ($)
+  3. price_leisure    : float – leisure seat price ($)
+  4. branding_level   : Low | Medium | High
+  5. product_strategy : Premium Cabin | Basic Economy | Digital/Loyalty | None
 """
 
 from __future__ import annotations
@@ -24,9 +25,12 @@ from app.data.log_manager import append_log_event
 
 
 # ── Valid decision choices (Case Appendix) ─────────────────────────────
-VALID_POSTURES = ("Premium", "Match", "Discount")
 VALID_BRANDING = ("Low", "Medium", "High")
 VALID_PRODUCTS = ("Premium Cabin", "Basic Economy", "Digital/Loyalty", "None")
+
+# Price floor / ceiling for sanity checks
+MIN_PRICE = 50.0
+MAX_PRICE = 1000.0
 
 
 @dataclass(frozen=True)
@@ -35,7 +39,8 @@ class EnterDecisionResult:
 	round_number: int
 	team_id: str
 	flights_per_day: int
-	pricing_posture: str
+	price_business: float
+	price_leisure: float
 	branding_level: str
 	product_strategy: str
 	submitted_at_utc: str
@@ -78,15 +83,20 @@ def _as_int(value: str, default: int = 0) -> int:
 
 def _validate_inputs(
 	flights_per_day: int,
-	pricing_posture: str,
+	price_business: float,
+	price_leisure: float,
 	branding_level: str,
 	product_strategy: str,
 ) -> None:
 	if flights_per_day < 0 or flights_per_day > 5:
 		raise ValueError(f"flights_per_day must be 0–5 (got {flights_per_day})")
-	if pricing_posture not in VALID_POSTURES:
+	if price_business < MIN_PRICE or price_business > MAX_PRICE:
 		raise ValueError(
-			f"pricing_posture must be one of {VALID_POSTURES} (got '{pricing_posture}')"
+			f"price_business must be between {MIN_PRICE} and {MAX_PRICE} (got {price_business})"
+		)
+	if price_leisure < MIN_PRICE or price_leisure > MAX_PRICE:
+		raise ValueError(
+			f"price_leisure must be between {MIN_PRICE} and {MAX_PRICE} (got {price_leisure})"
 		)
 	if branding_level not in VALID_BRANDING:
 		raise ValueError(
@@ -165,7 +175,8 @@ def enter_decision(
 	simulation_id: str,
 	team_id: str,
 	flights_per_day: int,
-	pricing_posture: str,
+	price_business: float,
+	price_leisure: float,
 	branding_level: str,
 	product_strategy: str,
 	round_number: int | None = None,
@@ -174,7 +185,8 @@ def enter_decision(
 	"""Record or update one team's decision for the current OPEN round."""
 	_validate_inputs(
 		flights_per_day=flights_per_day,
-		pricing_posture=pricing_posture,
+		price_business=price_business,
+		price_leisure=price_leisure,
 		branding_level=branding_level,
 		product_strategy=product_strategy,
 	)
@@ -205,7 +217,8 @@ def enter_decision(
 		"round_number": str(effective_round),
 		"team_id": team_id,
 		"flights_per_day": str(flights_per_day),
-		"pricing_posture": pricing_posture,
+		"price_business": str(price_business),
+		"price_leisure": str(price_leisure),
 		"branding_level": branding_level,
 		"product_strategy": product_strategy,
 		"submitted_at_utc": submitted_at_utc,
@@ -235,8 +248,8 @@ def enter_decision(
 		action="UPDATE_DECISION" if was_update else "ENTER_DECISION",
 		details=(
 			f"round={effective_round}; team_id={team_id}; flights_per_day={flights_per_day}; "
-			f"pricing_posture={pricing_posture}; branding_level={branding_level}; "
-			f"product_strategy={product_strategy}"
+			f"price_business={price_business}; price_leisure={price_leisure}; "
+			f"branding_level={branding_level}; product_strategy={product_strategy}"
 		),
 		event_at_utc=submitted_at_utc,
 	)
@@ -246,7 +259,8 @@ def enter_decision(
 		round_number=effective_round,
 		team_id=team_id,
 		flights_per_day=flights_per_day,
-		pricing_posture=pricing_posture,
+		price_business=price_business,
+		price_leisure=price_leisure,
 		branding_level=branding_level,
 		product_strategy=product_strategy,
 		submitted_at_utc=submitted_at_utc,
@@ -260,9 +274,12 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument("--team-id", required=True, help="Team identifier (A–F)")
 	parser.add_argument("--flights-per-day", required=True, type=int, help="0–5")
 	parser.add_argument(
-		"--pricing-posture", required=True,
-		choices=list(VALID_POSTURES),
-		help="Premium | Match | Discount",
+		"--price-business", required=True, type=float,
+		help="Business seat price ($)",
+	)
+	parser.add_argument(
+		"--price-leisure", required=True, type=float,
+		help="Leisure seat price ($)",
 	)
 	parser.add_argument(
 		"--branding-level", required=True,
@@ -296,7 +313,8 @@ def main() -> None:
 		simulation_id=args.simulation_id,
 		team_id=args.team_id,
 		flights_per_day=args.flights_per_day,
-		pricing_posture=args.pricing_posture,
+		price_business=args.price_business,
+		price_leisure=args.price_leisure,
 		branding_level=args.branding_level,
 		product_strategy=args.product_strategy,
 		round_number=args.round_number,

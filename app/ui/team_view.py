@@ -35,9 +35,12 @@ ADMIN_USER_ID = "U_ADMIN"
 TEAM_OPTIONS = ["A", "B", "C", "D", "E", "F"]
 TEAM_LABELS = {t: f"Airline {t}" for t in TEAM_OPTIONS}
 
-PRICING_OPTIONS = ["Premium", "Match", "Discount"]
 BRANDING_OPTIONS = ["Low", "Medium", "High"]
 PRODUCT_OPTIONS = ["Premium Cabin", "Basic Economy", "Digital/Loyalty", "None"]
+
+# Default prices – "Match" level from case appendix
+DEFAULT_PRICE_BUSINESS = 360.0
+DEFAULT_PRICE_LEISURE = 180.0
 
 _LOGO_CANDIDATES = [
     Path(__file__).resolve().parents[1] / "images" / "sim_logo.png",
@@ -253,7 +256,8 @@ def _get_existing_decision(
     row = match.iloc[-1]
     return {
         "flights_per_day": int(float(row.get("flights_per_day", 3))),
-        "pricing_posture": str(row.get("pricing_posture", "Match")),
+        "price_business": float(row.get("price_business", DEFAULT_PRICE_BUSINESS)),
+        "price_leisure": float(row.get("price_leisure", DEFAULT_PRICE_LEISURE)),
         "branding_level": str(row.get("branding_level", "Medium")),
         "product_strategy": str(row.get("product_strategy", "None")),
     }
@@ -477,7 +481,8 @@ def main() -> None:
     existing = _get_existing_decision(sim_path, selected_team, current_round) if can_enter else None
     defaults = existing or {
         "flights_per_day": 3,
-        "pricing_posture": "Match",
+        "price_business": DEFAULT_PRICE_BUSINESS,
+        "price_leisure": DEFAULT_PRICE_LEISURE,
         "branding_level": "Medium",
         "product_strategy": "None",
     }
@@ -495,11 +500,25 @@ def main() -> None:
             value=defaults["flights_per_day"],
             step=1,
         )
-        pricing_posture = st.selectbox(
-            "Pricing Posture",
-            options=PRICING_OPTIONS,
-            index=PRICING_OPTIONS.index(defaults["pricing_posture"]),
-        )
+        price_col1, price_col2 = st.columns(2)
+        with price_col1:
+            price_business = st.number_input(
+                "Business Seat Price ($)",
+                min_value=50.0, max_value=1000.0,
+                value=float(defaults["price_business"]),
+                step=10.0,
+                format="%.0f",
+                help="Reference: Premium $450 · Match $360 · Discount $290",
+            )
+        with price_col2:
+            price_leisure = st.number_input(
+                "Leisure Seat Price ($)",
+                min_value=50.0, max_value=1000.0,
+                value=float(defaults["price_leisure"]),
+                step=10.0,
+                format="%.0f",
+                help="Reference: Premium $220 · Match $180 · Discount $140",
+            )
         branding_level = st.selectbox(
             "Branding Level",
             options=BRANDING_OPTIONS,
@@ -534,7 +553,8 @@ def main() -> None:
                 simulation_id=SIM_ID,
                 team_id=selected_team,
                 flights_per_day=int(flights_per_day),
-                pricing_posture=pricing_posture,
+                price_business=float(price_business),
+                price_leisure=float(price_leisure),
                 branding_level=branding_level,
                 product_strategy=product_strategy,
                 round_number=current_round,
@@ -558,7 +578,8 @@ def main() -> None:
                 simulation_id=SIM_ID,
                 team_id=selected_team,
                 flights_per_day=int(flights_per_day),
-                pricing_posture=pricing_posture,
+                price_business=float(price_business),
+                price_leisure=float(price_leisure),
                 branding_level=branding_level,
                 product_strategy=product_strategy,
                 round_number=current_round,

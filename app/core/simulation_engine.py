@@ -33,9 +33,8 @@ class SimulationParameters:
 	seats_per_flight: int              # 200
 	fixed_cost_per_flight: int         # 18,000
 	days_per_month: int                # 30
-	discount_penalty_threshold: int    # 3
+	discount_penalty_threshold: int    # 3  (kept for possible future use)
 	discount_penalty_rate: float       # 0.08
-	fares: dict[str, dict[str, int]]   # posture -> {business: fare, leisure: fare}
 	branding_costs: dict[str, int]     # level -> monthly cost
 	product_costs: dict[str, int]      # strategy -> monthly cost
 
@@ -44,10 +43,11 @@ class SimulationParameters:
 class TeamDecisionInput:
 	"""One team's decision for a round."""
 	team_id: str
-	flights_per_day: int           # 0–5
-	pricing_posture: str           # "Premium" | "Match" | "Discount"
-	branding_level: str            # "Low" | "Medium" | "High"
-	product_strategy: str          # "Premium Cabin" | "Basic Economy" | "Digital/Loyalty" | "None"
+	flights_per_day: int               # 0–5
+	price_business: float              # team-set business seat price ($)
+	price_leisure: float               # team-set leisure seat price ($)
+	branding_level: str                # "Low" | "Medium" | "High"
+	product_strategy: str              # "Premium Cabin" | "Basic Economy" | "Digital/Loyalty" | "None"
 	variable_cost_per_passenger: float  # airline-specific (Case Appendix)
 
 
@@ -91,20 +91,6 @@ class RoundComputationResult:
 
 def build_parameters_from_csv(params: dict[str, str]) -> SimulationParameters:
 	"""Construct SimulationParameters from a key-value dict (parameters.csv)."""
-	fares = {
-		"Premium": {
-			"business": get_parameter_int(params, "fare_business_premium"),
-			"leisure": get_parameter_int(params, "fare_leisure_premium"),
-		},
-		"Match": {
-			"business": get_parameter_int(params, "fare_business_match"),
-			"leisure": get_parameter_int(params, "fare_leisure_match"),
-		},
-		"Discount": {
-			"business": get_parameter_int(params, "fare_business_discount"),
-			"leisure": get_parameter_int(params, "fare_leisure_discount"),
-		},
-	}
 	branding_costs = {
 		"Low": get_parameter_int(params, "branding_cost_low"),
 		"Medium": get_parameter_int(params, "branding_cost_medium"),
@@ -125,7 +111,6 @@ def build_parameters_from_csv(params: dict[str, str]) -> SimulationParameters:
 		days_per_month=get_parameter_int(params, "days_per_month"),
 		discount_penalty_threshold=get_parameter_int(params, "discount_penalty_threshold"),
 		discount_penalty_rate=get_parameter_float(params, "discount_penalty_rate"),
-		fares=fares,
 		branding_costs=branding_costs,
 		product_costs=product_costs,
 	)
@@ -135,7 +120,6 @@ def build_parameters_from_csv(params: dict[str, str]) -> SimulationParameters:
 # Round computation
 # ═══════════════════════════════════════════════════════════════════════════
 
-VALID_POSTURES = {"Premium", "Match", "Discount"}
 VALID_BRANDING = {"Low", "Medium", "High"}
 VALID_PRODUCTS = {"Premium Cabin", "Basic Economy", "Digital/Loyalty", "None"}
 
@@ -145,8 +129,10 @@ def _validate_decision(d: TeamDecisionInput, p: SimulationParameters) -> None:
 		raise ValueError("team_id is required")
 	if d.flights_per_day < 0 or d.flights_per_day > 5:
 		raise ValueError(f"flights_per_day must be 0–5 for team '{d.team_id}' (got {d.flights_per_day})")
-	if d.pricing_posture not in VALID_POSTURES:
-		raise ValueError(f"Invalid pricing_posture '{d.pricing_posture}' for team '{d.team_id}'")
+	if d.price_business <= 0:
+		raise ValueError(f"price_business must be > 0 for team '{d.team_id}' (got {d.price_business})")
+	if d.price_leisure <= 0:
+		raise ValueError(f"price_leisure must be > 0 for team '{d.team_id}' (got {d.price_leisure})")
 	if d.branding_level not in VALID_BRANDING:
 		raise ValueError(f"Invalid branding_level '{d.branding_level}' for team '{d.team_id}'")
 	if d.product_strategy not in VALID_PRODUCTS:
@@ -184,12 +170,12 @@ def compute_round_results(
 		monthly_flights[d.team_id] = mf
 		capacities[d.team_id] = mf * parameters.seats_per_flight
 
-	# ── Fare lookup ───────────────────────────────────────────────
-	biz_fares: dict[str, int] = {}
-	lei_fares: dict[str, int] = {}
+	# ── Team-set prices ───────────────────────────────────────────
+	biz_fares: dict[str, float] = {}
+	lei_fares: dict[str, float] = {}
 	for d in decisions:
-		biz_fares[d.team_id] = parameters.fares[d.pricing_posture]["business"]
-		lei_fares[d.team_id] = parameters.fares[d.pricing_posture]["leisure"]
+		biz_fares[d.team_id] = d.price_business
+		lei_fares[d.team_id] = d.price_leisure
 
 	# ── Demand allocation ─────────────────────────────────────────
 	# Score = capacity / fare  (higher capacity + lower fare → more demand)
@@ -240,13 +226,6 @@ def compute_round_results(
 			+ lei_pax[d.team_id] * lei_fares[d.team_id]
 		)
 		revenues[d.team_id] = rev
-
-	# ── Discount penalty (Case Appendix) ──────────────────────────
-	discount_count = sum(1 for d in decisions if d.pricing_posture == "Discount")
-	if discount_count >= parameters.discount_penalty_threshold:
-		for d in decisions:
-			if d.pricing_posture == "Discount":
-				revenues[d.team_id] *= (1.0 - parameters.discount_penalty_rate)
 
 	# ── Costs (Case Appendix) ─────────────────────────────────────
 	var_costs: dict[str, float] = {}

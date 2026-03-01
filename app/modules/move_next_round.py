@@ -150,7 +150,8 @@ def move_next_round(
 		TeamDecisionInput(
 			team_id=row.get("team_id", ""),
 			flights_per_day=_as_int(row.get("flights_per_day", "0")),
-			pricing_posture=row.get("pricing_posture", "Match"),
+			price_business=_as_float(row.get("price_business", "360")),
+			price_leisure=_as_float(row.get("price_leisure", "180")),
 			branding_level=row.get("branding_level", "Low"),
 			product_strategy=row.get("product_strategy", "None"),
 			variable_cost_per_passenger=var_cost_map.get(

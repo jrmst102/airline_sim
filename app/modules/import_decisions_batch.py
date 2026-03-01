@@ -12,7 +12,8 @@ from app.modules.google_sheets_adapter import read_worksheet_as_dicts
 REQUIRED_COLUMNS = [
 	"team_id",
 	"flights_per_day",
-	"pricing_posture",
+	"price_business",
+	"price_leisure",
 	"branding_level",
 	"product_strategy",
 ]
@@ -107,7 +108,8 @@ def import_decisions_batch(
 				simulation_id=simulation_id,
 				team_id=team_id,
 				flights_per_day=_parse_int(row.get("flights_per_day", ""), "flights_per_day"),
-				pricing_posture=str(row.get("pricing_posture", "")).strip(),
+				price_business=_parse_float(row.get("price_business", ""), "price_business"),
+				price_leisure=_parse_float(row.get("price_leisure", ""), "price_leisure"),
 				branding_level=str(row.get("branding_level", "")).strip(),
 				product_strategy=str(row.get("product_strategy", "")).strip(),
 				round_number=_parse_optional_int(row.get("round_number")),
