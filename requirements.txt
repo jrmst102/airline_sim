@@ -2,3 +2,4 @@ bcrypt
 boto3
 gspread
 google-auth
+python-dotenv
