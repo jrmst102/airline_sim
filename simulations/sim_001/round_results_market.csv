@@ -1,2 +1,0 @@
-simulation_id,round_number,total_demand,total_passengers,total_revenue,total_cost,total_profit,created_at_utc
-sim_001,0,120000,120000,,,25000000,2026-03-01T01:55:51.598652+00:00

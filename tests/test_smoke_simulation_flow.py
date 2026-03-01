@@ -127,10 +127,11 @@ class SmokeSimulationFlowTest(unittest.TestCase):
             self.assertEqual(simulation_row["current_round"], "2")
             self.assertEqual(len(open_rounds), 0)
 
-            # After undo of round 2, only round 1 results remain
-            # (6 team-result rows for round 1)
-            self.assertEqual(len(team_results_rows), len(TEAM_IDS))
-            self.assertEqual(len(market_results_rows), 1)
+            # After undo of round 2, remaining results:
+            #   round 0 baseline (6 teams) + round 1 (6 teams) = 12
+            self.assertEqual(len(team_results_rows), len(TEAM_IDS) * 2)
+            # market: round 0 baseline + round 1 = 2
+            self.assertEqual(len(market_results_rows), 2)
 
             # Verify new column names exist in team results
             for tr_row in team_results_rows:

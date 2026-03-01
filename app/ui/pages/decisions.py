@@ -33,10 +33,10 @@ def render(sim_id: str, team_id: str = "T1") -> None:
 		card("Decision Entry", f"Team {team_id} decision input")
 		with st.form("page_decision_form"):
 			round_raw = st.text_input("Round (optional, must be OPEN)", value="")
-			flights_per_day = st.number_input("flights_per_day", min_value=1, value=6, step=1)
-			price_premium = st.number_input("price_premium", min_value=0.01, value=220.0)
-			price_economy = st.number_input("price_economy", min_value=0.01, value=160.0)
-			brand_investment = st.number_input("brand_investment", min_value=0.0, value=1000.0)
+			flights_per_day = st.number_input("Flights per Day", min_value=0, max_value=5, value=3, step=1)
+			pricing_posture = st.selectbox("Pricing Posture", options=["Premium", "Match", "Discount"], index=1)
+			branding_level = st.selectbox("Branding Level", options=["Low", "Medium", "High"], index=1)
+			product_strategy = st.selectbox("Product Strategy", options=["Premium Cabin", "Basic Economy", "Digital/Loyalty", "None"], index=3)
 			submit = st.form_submit_button("Submit Decision")
 
 		if submit:
@@ -46,9 +46,9 @@ def render(sim_id: str, team_id: str = "T1") -> None:
 					simulation_id=sim_id,
 					team_id=team_id,
 					flights_per_day=int(flights_per_day),
-					price_premium=float(price_premium),
-					price_economy=float(price_economy),
-					brand_investment=float(brand_investment),
+					pricing_posture=pricing_posture,
+					branding_level=branding_level,
+					product_strategy=product_strategy,
 					round_number=round_number,
 					root_dir=root_dir,
 				)

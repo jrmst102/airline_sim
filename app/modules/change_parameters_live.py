@@ -1,3 +1,14 @@
+"""
+Change Parameters Live – Airlines Competitive Strategy Simulation
+==================================================================
+Update one or more key-value parameters in ``parameters.csv`` while
+the simulation is CREATED or STARTED.
+
+parameters.csv uses a key-value format (key,value,notes).  This module
+reads the current values, updates the requested keys, and writes
+them back.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -13,20 +24,34 @@ from app.data.log_manager import append_log_event
 @dataclass(frozen=True)
 class ChangeParametersResult:
 	simulation_id: str
-	new_version: int
-	changed_fields: list[str]
+	changed_keys: list[str]
 	created_at_utc: str
 
 
-PARAMETER_FIELDS = [
-	"days_per_round",
-	"base_demand_business",
-	"base_demand_leisure",
-	"base_fuel_cost_per_flight",
-	"base_fixed_cost_per_round",
-	"base_variable_cost_per_pax",
-	"brand_effectiveness",
-]
+# Keys that are allowed to be changed live  (subset of parameters.csv keys).
+ALLOWED_KEYS: set[str] = {
+	"total_demand_passengers",
+	"business_demand",
+	"leisure_demand",
+	"seats_per_flight",
+	"fixed_cost_per_flight",
+	"days_per_month",
+	"fare_business_premium",
+	"fare_leisure_premium",
+	"fare_business_match",
+	"fare_leisure_match",
+	"fare_business_discount",
+	"fare_leisure_discount",
+	"branding_cost_low",
+	"branding_cost_medium",
+	"branding_cost_high",
+	"product_cost_premium_cabin",
+	"product_cost_basic_economy",
+	"product_cost_digital_loyalty",
+	"product_cost_none",
+	"discount_penalty_threshold",
+	"discount_penalty_rate",
+}
 
 
 def _utc_now() -> str:
@@ -56,13 +81,6 @@ def _write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) ->
 			writer.writerows(rows)
 
 
-def _as_int(value: str, default: int = 0) -> int:
-	try:
-		return int(float(value))
-	except (TypeError, ValueError):
-		return default
-
-
 def _next_event_id(admin_action_rows: list[dict[str, str]]) -> str:
 	max_suffix = 0
 	for row in admin_action_rows:
@@ -74,34 +92,29 @@ def _next_event_id(admin_action_rows: list[dict[str, str]]) -> str:
 	return f"E{max_suffix + 1}"
 
 
-def _validate_updates(updates: dict[str, float | int]) -> None:
-	if "days_per_round" in updates and int(updates["days_per_round"]) < 1:
-		raise ValueError("days_per_round must be >= 1")
-	for non_negative_key in [
-		"base_demand_business",
-		"base_demand_leisure",
-		"base_fuel_cost_per_flight",
-		"base_fixed_cost_per_round",
-		"base_variable_cost_per_pax",
-		"brand_effectiveness",
-	]:
-		if non_negative_key in updates and float(updates[non_negative_key]) < 0:
-			raise ValueError(f"{non_negative_key} must be >= 0")
+def _validate_updates(updates: dict[str, str]) -> None:
+	unknown = set(updates.keys()) - ALLOWED_KEYS
+	if unknown:
+		raise ValueError(f"Unknown parameter key(s): {', '.join(sorted(unknown))}")
+	for key, value in updates.items():
+		try:
+			float(value)
+		except ValueError:
+			raise ValueError(f"Parameter '{key}' value must be numeric (got '{value}')")
 
 
 def change_parameters_live(
 	simulation_id: str,
+	updates: dict[str, str],
 	admin_user_id: str = "U_ADMIN",
 	root_dir: Path | str = Path("simulations"),
-	*,
-	days_per_round: int | None = None,
-	base_demand_business: float | None = None,
-	base_demand_leisure: float | None = None,
-	base_fuel_cost_per_flight: float | None = None,
-	base_fixed_cost_per_round: float | None = None,
-	base_variable_cost_per_pax: float | None = None,
-	brand_effectiveness: float | None = None,
 ) -> ChangeParametersResult:
+	"""Update parameter values in the key-value parameters.csv."""
+	if not updates:
+		raise ValueError("At least one parameter update must be provided")
+
+	_validate_updates(updates)
+
 	simulation_dir = _simulation_path(root_dir, simulation_id)
 	simulation_csv = simulation_dir / "simulation.csv"
 	parameters_csv = simulation_dir / "parameters.csv"
@@ -113,60 +126,44 @@ def change_parameters_live(
 	sim_row = sim_rows[0]
 	status = sim_row.get("status", "")
 	if status not in {"CREATED", "STARTED"}:
-		raise ValueError(f"Parameters can only be changed when simulation is CREATED or STARTED (found '{status}')")
+		raise ValueError(
+			f"Parameters can only be changed when simulation is CREATED or STARTED (found '{status}')"
+		)
 
-	updates_raw: dict[str, float | int | None] = {
-		"days_per_round": days_per_round,
-		"base_demand_business": base_demand_business,
-		"base_demand_leisure": base_demand_leisure,
-		"base_fuel_cost_per_flight": base_fuel_cost_per_flight,
-		"base_fixed_cost_per_round": base_fixed_cost_per_round,
-		"base_variable_cost_per_pax": base_variable_cost_per_pax,
-		"brand_effectiveness": brand_effectiveness,
-	}
-	updates = {key: value for key, value in updates_raw.items() if value is not None}
-	if not updates:
-		raise ValueError("At least one parameter value must be provided")
+	# Read key-value parameters
+	param_fieldnames, param_rows = _load_csv(parameters_csv)
+	if not param_rows:
+		raise ValueError("No parameters found in parameters.csv")
 
-	_validate_updates(updates)
+	# Apply updates
+	changed_keys: list[str] = []
+	for row in param_rows:
+		key = row.get("key", "")
+		if key in updates:
+			row["value"] = updates[key]
+			changed_keys.append(key)
 
-	parameter_fieldnames, parameter_rows = _load_csv(parameters_csv)
-	if not parameter_rows:
-		raise ValueError("No parameter versions found in parameters.csv")
+	# Warn if any requested keys weren't found in the CSV
+	missing_keys = set(updates.keys()) - set(changed_keys)
+	if missing_keys:
+		raise ValueError(f"Parameter key(s) not found in CSV: {', '.join(sorted(missing_keys))}")
 
-	latest = parameter_rows[-1]
-	new_version = max(_as_int(row.get("version", "0")) for row in parameter_rows) + 1
 	now = _utc_now()
-
-	new_row: dict[str, str] = {
-		"simulation_id": simulation_id,
-		"version": str(new_version),
-		"created_at_utc": now,
-	}
-	for field_name in PARAMETER_FIELDS:
-		if field_name in updates:
-			new_row[field_name] = str(updates[field_name])
-		else:
-			new_row[field_name] = latest.get(field_name, "")
-
-	parameter_rows.append(new_row)
+	sim_row["updated_at_utc"] = now
 
 	admin_fieldnames, admin_rows = _load_csv(admin_actions_csv)
-	changed_fields = sorted(updates.keys())
 	admin_rows.append(
 		{
 			"event_id": _next_event_id(admin_rows),
 			"simulation_id": simulation_id,
 			"admin_user_id": admin_user_id,
 			"action": "CHANGE_PARAMETERS_LIVE",
-			"details": f"version={new_version}; changed_fields={','.join(changed_fields)}",
+			"details": f"changed_keys={','.join(sorted(changed_keys))}",
 			"event_at_utc": now,
 		}
 	)
 
-	sim_row["updated_at_utc"] = now
-
-	_write_csv(parameters_csv, parameter_fieldnames, parameter_rows)
+	_write_csv(parameters_csv, param_fieldnames, param_rows)
 	_write_csv(admin_actions_csv, admin_fieldnames, admin_rows)
 	_write_csv(simulation_csv, sim_fieldnames, sim_rows)
 	append_log_event(
@@ -174,28 +171,30 @@ def change_parameters_live(
 		simulation_id=simulation_id,
 		actor_user_id=admin_user_id,
 		action="CHANGE_PARAMETERS_LIVE",
-		details=f"version={new_version}; changed_fields={','.join(changed_fields)}",
+		details=f"changed_keys={','.join(sorted(changed_keys))}",
 		event_at_utc=now,
 	)
 
 	return ChangeParametersResult(
 		simulation_id=simulation_id,
-		new_version=new_version,
-		changed_fields=changed_fields,
+		changed_keys=sorted(changed_keys),
 		created_at_utc=now,
 	)
 
 
 def _parse_cli_args() -> argparse.Namespace:
-	parser = argparse.ArgumentParser(description="Create a new live parameter version for a simulation")
+	parser = argparse.ArgumentParser(
+		description="Update key-value parameters for a simulation",
+	)
 	parser.add_argument("simulation_id", help="Simulation identifier")
-	parser.add_argument("--days-per-round", type=int)
-	parser.add_argument("--base-demand-business", type=float)
-	parser.add_argument("--base-demand-leisure", type=float)
-	parser.add_argument("--base-fuel-cost-per-flight", type=float)
-	parser.add_argument("--base-fixed-cost-per-round", type=float)
-	parser.add_argument("--base-variable-cost-per-pax", type=float)
-	parser.add_argument("--brand-effectiveness", type=float)
+	parser.add_argument(
+		"--set",
+		nargs=2,
+		metavar=("KEY", "VALUE"),
+		action="append",
+		dest="param_updates",
+		help="Set a parameter: --set total_demand_passengers 130000",
+	)
 	parser.add_argument(
 		"--root",
 		type=Path,
@@ -212,21 +211,18 @@ def _parse_cli_args() -> argparse.Namespace:
 
 def main() -> None:
 	args = _parse_cli_args()
+	if not args.param_updates:
+		raise SystemExit("At least one --set KEY VALUE is required")
+	updates = {key: value for key, value in args.param_updates}
 	result = change_parameters_live(
 		simulation_id=args.simulation_id,
+		updates=updates,
 		admin_user_id=args.admin_user_id,
 		root_dir=args.root,
-		days_per_round=args.days_per_round,
-		base_demand_business=args.base_demand_business,
-		base_demand_leisure=args.base_demand_leisure,
-		base_fuel_cost_per_flight=args.base_fuel_cost_per_flight,
-		base_fixed_cost_per_round=args.base_fixed_cost_per_round,
-		base_variable_cost_per_pax=args.base_variable_cost_per_pax,
-		brand_effectiveness=args.brand_effectiveness,
 	)
 	print(
-		f"Updated parameters for {result.simulation_id}: new_version={result.new_version}, "
-		f"changed_fields={','.join(result.changed_fields)}"
+		f"Updated parameters for {result.simulation_id}: "
+		f"changed_keys={','.join(result.changed_keys)}"
 	)
 
 

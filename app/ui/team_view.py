@@ -18,10 +18,10 @@ from app.ui.components import (
 	TEAM_BUTTON_SHOW_TEAM_DECISION_HISTORY,
 	TEAM_BUTTON_SHOW_TEAM_RESULTS,
 	TEAM_FORM_SUBMIT_DECISION,
-	TEAM_LABEL_BRAND_INVESTMENT,
+	TEAM_LABEL_BRANDING_LEVEL,
 	TEAM_LABEL_FLIGHTS_PER_DAY,
-	TEAM_LABEL_PRICE_ECONOMY,
-	TEAM_LABEL_PRICE_PREMIUM,
+	TEAM_LABEL_PRICING_POSTURE,
+	TEAM_LABEL_PRODUCT_STRATEGY,
 	TEAM_LABEL_ROUND_FILTER,
 	TEAM_LABEL_ROUND_OPTIONAL_OPEN,
 	TEAM_LABEL_SECTION,
@@ -97,10 +97,10 @@ def render_team_view() -> None:
 			with render_card(st, TEAM_SUBHEADER_ENTER_DECISION):
 				with st.form("team_decision_form"):
 					round_raw = st.text_input(TEAM_LABEL_ROUND_OPTIONAL_OPEN, value="")
-					flights_per_day = st.number_input(TEAM_LABEL_FLIGHTS_PER_DAY, min_value=1, value=6, step=1)
-					price_premium = st.number_input(TEAM_LABEL_PRICE_PREMIUM, min_value=0.01, value=220.0)
-					price_economy = st.number_input(TEAM_LABEL_PRICE_ECONOMY, min_value=0.01, value=160.0)
-					brand_investment = st.number_input(TEAM_LABEL_BRAND_INVESTMENT, min_value=0.0, value=1000.0)
+					flights_per_day = st.number_input(TEAM_LABEL_FLIGHTS_PER_DAY, min_value=0, max_value=5, value=3, step=1)
+					pricing_posture = st.selectbox(TEAM_LABEL_PRICING_POSTURE, options=["Premium", "Match", "Discount"], index=1)
+					branding_level = st.selectbox(TEAM_LABEL_BRANDING_LEVEL, options=["Low", "Medium", "High"], index=1)
+					product_strategy = st.selectbox(TEAM_LABEL_PRODUCT_STRATEGY, options=["Premium Cabin", "Basic Economy", "Digital/Loyalty", "None"], index=3)
 					submit_decision = st.form_submit_button(TEAM_FORM_SUBMIT_DECISION)
 
 				if submit_decision:
@@ -110,9 +110,9 @@ def render_team_view() -> None:
 							simulation_id=simulation_id,
 							team_id=team_id,
 							flights_per_day=int(flights_per_day),
-							price_premium=float(price_premium),
-							price_economy=float(price_economy),
-							brand_investment=float(brand_investment),
+							pricing_posture=pricing_posture,
+							branding_level=branding_level,
+							product_strategy=product_strategy,
 							round_number=round_number,
 							root_dir=root_dir,
 						)
