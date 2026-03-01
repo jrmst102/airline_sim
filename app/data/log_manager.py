@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import csv
+import io
 from datetime import datetime, timezone
-from pathlib import Path
+
+from app.data.csv_manager import load_csv, write_csv, csv_exists
 
 
 LOG_HEADERS = [
@@ -31,21 +33,18 @@ def _next_event_id(log_rows: list[dict[str, str]]) -> str:
 
 
 def append_log_event(
-	simulation_dir: Path,
 	simulation_id: str,
 	actor_user_id: str,
 	action: str,
 	details: str,
 	event_at_utc: str | None = None,
+	# Legacy parameter — accepted but ignored when using storage layer
+	simulation_dir=None,
 ) -> None:
-	log_csv = simulation_dir / "log.csv"
 	rows: list[dict[str, str]] = []
 
-	if log_csv.exists():
-		with log_csv.open("r", newline="", encoding="utf-8") as read_handle:
-			reader = csv.DictReader(read_handle)
-			if reader.fieldnames:
-				rows = list(reader)
+	if csv_exists(simulation_id, "log.csv"):
+		_, rows = load_csv(simulation_id, "log.csv")
 
 	timestamp = event_at_utc or _utc_now()
 	rows.append(
@@ -59,8 +58,4 @@ def append_log_event(
 		}
 	)
 
-	with log_csv.open("w", newline="", encoding="utf-8") as write_handle:
-		writer = csv.DictWriter(write_handle, fieldnames=LOG_HEADERS)
-		writer.writeheader()
-		if rows:
-			writer.writerows(rows)
+	write_csv(simulation_id, "log.csv", LOG_HEADERS, rows)

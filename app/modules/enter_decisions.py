@@ -14,13 +14,13 @@ Decision variables (Case Appendix):
 from __future__ import annotations
 
 import argparse
-import csv
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from app.core.state_machine import can_enter_decisions, validate_round_state, validate_simulation_state
+from app.data.csv_manager import load_csv, write_csv, csv_exists
 from app.data.log_manager import append_log_event
 
 
@@ -49,29 +49,6 @@ class EnterDecisionResult:
 
 def _utc_now() -> str:
 	return datetime.now(timezone.utc).isoformat()
-
-
-def _simulation_path(root_dir: Path | str, simulation_id: str) -> Path:
-	return Path(root_dir) / simulation_id
-
-
-def _load_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-	if not path.exists():
-		raise FileNotFoundError(f"Required file not found: {path}")
-	with path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		fieldnames = reader.fieldnames
-		if not fieldnames:
-			raise ValueError(f"Missing CSV header in {path}")
-		return fieldnames, list(reader)
-
-
-def _write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
-	with path.open("w", newline="", encoding="utf-8") as handle:
-		writer = csv.DictWriter(handle, fieldnames=fieldnames)
-		writer.writeheader()
-		if rows:
-			writer.writerows(rows)
 
 
 def _as_int(value: str, default: int = 0) -> int:
@@ -108,18 +85,18 @@ def _validate_inputs(
 		)
 
 
-def _ensure_simulation_started(simulation_csv: Path) -> None:
-	_, sim_rows = _load_csv(simulation_csv)
+def _ensure_simulation_started(simulation_id: str) -> None:
+	_, sim_rows = load_csv(simulation_id, "simulation.csv")
 	if len(sim_rows) != 1:
-		raise ValueError(f"Expected exactly 1 simulation row in {simulation_csv}")
+		raise ValueError(f"Expected exactly 1 simulation row")
 	status = sim_rows[0].get("status", "")
 	validate_simulation_state(status)
 	if status != "STARTED":
 		raise ValueError(f"Simulation must be STARTED to enter decisions (found '{status}')")
 
 
-def _ensure_team_active(teams_csv: Path, team_id: str) -> None:
-	_, team_rows = _load_csv(teams_csv)
+def _ensure_team_active(simulation_id: str, team_id: str) -> None:
+	_, team_rows = load_csv(simulation_id, "teams.csv")
 	matched = next((row for row in team_rows if row.get("team_id") == team_id), None)
 	if matched is None:
 		raise ValueError(f"Unknown team_id '{team_id}'")
@@ -127,8 +104,8 @@ def _ensure_team_active(teams_csv: Path, team_id: str) -> None:
 		raise ValueError(f"Team '{team_id}' is not active")
 
 
-def _max_flights_per_day(airplane_types_csv: Path) -> int:
-	_, plane_rows = _load_csv(airplane_types_csv)
+def _max_flights_per_day(simulation_id: str) -> int:
+	_, plane_rows = load_csv(simulation_id, "airplane_types.csv")
 	if not plane_rows:
 		raise ValueError("No airplane types configured")
 	max_flights = max(_as_int(row.get("max_flights_per_day", "0")) for row in plane_rows)
@@ -137,8 +114,8 @@ def _max_flights_per_day(airplane_types_csv: Path) -> int:
 	return max_flights
 
 
-def _resolve_open_round(rounds_csv: Path, requested_round: int | None) -> int:
-	_, round_rows = _load_csv(rounds_csv)
+def _resolve_open_round(simulation_id: str, requested_round: int | None) -> int:
+	_, round_rows = load_csv(simulation_id, "rounds.csv")
 	if not round_rows:
 		raise ValueError("No rounds configured")
 
@@ -191,25 +168,18 @@ def enter_decision(
 		product_strategy=product_strategy,
 	)
 
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	simulation_csv = simulation_dir / "simulation.csv"
-	rounds_csv = simulation_dir / "rounds.csv"
-	teams_csv = simulation_dir / "teams.csv"
-	airplane_types_csv = simulation_dir / "airplane_types.csv"
-	decisions_csv = simulation_dir / "decisions.csv"
+	_ensure_simulation_started(simulation_id)
+	_ensure_team_active(simulation_id, team_id)
 
-	_ensure_simulation_started(simulation_csv)
-	_ensure_team_active(teams_csv, team_id)
-
-	max_flights = _max_flights_per_day(airplane_types_csv)
+	max_flights = _max_flights_per_day(simulation_id)
 	if flights_per_day > max_flights:
 		raise ValueError(
 			f"flights_per_day cannot exceed configured max_flights_per_day ({max_flights})"
 		)
 
-	effective_round = _resolve_open_round(rounds_csv, requested_round=round_number)
+	effective_round = _resolve_open_round(simulation_id, requested_round=round_number)
 
-	fieldnames, rows = _load_csv(decisions_csv)
+	fieldnames, rows = load_csv(simulation_id, "decisions.csv")
 	submitted_at_utc = _utc_now()
 
 	new_row = {
@@ -240,9 +210,8 @@ def enter_decision(
 	else:
 		rows.append(new_row)
 
-	_write_csv(decisions_csv, fieldnames, rows)
+	_write_csv_result = write_csv(simulation_id, "decisions.csv", fieldnames, rows)
 	append_log_event(
-		simulation_dir=simulation_dir,
 		simulation_id=simulation_id,
 		actor_user_id=team_id,
 		action="UPDATE_DECISION" if was_update else "ENTER_DECISION",
