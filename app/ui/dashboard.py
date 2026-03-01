@@ -318,15 +318,22 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
             table["Passengers"] = pd.to_numeric(
                 table["Passengers"], errors="coerce"
             ).apply(lambda v: f"{v:,.0f}" if pd.notna(v) else "\u2014")
-        for col in ("Revenue", "Cost", "Profit"):
+        for col in ("Revenue", "Variable Cost", "Fixed Cost", "Branding Cost",
+                     "Product Cost", "Total Cost", "Profit"):
             if col in table.columns:
                 table[col] = pd.to_numeric(table[col], errors="coerce").apply(
                     lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014"
                 )
-        if "Market Share" in table.columns:
-            table["Market Share"] = pd.to_numeric(
-                table["Market Share"], errors="coerce"
-            ).apply(lambda v: f"{v:.1%}" if pd.notna(v) else "\u2014")
+        for col in ("Load Factor", "Mkt Share (Vol)", "Mkt Share (Profit)"):
+            if col in table.columns:
+                table[col] = pd.to_numeric(table[col], errors="coerce").apply(
+                    lambda v: f"{v:.1%}" if pd.notna(v) else "\u2014"
+                )
+        for col in ("CSI", "OEI"):
+            if col in table.columns:
+                table[col] = pd.to_numeric(table[col], errors="coerce").apply(
+                    lambda v: f"{v:.1f}" if pd.notna(v) else "\u2014"
+                )
 
         return table.reset_index(drop=True)
 
@@ -362,12 +369,16 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
             if profit_col is not None:
                 profit_n = pd.to_numeric(teams_df[profit_col], errors="coerce") * 1_000_000
                 est_cost = est_rev - profit_n
-                cols["Cost"] = est_cost.apply(lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014")
+                cols["Total Cost"] = est_cost.apply(lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014")
             else:
-                cols["Cost"] = "\u2014"
+                cols["Total Cost"] = "\u2014"
         else:
             cols["Revenue"] = "\u2014"
-            cols["Cost"] = "\u2014"
+            cols["Total Cost"] = "\u2014"
+
+        # Placeholder columns not available in baseline
+        for placeholder in ("Variable Cost", "Fixed Cost", "Branding Cost", "Product Cost"):
+            cols[placeholder] = "\u2014"
 
         # Baseline profit
         if profit_col is not None:
@@ -377,14 +388,21 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
         else:
             cols["Profit"] = "\u2014"
 
+        # Load factor placeholder
+        cols["Load Factor"] = "\u2014"
+
         # Market share
         ms_col = next((c for c in teams_df.columns if c.strip().lower() == "baseline_volume_share"), None)
         if ms_col is not None:
-            cols["Market Share"] = pd.to_numeric(teams_df[ms_col], errors="coerce").apply(
+            cols["Mkt Share (Vol)"] = pd.to_numeric(teams_df[ms_col], errors="coerce").apply(
                 lambda v: f"{v:.1%}" if pd.notna(v) else "\u2014"
             )
         else:
-            cols["Market Share"] = "\u2014"
+            cols["Mkt Share (Vol)"] = "\u2014"
+
+        cols["Mkt Share (Profit)"] = "\u2014"
+        cols["CSI"] = "\u2014"
+        cols["OEI"] = "\u2014"
 
         table = pd.DataFrame(cols)
         return table.reset_index(drop=True)
