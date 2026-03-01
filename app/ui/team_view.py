@@ -630,8 +630,8 @@ def main() -> None:
                     )
 
             show_cols = []
-            for c in ["team_name", "team_id", "flights_per_day", "pricing_posture",
-                       "branding_level", "product_strategy", "submitted_at_utc"]:
+            for c in ["team_name", "team_id", "flights_per_day", "price_business",
+                       "price_leisure", "branding_level", "product_strategy", "submitted_at_utc"]:
                 m = next((col for col in display_df.columns if col.strip().lower() == c), None)
                 if m is not None:
                     show_cols.append(m)
@@ -641,7 +641,8 @@ def main() -> None:
                     "team_name": "Team",
                     "team_id": "ID",
                     "flights_per_day": "Flights/Day",
-                    "pricing_posture": "Pricing",
+                    "price_business": "Biz Price",
+                    "price_leisure": "Lei Price",
                     "branding_level": "Branding",
                     "product_strategy": "Product",
                     "submitted_at_utc": "Submitted",

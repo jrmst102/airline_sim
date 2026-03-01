@@ -1,8 +1,8 @@
 """
 Smoke test – full simulation lifecycle
 =======================================
-Uses the 6-airline case setup (team IDs A–F) with categorical decisions
-(pricing_posture, branding_level, product_strategy).
+Uses the 6-airline case setup (team IDs A–F) with numeric price
+decisions (price_business, price_leisure, branding_level, product_strategy).
 """
 
 import csv
@@ -42,17 +42,19 @@ def _read_rows(path: Path) -> list[dict[str, str]]:
 def _enter_round_decisions(
     simulation_id: str,
     root: Path,
-    postures: list[str] | None = None,
+    prices: list[tuple[float, float]] | None = None,
 ) -> None:
     """Enter one decision per active team. Uses sensible defaults."""
-    if postures is None:
-        postures = ["Match"] * len(TEAM_IDS)
-    for tid, posture in zip(TEAM_IDS, postures):
+    if prices is None:
+        # Default to Match-level prices for all teams
+        prices = [(360.0, 180.0)] * len(TEAM_IDS)
+    for tid, (biz_price, lei_price) in zip(TEAM_IDS, prices):
         enter_decision(
             simulation_id=simulation_id,
             team_id=tid,
             flights_per_day=3,
-            pricing_posture=posture,
+            price_business=biz_price,
+            price_leisure=lei_price,
             branding_level="Medium",
             product_strategy="None",
             root_dir=root,
@@ -90,7 +92,14 @@ class SmokeSimulationFlowTest(unittest.TestCase):
             _enter_round_decisions(
                 simulation_id,
                 root,
-                postures=["Premium", "Match", "Discount", "Match", "Discount", "Premium"],
+                prices=[
+                    (450.0, 220.0),   # A – Premium level
+                    (360.0, 180.0),   # B – Match level
+                    (290.0, 140.0),   # C – Discount level
+                    (360.0, 180.0),   # D – Match level
+                    (290.0, 140.0),   # E – Discount level
+                    (450.0, 220.0),   # F – Premium level
+                ],
             )
             move_result_round_2 = move_next_round(
                 simulation_id=simulation_id, root_dir=root,
