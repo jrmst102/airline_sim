@@ -38,7 +38,11 @@ DAYS_PER_MONTH         = 30      # Monthly rounds
 # ── Discount-penalty rule (Case Appendix) ──────────────────────────────
 DISCOUNT_PENALTY_THRESHOLD = 3   # min airlines choosing Discount
 DISCOUNT_PENALTY_RATE      = 0.08
-
+# ── Fare multiplier (Case Appendix) ────────────────────────────
+# JFK–BOS is a high-frequency shuttle corridor.  Each passenger
+# purchases an average of ~3 tickets per month, so monthly revenue
+# per passenger = fare × fare_multiplier.
+FARE_MULTIPLIER = 3.0
 # ── Pricing matrix (fare by posture, Case Appendix) ───────────────────
 FARES: dict[str, dict[str, int]] = {
     "Premium":  {"business": 450, "leisure": 220},
@@ -429,6 +433,9 @@ def _build_parameter_rows() -> list[dict[str, str]]:
          "Monthly cost – Digital/Loyalty"),
         ("product_cost_none",            str(PRODUCT_COSTS["None"]),
          "Monthly cost – None"),
+        # ── Fare multiplier (Case Appendix) ──
+        ("fare_multiplier",              str(FARE_MULTIPLIER),
+         "Avg monthly trips per passenger (JFK–BOS shuttle corridor)"),
     ]
     return [{"key": k, "value": v, "notes": n} for k, v, n in entries]
 

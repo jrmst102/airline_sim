@@ -37,6 +37,7 @@ class SimulationParameters:
 	discount_penalty_rate: float       # 0.08
 	branding_costs: dict[str, int]     # level -> monthly cost
 	product_costs: dict[str, int]      # strategy -> monthly cost
+	fare_multiplier: float             # avg monthly trips per passenger (Case Appendix)
 
 
 @dataclass(frozen=True)
@@ -115,6 +116,7 @@ def build_parameters_from_csv(params: dict[str, str]) -> SimulationParameters:
 		discount_penalty_rate=get_parameter_float(params, "discount_penalty_rate"),
 		branding_costs=branding_costs,
 		product_costs=product_costs,
+		fare_multiplier=get_parameter_float(params, "fare_multiplier"),
 	)
 
 
@@ -221,12 +223,14 @@ def compute_round_results(
 		tot_pax[d.team_id] = biz_carried + lei_carried
 
 	# ── Revenue ───────────────────────────────────────────────────
+	# Fares are per-ticket prices; multiply by fare_multiplier
+	# (avg monthly trips per passenger on this corridor).
 	revenues: dict[str, float] = {}
 	for d in decisions:
 		rev = float(
 			biz_pax[d.team_id] * biz_fares[d.team_id]
 			+ lei_pax[d.team_id] * lei_fares[d.team_id]
-		)
+		) * parameters.fare_multiplier
 		revenues[d.team_id] = rev
 
 	# ── Costs (Case Appendix) ─────────────────────────────────────
