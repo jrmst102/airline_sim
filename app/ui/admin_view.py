@@ -10,9 +10,16 @@ Run with:
 from __future__ import annotations
 
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# Ensure project root is on sys.path so `from app.…` imports work
+# regardless of how Streamlit is launched.
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
 
 import pandas as pd
 import streamlit as st
