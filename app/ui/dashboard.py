@@ -1,62 +1,104 @@
+"""
+Airlines – Competitive Strategy Simulation Dashboard
+=====================================================
+A single-page Streamlit dashboard that reads simulation state from local CSV
+files and displays simulation status, current round, and per-team stats.
+
+Run with:
+    streamlit run app/ui/dashboard.py
+"""
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import os
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 AUTO_REFRESH_SECONDS = 60
+PAGE_TITLE = "Airlines - Competitive Strategy Simulation"
+COPYRIGHT = "Copyright 2026 by Dr. Jose Mendoza"
+
+# Logo lives alongside other images shipped with the app.  Fall back to the
+# spec-expected ./assets/logo.png path when the image isn't found there.
+_LOGO_CANDIDATES = [
+    Path(__file__).resolve().parents[1] / "images" / "sim_logo.png",
+    Path("./assets/logo.png"),
+]
 
 
-def _load_local_css() -> None:
-    base_dir = Path(__file__).resolve().parent
-    css_parts: list[str] = []
-
-    for name in ("theme.css", "styles.css"):
-        p = base_dir / name
-        if p.exists():
-            css_parts.append(p.read_text(encoding="utf-8"))
-
-    css_parts.append(
-        """
-        section[data-testid="stSidebar"] { display: none !important; }
-        [data-testid="collapsedControl"] { display: none !important; }
-
-        .air-header { left: 0 !important; }
-
-        .main .block-container {
-            max-width: 1100px !important;
-            padding-top: 120px !important;
-        }
-
-        div[data-testid="stMetricLabel"] p,
-        div[data-testid="stMetricLabel"] label {
-            color: #e5e7eb !important;
-            opacity: 1 !important;
-        }
-        div[data-testid="stMetricValue"] { color: #ffffff !important; }
-
-        .status-card {
-            margin-top: 10px;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 12px;
-            padding: 12px 14px;
-            background: rgba(255,255,255,0.04);
-            color: #e5e7eb;
-        }
-        .copyright {
-            margin-top: 22px;
-            text-align: center;
-            color: #9ca3af;
-            font-size: 0.85rem;
-        }
-        """
-    )
-
-    st.markdown(f"<style>{''.join(css_parts)}</style>", unsafe_allow_html=True)
+def _data_root() -> Path:
+    """Return the data root directory, respecting the DATA_ROOT env var."""
+    return Path(os.environ.get("DATA_ROOT", "."))
 
 
+def _sim_dir(sim_id: str) -> Path:
+    """Return the directory for a given simulation ID."""
+    return _data_root() / "simulations" / sim_id
+
+
+# ---------------------------------------------------------------------------
+# CSS – hide sidebar, centre content, colour badges
+# ---------------------------------------------------------------------------
+_CUSTOM_CSS = """
+<style>
+/* ── Hide Streamlit sidebar & hamburger ────────────────────────── */
+section[data-testid="stSidebar"]  { display: none !important; }
+[data-testid="collapsedControl"]  { display: none !important; }
+
+/* ── Centered, readable layout ─────────────────────────────────── */
+.main .block-container {
+    max-width: 860px !important;
+    padding-top: 16px !important;
+    padding-bottom: 16px !important;
+}
+
+/* ── Status badge ──────────────────────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.5px;
+}
+.badge-started  { background: #16a34a; color: #fff; }
+.badge-created  { background: #6b7280; color: #fff; }
+.badge-stopped  { background: #dc2626; color: #fff; }
+.badge-notfound { background: #f97316; color: #fff; }
+
+/* ── Round card ────────────────────────────────────────────────── */
+.round-card {
+    text-align: center;
+    padding: 12px;
+    border: 1px solid rgba(128,128,128,0.25);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+}
+.round-card .label { font-size: 0.85rem; color: #9ca3af; margin-bottom: 2px; }
+.round-card .value { font-size: 2.2rem; font-weight: 800; color: #2563eb; }
+
+/* ── Footer ────────────────────────────────────────────────────── */
+.footer {
+    margin-top: 24px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(128,128,128,0.2);
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.85rem;
+}
+</style>
+"""
+
+
+# ---------------------------------------------------------------------------
+# Auto-refresh (pure HTML meta-refresh – no extra dependency)
+# ---------------------------------------------------------------------------
 def _auto_refresh() -> None:
     st.markdown(
         f"<meta http-equiv='refresh' content='{AUTO_REFRESH_SECONDS}'>",
@@ -64,167 +106,273 @@ def _auto_refresh() -> None:
     )
 
 
-def _discover_csvs() -> list[Path]:
-    root = Path(__file__).resolve().parents[2]
-    candidates = [root / "data", root / "output", root]
-    files: list[Path] = []
-    for d in candidates:
-        if d.exists():
-            files.extend(sorted(d.glob("*.csv")))
-
-    seen = set()
-    unique = []
-    for f in files:
-        key = str(f.resolve())
-        if key not in seen:
-            seen.add(key)
-            unique.append(f)
-    return unique
-
-
-def _read_all_rows(csv_files: list[Path]) -> tuple[int, int | None, datetime | None]:
-    total_rows = 0
-    max_round: int | None = None
-    latest_mtime: datetime | None = None
-
-    for f in csv_files:
-        try:
-            df = pd.read_csv(f)
-            total_rows += len(df)
-
-            round_col = next((c for c in df.columns if c.strip().lower() == "round"), None)
-            if round_col is not None:
-                vals = pd.to_numeric(df[round_col], errors="coerce").dropna()
-                if not vals.empty:
-                    candidate = int(vals.max())
-                    max_round = candidate if max_round is None else max(max_round, candidate)
-
-            mtime = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc)
-            latest_mtime = mtime if latest_mtime is None else max(latest_mtime, mtime)
-        except Exception:
-            continue
-
-    return total_rows, max_round, latest_mtime
-
-
-def _to_bool(value) -> bool | None:
-    if isinstance(value, bool):
-        return value
-    if pd.isna(value):
-        return None
-    s = str(value).strip().lower()
-    if s in {"1", "true", "yes", "y", "started", "running"}:
-        return True
-    if s in {"0", "false", "no", "n", "stopped", "not_started", "idle"}:
-        return False
+# ---------------------------------------------------------------------------
+# CSV helpers – robust reads that never crash
+# ---------------------------------------------------------------------------
+def _read_csv_safe(path: Path) -> pd.DataFrame | None:
+    """Read a CSV file and return a DataFrame, or None on any error."""
+    try:
+        if path.exists():
+            return pd.read_csv(path)
+    except Exception:
+        pass
     return None
 
 
-def _simulation_started(csv_files: list[Path], detected_round: int | None) -> tuple[bool, str]:
-    # Prefer explicit state file if present
-    state_candidates = [
-        p for p in csv_files
-        if p.name.lower() in {"simulation_state.csv", "sim_state.csv", "simulation.csv"}
-    ]
+def _determine_status(sim_path: Path) -> str:
+    """Return one of CREATED, STARTED, STOPPED, NOT_FOUND."""
+    if not sim_path.exists():
+        return "NOT_FOUND"
 
-    state_cols_started = {"started", "is_started", "simulation_started", "running", "is_running"}
-    state_cols_round = {"round", "current_round"}
+    sim_df = _read_csv_safe(sim_path / "simulation.csv")
+    if sim_df is not None and not sim_df.empty:
+        # Look for an explicit status column
+        status_col = next(
+            (c for c in sim_df.columns if c.strip().lower() == "status"), None
+        )
+        if status_col is not None:
+            raw = str(sim_df.iloc[-1][status_col]).strip().upper()
+            if raw in {"STARTED", "RUNNING"}:
+                return "STARTED"
+            if raw in {"STOPPED", "COMPLETED", "ARCHIVED", "ENDED"}:
+                return "STOPPED"
+            if raw in {"CREATED", "SETUP"}:
+                return "CREATED"
 
-    for f in state_candidates:
-        try:
-            df = pd.read_csv(f)
-            if df.empty:
-                continue
-            last = df.iloc[-1]
+    # Fallback – infer from rounds.csv
+    rounds_df = _read_csv_safe(sim_path / "rounds.csv")
+    if rounds_df is not None and not rounds_df.empty:
+        status_col = next(
+            (c for c in rounds_df.columns if c.strip().lower() == "status"), None
+        )
+        if status_col is not None:
+            opened = rounds_df[
+                rounds_df[status_col].str.strip().str.upper().isin({"OPEN", "CLOSED"})
+            ]
+            if not opened.empty:
+                return "STARTED"
 
-            started_val = None
-            round_val = None
-
-            for c in df.columns:
-                cl = c.strip().lower()
-                if cl in state_cols_started:
-                    started_val = _to_bool(last[c])
-                if cl in state_cols_round:
-                    num = pd.to_numeric(pd.Series([last[c]]), errors="coerce").dropna()
-                    if not num.empty:
-                        round_val = int(num.iloc[0])
-
-            if started_val is True:
-                return True, f"Started (from {f.name})"
-            if started_val is False and (round_val is None or round_val <= 0):
-                return False, f"Not started (from {f.name})"
-        except Exception:
-            continue
-
-    # Fallback: infer from rounds in result-like CSVs
-    if detected_round is not None and detected_round > 0:
-        return True, "Started (inferred from round data)"
-
-    return False, "Simulation has not started yet"
+    return "CREATED"
 
 
+def _current_round(sim_path: Path) -> int:
+    """Return the latest round number, or 0 if unavailable."""
+    # Prefer simulation.csv current_round field
+    sim_df = _read_csv_safe(sim_path / "simulation.csv")
+    if sim_df is not None and not sim_df.empty:
+        cr_col = next(
+            (c for c in sim_df.columns if c.strip().lower() == "current_round"), None
+        )
+        if cr_col is not None:
+            val = pd.to_numeric(
+                pd.Series([sim_df.iloc[-1][cr_col]]), errors="coerce"
+            ).dropna()
+            if not val.empty:
+                return int(val.iloc[0])
+
+    # Fallback – max round_number in rounds.csv
+    rounds_df = _read_csv_safe(sim_path / "rounds.csv")
+    if rounds_df is None or rounds_df.empty:
+        return 0
+
+    rn_col = next(
+        (c for c in rounds_df.columns if c.strip().lower() == "round_number"), None
+    )
+    if rn_col is None:
+        return 0
+
+    vals = pd.to_numeric(rounds_df[rn_col], errors="coerce").dropna()
+    return int(vals.max()) if not vals.empty else 0
+
+
+def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
+    """
+    Build a display-ready team stats DataFrame.
+
+    Prefers round_results_team.csv filtered to *latest_round*.
+    Falls back to teams.csv with empty stat columns.
+    """
+    teams_df = _read_csv_safe(sim_path / "teams.csv")
+    results_df = _read_csv_safe(sim_path / "round_results_team.csv")
+
+    # Column name mappings (source -> display)
+    desired_cols = {
+        "team_name": "Team Name",
+        "team_id": "Team ID",
+        "round_number": "Round",
+        "revenue": "Revenue",
+        "cost": "Cost",
+        "profit": "Profit",
+        "market_share_volume": "Market Share",
+    }
+
+    if results_df is not None and not results_df.empty:
+        # Filter to the latest round if possible
+        rn_col = next(
+            (c for c in results_df.columns if c.strip().lower() == "round_number"),
+            None,
+        )
+        if rn_col and latest_round > 0:
+            filtered = results_df[
+                pd.to_numeric(results_df[rn_col], errors="coerce") == latest_round
+            ]
+            if not filtered.empty:
+                results_df = filtered
+
+        # Merge team names from teams.csv if the column isn't already present
+        if (
+            teams_df is not None
+            and "team_name" not in results_df.columns
+            and "team_id" in results_df.columns
+            and "team_id" in teams_df.columns
+        ):
+            results_df = results_df.merge(
+                teams_df[["team_id", "team_name"]].drop_duplicates(),
+                on="team_id",
+                how="left",
+            )
+
+        # Select & rename columns that exist
+        out_cols: dict[str, str] = {}
+        for src, dst in desired_cols.items():
+            match = next(
+                (c for c in results_df.columns if c.strip().lower() == src), None
+            )
+            if match is not None:
+                out_cols[match] = dst
+
+        if out_cols:
+            table = results_df[list(out_cols.keys())].rename(columns=out_cols)
+        else:
+            table = results_df.copy()
+
+        # Sort by Profit desc if available
+        if "Profit" in table.columns:
+            table = table.sort_values("Profit", ascending=False)
+        elif "Team Name" in table.columns:
+            table = table.sort_values("Team Name")
+
+        # Format money & percentage columns
+        for col in ("Revenue", "Cost", "Profit"):
+            if col in table.columns:
+                table[col] = pd.to_numeric(table[col], errors="coerce").apply(
+                    lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014"
+                )
+        if "Market Share" in table.columns:
+            table["Market Share"] = pd.to_numeric(
+                table["Market Share"], errors="coerce"
+            ).apply(lambda v: f"{v:.1%}" if pd.notna(v) else "\u2014")
+
+        return table.reset_index(drop=True)
+
+    # Fallback: teams only, no results yet
+    if teams_df is not None and not teams_df.empty:
+        cols_pick: dict[str, str] = {}
+        for src, dst in desired_cols.items():
+            match = next(
+                (c for c in teams_df.columns if c.strip().lower() == src), None
+            )
+            if match is not None:
+                cols_pick[match] = dst
+
+        if cols_pick:
+            table = teams_df[list(cols_pick.keys())].rename(columns=cols_pick)
+        else:
+            table = teams_df.copy()
+
+        for col in ("Round", "Revenue", "Cost", "Profit", "Market Share"):
+            if col not in table.columns:
+                table[col] = "\u2014"
+
+        return table.reset_index(drop=True)
+
+    return pd.DataFrame()
+
+
+# ---------------------------------------------------------------------------
+# Badge rendering
+# ---------------------------------------------------------------------------
+_BADGE_CLASS = {
+    "STARTED": "badge-started",
+    "CREATED": "badge-created",
+    "STOPPED": "badge-stopped",
+    "NOT_FOUND": "badge-notfound",
+}
+
+
+def _render_badge(status: str) -> str:
+    cls = _BADGE_CLASS.get(status, "badge-notfound")
+    return f'<span class="badge {cls}">{status}</span>'
+
+
+# ---------------------------------------------------------------------------
+# Main dashboard
+# ---------------------------------------------------------------------------
 def main() -> None:
-    st.set_page_config(page_title="Simulation Dashboard", layout="wide")
-    _load_local_css()
+    st.set_page_config(page_title=PAGE_TITLE, layout="wide")
+    st.markdown(_CUSTOM_CSS, unsafe_allow_html=True)
     _auto_refresh()
 
-    st.markdown(
-        """
-        <div class="air-header">
-          <div class="title">Simulation Dashboard</div>
-          <div class="sub">Status-only view</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    # ── Logo ───────────────────────────────────────────────────────
+    for logo_path in _LOGO_CANDIDATES:
+        if logo_path.exists():
+            st.image(str(logo_path), width=100)
+            break
 
-    if st.button("Refresh", type="primary"):
-        st.rerun()
+    # ── Title ──────────────────────────────────────────────────────
+    st.title(PAGE_TITLE)
 
-    csv_files = _discover_csvs()
-    total_rows, round_number, latest_mtime = _read_all_rows(csv_files)
-    started, start_reason = _simulation_started(csv_files, round_number)
+    # Hard-coded single simulation
+    sim_id = "sim_001"
+    sim_path = _sim_dir(sim_id)
 
-    # Gate: show clear waiting state until simulation starts
-    if not started:
-        st.info(f"{start_reason}. Click **Refresh** after admin starts the simulation.")
+    # ── Status & Round ─────────────────────────────────────────────
+    status = _determine_status(sim_path)
+    latest_round = _current_round(sim_path)
+
+    st.markdown("---")
+
+    col_status, col_round = st.columns(2)
+    with col_status:
+        st.subheader("Simulation Status")
+        st.markdown(_render_badge(status), unsafe_allow_html=True)
+    with col_round:
         st.markdown(
-            f"<div class='copyright'>© {datetime.now().year} Airline Simulation</div>",
+            f"""
+            <div class="round-card">
+                <div class="label">Current Round</div>
+                <div class="value">{latest_round}</div>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
-        return
 
-    now = datetime.now(timezone.utc)
-    age_seconds = int((now - latest_mtime).total_seconds()) if latest_mtime else None
+    st.markdown("---")
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Round", "-" if round_number is None else round_number)
-    c2.metric("CSV Files", len(csv_files))
-    c3.metric("Total Rows", total_rows)
-    c4.metric("Data Age (sec)", "-" if age_seconds is None else age_seconds)
+    # ── Team Stats Table ───────────────────────────────────────────
+    st.subheader("Team Stats")
 
-    last_refresh_local = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    latest_data_local = (
-        latest_mtime.astimezone().strftime("%Y-%m-%d %H:%M:%S") if latest_mtime else "N/A"
-    )
-    st.markdown(
-        f"""
-        <div class="status-card">
-          <strong>Status:</strong> OK<br/>
-          <strong>Start check:</strong> {start_reason}<br/>
-          <strong>Last refresh:</strong> {last_refresh_local}<br/>
-          <strong>Latest data timestamp:</strong> {latest_data_local}<br/>
-          <strong>Auto-refresh:</strong> every {AUTO_REFRESH_SECONDS} seconds
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    if status == "NOT_FOUND":
+        st.warning(
+            f"Simulation folder **{sim_id}** not found under "
+            f'`{_data_root() / "simulations"}`.'
+        )
+    else:
+        table = _build_team_table(sim_path, latest_round)
+        if table.empty:
+            st.info("No team data available yet.")
+        else:
+            st.dataframe(table, use_container_width=True, hide_index=True)
 
-    st.markdown(
-        f"<div class='copyright'>© {datetime.now().year} Airline Simulation</div>",
-        unsafe_allow_html=True,
-    )
+    # ── Refresh button (above footer) ─────────────────────────────
+    st.markdown("")
+    if st.button("\U0001f504 Refresh", type="primary"):
+        st.rerun()
+
+    # ── Footer ─────────────────────────────────────────────────────
+    st.markdown(f'<div class="footer">{COPYRIGHT}</div>', unsafe_allow_html=True)
 
 
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     main()
