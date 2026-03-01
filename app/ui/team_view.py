@@ -26,7 +26,6 @@ import streamlit as st
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-AUTO_REFRESH_SECONDS = 60
 PAGE_TITLE = "Airlines - Competitive Strategy Simulation"
 COPYRIGHT = "Copyright 2026 by Dr. Jose Mendoza"
 SIM_ID = "sim_001"
@@ -120,13 +119,6 @@ section[data-testid="stSidebar"]  { display: none !important; }
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def _auto_refresh() -> None:
-    st.markdown(
-        f"<meta http-equiv='refresh' content='{AUTO_REFRESH_SECONDS}'>",
-        unsafe_allow_html=True,
-    )
-
-
 def _read_csv_safe(path: Path) -> pd.DataFrame | None:
     try:
         if path.exists():
@@ -292,11 +284,47 @@ DECISIONS_COLUMNS = [
 ]
 
 
+def _get_latest_decision_for_team(
+    sim_path: Path, team_id: str, up_to_round: int
+) -> dict[str, Any] | None:
+    """Return the most recent decision for *team_id* from any round <= *up_to_round*."""
+    decisions_df = _read_csv_safe(sim_path / "decisions.csv")
+    if decisions_df is None or decisions_df.empty:
+        return None
+    tid_col = next(
+        (c for c in decisions_df.columns if c.strip().lower() == "team_id"), None
+    )
+    rn_col = next(
+        (c for c in decisions_df.columns if c.strip().lower() == "round_number"), None
+    )
+    if tid_col is None or rn_col is None:
+        return None
+    decisions_df = decisions_df.copy()
+    decisions_df["_rn"] = pd.to_numeric(decisions_df[rn_col], errors="coerce")
+    match = decisions_df[
+        (decisions_df[tid_col] == team_id) & (decisions_df["_rn"] <= up_to_round)
+    ]
+    if match.empty:
+        return None
+    row = match.loc[match["_rn"].idxmax()]
+    return {
+        "flights_per_day": int(float(row.get("flights_per_day", 3))),
+        "price_business": float(row.get("price_business", DEFAULT_PRICE_BUSINESS)),
+        "price_leisure": float(row.get("price_leisure", DEFAULT_PRICE_LEISURE)),
+        "branding_level": str(row.get("branding_level", "Medium")),
+        "product_strategy": str(row.get("product_strategy", "None")),
+    }
+
+
 def _build_editable_decisions(sim_path: Path, round_number: int) -> pd.DataFrame:
-    """Build a DataFrame of current decisions for all 6 teams for st.data_editor."""
+    """Build a DataFrame of current decisions for all 6 teams for st.data_editor.
+
+    Priority: current-round decision > previous-round decision > hardcoded defaults.
+    """
     existing = _get_all_decisions_for_round(sim_path, round_number)
     rows: list[dict[str, Any]] = []
     for team_id in TEAM_OPTIONS:
+        # 1) Use existing decision for this round if available
         if existing is not None and "team_id" in existing.columns:
             match = existing[existing["team_id"] == team_id]
             if not match.empty:
@@ -310,6 +338,14 @@ def _build_editable_decisions(sim_path: Path, round_number: int) -> pd.DataFrame
                     "product_strategy": str(r.get("product_strategy", "None")),
                 })
                 continue
+
+        # 2) Carry forward from the most recent previous round
+        prev = _get_latest_decision_for_team(sim_path, team_id, round_number - 1)
+        if prev is not None:
+            rows.append({"team_id": team_id, **prev})
+            continue
+
+        # 3) Hardcoded defaults (first round, no prior data)
         rows.append({
             "team_id": team_id,
             "flights_per_day": 3,
@@ -521,7 +557,6 @@ def _render_badge(status: str) -> str:
 def main() -> None:
     st.set_page_config(page_title=PAGE_TITLE, layout="wide")
     st.markdown(_CUSTOM_CSS, unsafe_allow_html=True)
-    _auto_refresh()
 
     # ── Logo ───────────────────────────────────────────────────────
     for logo_path in _LOGO_CANDIDATES:
