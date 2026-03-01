@@ -467,18 +467,19 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
             (c for c in results_df.columns if c.strip().lower() == "round_number"), None
         )
         if rn_col:
-            filtered = results_df[
-                pd.to_numeric(results_df[rn_col], errors="coerce") == latest_round
-            ]
+            results_df["_rn_num"] = pd.to_numeric(results_df[rn_col], errors="coerce")
+            # Show the requested round if results exist; otherwise show the
+            # highest round that has results (i.e. the last closed round).
+            filtered = results_df[results_df["_rn_num"] == latest_round]
             if not filtered.empty:
-                results_df = filtered
+                results_df = filtered.drop(columns=["_rn_num"])
             else:
-                fallback = results_df[
-                    pd.to_numeric(results_df[rn_col], errors="coerce") == 0
-                ]
+                max_rn = results_df["_rn_num"].max()
+                fallback = results_df[results_df["_rn_num"] == max_rn]
                 if not fallback.empty:
-                    results_df = fallback.copy()
-                    results_df[rn_col] = str(latest_round)
+                    results_df = fallback.drop(columns=["_rn_num"])
+                else:
+                    results_df = results_df.drop(columns=["_rn_num"])
 
         # Merge team names
         if (
@@ -608,17 +609,6 @@ def main() -> None:
 
     st.markdown("---")
 
-    # ── Team selector (for Team Stats view) ────────────────────────
-    selected_team = st.selectbox(
-        "Select Your Team",
-        options=TEAM_OPTIONS,
-        format_func=lambda t: TEAM_LABELS[t],
-        index=0,
-        key="team_selector",
-    )
-
-    st.markdown("---")
-
     # ── Enter / Update Decisions (all teams) ───────────────────────
     st.subheader(f"Enter Decisions \u2014 Round {current_round}")
 
@@ -727,16 +717,17 @@ def main() -> None:
     if status == "NOT_FOUND":
         st.warning(f"Simulation folder **{SIM_ID}** not found. Run **Setup** first.")
     else:
-        table = _build_team_table(sim_path, current_round)
+        # When a round is OPEN, results don't exist for it yet —
+        # show the most recently completed round instead.
+        if round_status == "OPEN" and current_round > 1:
+            display_round = current_round - 1
+        else:
+            display_round = current_round
+        table = _build_team_table(sim_path, display_round)
         if table.empty:
             st.info("No team data available yet.")
         else:
             st.dataframe(table, use_container_width=True, hide_index=True)
-
-    # ── Refresh button ─────────────────────────────────────────────
-    st.markdown("")
-    if st.button("\U0001f504 Refresh", type="primary"):
-        st.rerun()
 
     # ── Footer ─────────────────────────────────────────────────────
     st.markdown(f'<div class="footer">{COPYRIGHT}</div>', unsafe_allow_html=True)
