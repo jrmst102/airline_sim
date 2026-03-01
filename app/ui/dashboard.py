@@ -367,10 +367,13 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
         monthly_flights = fpd * DAYS_PER_MONTH
         capacity        = monthly_flights * SEATS_PER_FLIGHT
 
+        BASELINE_BRANDING_COST = 3_000_000   # Medium branding – $3M/mo
+        BASELINE_PRODUCT_COST  = 2_000_000   # Digital/Loyalty – $2M/mo
+
         var_cost   = pax_n * vcpp_n
         fix_cost   = monthly_flights * FIXED_COST_PER_FLIGHT
-        brand_cost = 0
-        prod_cost  = 0
+        brand_cost = BASELINE_BRANDING_COST
+        prod_cost  = BASELINE_PRODUCT_COST
         total_cost = var_cost + fix_cost + brand_cost + prod_cost
         revenue    = profit_n + total_cost   # derive so profit stays consistent
         load_factor = pax_n / capacity
@@ -386,8 +389,8 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
         cols["Revenue"]       = revenue.apply(fmt_dollar)
         cols["Variable Cost"] = var_cost.apply(fmt_dollar)
         cols["Fixed Cost"]    = fix_cost.apply(fmt_dollar)
-        cols["Branding Cost"] = "$0"
-        cols["Product Cost"]  = "$0"
+        cols["Branding Cost"] = f"${brand_cost:,.0f}"
+        cols["Product Cost"]  = f"${prod_cost:,.0f}"
         cols["Total Cost"]    = total_cost.apply(fmt_dollar)
         cols["Profit"]        = profit_n.apply(fmt_dollar)
         cols["Load Factor"]   = load_factor.apply(fmt_pct)

@@ -62,6 +62,11 @@ PRODUCT_COSTS: dict[str, int] = {
 }
 
 # ── Per-team baseline data, keyed by letter A–F (Case Appendix) ───────
+# Baseline branding / product – all airlines are established carriers with
+# existing marketing budgets and loyalty programs before the game starts.
+BASELINE_BRANDING = "Medium"      # $3 M / month
+BASELINE_PRODUCT  = "Digital/Loyalty"  # $2 M / month
+
 TEAM_BASELINES: dict[str, dict[str, Any]] = {
     "A": {
         "baseline_passengers":      26_400,
@@ -70,6 +75,8 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_share":    0.26,
         "variable_cost_per_pax":    155,
         "baseline_flights_per_day": 5,
+        "baseline_branding":        BASELINE_BRANDING,
+        "baseline_product":         BASELINE_PRODUCT,
     },
     "B": {
         "baseline_passengers":      22_800,
@@ -78,6 +85,8 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_share":    0.19,
         "variable_cost_per_pax":    170,
         "baseline_flights_per_day": 5,
+        "baseline_branding":        BASELINE_BRANDING,
+        "baseline_product":         BASELINE_PRODUCT,
     },
     "C": {
         "baseline_passengers":      21_600,
@@ -86,6 +95,8 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_share":    0.17,
         "variable_cost_per_pax":    160,
         "baseline_flights_per_day": 4,
+        "baseline_branding":        BASELINE_BRANDING,
+        "baseline_product":         BASELINE_PRODUCT,
     },
     "D": {
         "baseline_passengers":      19_200,
@@ -94,6 +105,8 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_share":    0.18,
         "variable_cost_per_pax":    130,
         "baseline_flights_per_day": 4,
+        "baseline_branding":        BASELINE_BRANDING,
+        "baseline_product":         BASELINE_PRODUCT,
     },
     "E": {
         "baseline_passengers":      15_600,
@@ -102,6 +115,8 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_share":    0.08,
         "variable_cost_per_pax":    110,
         "baseline_flights_per_day": 3,
+        "baseline_branding":        BASELINE_BRANDING,
+        "baseline_product":         BASELINE_PRODUCT,
     },
     "F": {
         "baseline_passengers":      14_400,
@@ -110,6 +125,8 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_share":    0.12,
         "variable_cost_per_pax":    145,
         "baseline_flights_per_day": 3,
+        "baseline_branding":        BASELINE_BRANDING,
+        "baseline_product":         BASELINE_PRODUCT,
     },
 }
 TEAM_LETTERS = list(TEAM_BASELINES.keys())  # ["A", "B", … "F"]
@@ -534,8 +551,8 @@ def setup_simulation(
 
         var_cost      = pax * vcpp
         fix_cost      = monthly_flights * FIXED_COST_PER_FLIGHT
-        brand_cost    = 0          # no strategy chosen yet
-        prod_cost     = 0          # no strategy chosen yet
+        brand_cost    = BRANDING_COSTS[bl["baseline_branding"]]
+        prod_cost     = PRODUCT_COSTS[bl["baseline_product"]]
         total_cost    = var_cost + fix_cost + brand_cost + prod_cost
         revenue       = profit + total_cost   # derive to stay consistent
 
