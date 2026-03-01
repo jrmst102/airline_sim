@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import argparse
-import csv
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from app.core.round_manager import end_simulation_rounds
 from app.core.state_machine import can_end_simulation, validate_round_state, validate_simulation_state
+from app.data.csv_manager import load_csv, write_csv
 from app.data.log_manager import append_log_event
 
 
@@ -24,29 +23,6 @@ class EndSimulationResult:
 
 def _utc_now() -> str:
 	return datetime.now(timezone.utc).isoformat()
-
-
-def _simulation_path(root_dir: Path | str, simulation_id: str) -> Path:
-	return Path(root_dir) / simulation_id
-
-
-def _load_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-	if not path.exists():
-		raise FileNotFoundError(f"Required file not found: {path}")
-	with path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		fieldnames = reader.fieldnames
-		if not fieldnames:
-			raise ValueError(f"Missing CSV header in {path}")
-		return fieldnames, list(reader)
-
-
-def _write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
-	with path.open("w", newline="", encoding="utf-8") as handle:
-		writer = csv.DictWriter(handle, fieldnames=fieldnames)
-		writer.writeheader()
-		if rows:
-			writer.writerows(rows)
 
 
 def _as_int(value: str, default: int = 0) -> int:
@@ -72,12 +48,7 @@ def end_simulation(
 	admin_user_id: str = "U_ADMIN",
 	root_dir: Path | str = Path("simulations"),
 ) -> EndSimulationResult:
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	simulation_csv = simulation_dir / "simulation.csv"
-	rounds_csv = simulation_dir / "rounds.csv"
-	admin_actions_csv = simulation_dir / "admin_actions.csv"
-
-	sim_fieldnames, sim_rows = _load_csv(simulation_csv)
+	sim_fieldnames, sim_rows = load_csv(simulation_id, "simulation.csv")
 	if len(sim_rows) != 1:
 		raise ValueError(f"Expected exactly 1 simulation row in {simulation_csv}")
 	sim_row = sim_rows[0]
@@ -91,7 +62,7 @@ def end_simulation(
 			f"Simulation must be CREATED or STARTED to end (found '{current_status}')"
 		)
 
-	round_fieldnames, round_rows = _load_csv(rounds_csv)
+	round_fieldnames, round_rows = load_csv(simulation_id, "rounds.csv")
 	if not round_rows:
 		raise ValueError("No rounds configured")
 
@@ -111,7 +82,7 @@ def end_simulation(
 	sim_row["current_round"] = str(current_round)
 	sim_row["updated_at_utc"] = now
 
-	admin_fieldnames, admin_rows = _load_csv(admin_actions_csv)
+	admin_fieldnames, admin_rows = load_csv(simulation_id, "admin_actions.csv")
 	admin_rows.append(
 		{
 			"event_id": _next_event_id(admin_rows),
@@ -126,11 +97,10 @@ def end_simulation(
 		}
 	)
 
-	_write_csv(rounds_csv, round_fieldnames, round_rows)
-	_write_csv(simulation_csv, sim_fieldnames, sim_rows)
-	_write_csv(admin_actions_csv, admin_fieldnames, admin_rows)
+	write_csv(simulation_id, "rounds.csv", round_fieldnames, round_rows)
+	write_csv(simulation_id, "simulation.csv", sim_fieldnames, sim_rows)
+	write_csv(simulation_id, "admin_actions.csv", admin_fieldnames, admin_rows)
 	append_log_event(
-		simulation_dir=simulation_dir,
 		simulation_id=simulation_id,
 		actor_user_id=admin_user_id,
 		action="END_SIMULATION",
