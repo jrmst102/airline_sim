@@ -8,19 +8,16 @@ computes market-share rankings, and returns a dict ready for JSON.
 
 from __future__ import annotations
 
-import csv
 from datetime import datetime, timezone
 from pathlib import Path
 
+from app.data.csv_manager import csv_exists, read_csv_rows
 
-# Default simulation path (relative to project root)
+
+# Default simulation ID
+DEFAULT_SIM_ID = "sim_001"
+# Keep legacy constant for backward compat
 DEFAULT_SIM_PATH = Path("simulations/sim_001")
-
-
-def _load_csv_rows(path: Path) -> list[dict[str, str]]:
-    """Read a CSV file and return a list of row dicts."""
-    with path.open("r", newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
 
 
 def _float(v: str, default: float = 0.0) -> float:
@@ -43,8 +40,10 @@ def get_dashboard_data(sim_path: Path = DEFAULT_SIM_PATH) -> dict:
     Returns a dict with keys:
         round, as_of, profit_ranking, volume_ranking, table
     """
-    results_path = sim_path / "round_results_team.csv"
-    if not results_path.exists():
+    # Derive simulation_id from sim_path (e.g. simulations/sim_001 -> sim_001)
+    simulation_id = sim_path.name if sim_path != DEFAULT_SIM_PATH else DEFAULT_SIM_ID
+
+    if not csv_exists(simulation_id, "round_results_team.csv"):
         return {
             "round": 0,
             "as_of": datetime.now(timezone.utc).isoformat(),
@@ -53,7 +52,7 @@ def get_dashboard_data(sim_path: Path = DEFAULT_SIM_PATH) -> dict:
             "table": [],
         }
 
-    rows = _load_csv_rows(results_path)
+    rows = read_csv_rows(simulation_id, "round_results_team.csv")
     if not rows:
         return {
             "round": 0,

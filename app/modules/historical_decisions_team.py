@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import argparse
-import csv
 from dataclasses import dataclass
 from pathlib import Path
+
+from app.data.csv_manager import read_csv_rows
 
 
 DECISION_ACTIONS = {"ENTER_DECISION", "UPDATE_DECISION"}
@@ -17,18 +18,6 @@ class TeamDecisionSummary:
 	updated_decisions: int
 	distinct_rounds: int
 	last_event_at_utc: str
-
-
-def _simulation_path(root_dir: Path | str, simulation_id: str) -> Path:
-	return Path(root_dir) / simulation_id
-
-
-def _load_log_rows(log_csv: Path) -> list[dict[str, str]]:
-	if not log_csv.exists():
-		raise FileNotFoundError(f"Required file not found: {log_csv}")
-	with log_csv.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		return list(reader)
 
 
 def _parse_details(details: str) -> dict[str, str]:
@@ -46,8 +35,7 @@ def get_historical_decisions_team(
 	simulation_id: str,
 	root_dir: Path | str = Path("simulations"),
 ) -> list[TeamDecisionSummary]:
-	log_csv = _simulation_path(root_dir, simulation_id) / "log.csv"
-	rows = _load_log_rows(log_csv)
+	rows = read_csv_rows(simulation_id, "log.csv")
 
 	aggregates: dict[str, dict[str, object]] = {}
 

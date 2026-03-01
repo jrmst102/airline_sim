@@ -2,1116 +2,308 @@
   Airline Simulation Test Suite Report
 ========================================================================
 
-  Timestamp  : 2026-03-01T16:06:41.799895+00:00
+  Timestamp  : 2026-03-01T16:59:56.337074+00:00
   RNG Seed   : 12345
-  Git Commit : e0ca3c1
+  Git Commit : 9829923
   Total Run  : 32 / 32 scenarios
-  PASSED     : 32
-  FAILED     : 0
-  Runtime    : 0.68s
+  PASSED     : 0
+  FAILED     : 32
+  Runtime    : 0.40s
 
 ------------------------------------------------------------------------
    ID  Scenario Name                                    Status  Notes
 ------------------------------------------------------------------------
-    1  No changes                                       PASS    
-    2  One airline lowest prices                        PASS    
-    3  One airline highest prices                       PASS    
-    4  One airline brand+product only                   PASS    
-    5  Two airlines: lowest vs highest prices           PASS    
-    6  Two airlines: High vs Low brand+product          PASS    
-    7  Two airlines: mid prices + brand+product         PASS    
-    8  Three airlines: highest/lowest/random prices     PASS    
-    9  Three airlines: prices+brand+product (no extremes) PASS    
-   10  Four airlines: random prices                     PASS    
-   11  Five airlines: random prices                     PASS    
-   12  Five airlines: prices+brand+product              PASS    
-   13  All prices; five brand+product                   PASS    
-   14  All prices+brand+product                         PASS    
-   15  One airline: flights only                        PASS    
-   16  Two airlines: flights only                       PASS    
-   17  Three airlines: flights only                     PASS    
-   18  Four airlines: flights only                      PASS    
-   19  Five airlines: flights only                      PASS    
-   20  Six airlines: flights only                       PASS    
-   21  One airline: flights+prices                      PASS    
-   22  Two airlines: flights+prices                     PASS    
-   23  Three airlines: flights+prices                   PASS    
-   24  Four airlines: flights+prices                    PASS    
-   25  Five airlines: flights+prices                    PASS    
-   26  All airlines: flights+prices                     PASS    
-   27  All airlines: flights+prices+brand+product       PASS    
-   28  Five airlines: flights+prices+product            PASS    
-   29  Four airlines: flights+prices+product            PASS    
-   30  Three airlines: flights+prices+product           PASS    
-   31  Two airlines: flights+prices+product             PASS    
-   32  One airline: flights+prices+product              PASS    
+    1  No changes                                       FAIL    FileNotFoundError: [Errno 2] No such fil
+    2  One airline lowest prices                        FAIL    FileNotFoundError: [Errno 2] No such fil
+    3  One airline highest prices                       FAIL    FileNotFoundError: [Errno 2] No such fil
+    4  One airline brand+product only                   FAIL    FileNotFoundError: [Errno 2] No such fil
+    5  Two airlines: lowest vs highest prices           FAIL    FileNotFoundError: [Errno 2] No such fil
+    6  Two airlines: High vs Low brand+product          FAIL    FileNotFoundError: [Errno 2] No such fil
+    7  Two airlines: mid prices + brand+product         FAIL    FileNotFoundError: [Errno 2] No such fil
+    8  Three airlines: highest/lowest/random prices     FAIL    FileNotFoundError: [Errno 2] No such fil
+    9  Three airlines: prices+brand+product (no extremes) FAIL    FileNotFoundError: [Errno 2] No such fil
+   10  Four airlines: random prices                     FAIL    FileNotFoundError: [Errno 2] No such fil
+   11  Five airlines: random prices                     FAIL    FileNotFoundError: [Errno 2] No such fil
+   12  Five airlines: prices+brand+product              FAIL    FileNotFoundError: [Errno 2] No such fil
+   13  All prices; five brand+product                   FAIL    FileNotFoundError: [Errno 2] No such fil
+   14  All prices+brand+product                         FAIL    FileNotFoundError: [Errno 2] No such fil
+   15  One airline: flights only                        FAIL    FileNotFoundError: [Errno 2] No such fil
+   16  Two airlines: flights only                       FAIL    FileNotFoundError: [Errno 2] No such fil
+   17  Three airlines: flights only                     FAIL    FileNotFoundError: [Errno 2] No such fil
+   18  Four airlines: flights only                      FAIL    FileNotFoundError: [Errno 2] No such fil
+   19  Five airlines: flights only                      FAIL    FileNotFoundError: [Errno 2] No such fil
+   20  Six airlines: flights only                       FAIL    FileNotFoundError: [Errno 2] No such fil
+   21  One airline: flights+prices                      FAIL    FileNotFoundError: [Errno 2] No such fil
+   22  Two airlines: flights+prices                     FAIL    FileNotFoundError: [Errno 2] No such fil
+   23  Three airlines: flights+prices                   FAIL    FileNotFoundError: [Errno 2] No such fil
+   24  Four airlines: flights+prices                    FAIL    FileNotFoundError: [Errno 2] No such fil
+   25  Five airlines: flights+prices                    FAIL    FileNotFoundError: [Errno 2] No such fil
+   26  All airlines: flights+prices                     FAIL    FileNotFoundError: [Errno 2] No such fil
+   27  All airlines: flights+prices+brand+product       FAIL    FileNotFoundError: [Errno 2] No such fil
+   28  Five airlines: flights+prices+product            FAIL    FileNotFoundError: [Errno 2] No such fil
+   29  Four airlines: flights+prices+product            FAIL    FileNotFoundError: [Errno 2] No such fil
+   30  Three airlines: flights+prices+product           FAIL    FileNotFoundError: [Errno 2] No such fil
+   31  Two airlines: flights+prices+product             FAIL    FileNotFoundError: [Errno 2] No such fil
+   32  One airline: flights+prices+product              FAIL    FileNotFoundError: [Errno 2] No such fil
 ------------------------------------------------------------------------
 
 ========================================================================
   Scenario 01: No changes
-  STATUS: PASS
-  Elapsed: 0.038s
+  STATUS: FAIL
+  Elapsed: 0.019s
 
-  Inputs applied (changes from baseline):
-    (no changes from baseline)
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_01/decisions.csv'
 
 
 ========================================================================
   Scenario 02: One airline lowest prices
-  STATUS: PASS
-  Elapsed: 0.034s
+  STATUS: FAIL
+  Elapsed: 0.018s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=280, Price_L=130
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_02/decisions.csv'
 
 
 ========================================================================
   Scenario 03: One airline highest prices
-  STATUS: PASS
-  Elapsed: 0.023s
+  STATUS: FAIL
+  Elapsed: 0.015s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=460, Price_L=230
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_03/decisions.csv'
 
 
 ========================================================================
   Scenario 04: One airline brand+product only
-  STATUS: PASS
-  Elapsed: 0.023s
+  STATUS: FAIL
+  Elapsed: 0.012s
 
-  Inputs applied (changes from baseline):
-    Team A: Brand=Medium, Product=Low
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_04/decisions.csv'
 
 
 ========================================================================
   Scenario 05: Two airlines: lowest vs highest prices
-  STATUS: PASS
-  Elapsed: 0.024s
+  STATUS: FAIL
+  Elapsed: 0.016s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=280, Price_L=130
-    Team B: Price_B=460, Price_L=230
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_05/decisions.csv'
 
 
 ========================================================================
   Scenario 06: Two airlines: High vs Low brand+product
-  STATUS: PASS
-  Elapsed: 0.022s
+  STATUS: FAIL
+  Elapsed: 0.015s
 
-  Inputs applied (changes from baseline):
-    Team B: Brand=Low, Product=Medium
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_06/decisions.csv'
 
 
 ========================================================================
   Scenario 07: Two airlines: mid prices + brand+product
-  STATUS: PASS
-  Elapsed: 0.028s
+  STATUS: FAIL
+  Elapsed: 0.020s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=397, Price_L=142, Brand=Medium, Product=Medium
-    Team B: Price_B=340, Price_L=175, Brand=High, Product=Medium
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_07/decisions.csv'
 
 
 ========================================================================
   Scenario 08: Three airlines: highest/lowest/random prices
-  STATUS: PASS
-  Elapsed: 0.022s
+  STATUS: FAIL
+  Elapsed: 0.012s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=460, Price_L=230
-    Team B: Price_B=280, Price_L=130
-    Team C: Price_B=386, Price_L=223
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_08/decisions.csv'
 
 
 ========================================================================
   Scenario 09: Three airlines: prices+brand+product (no extremes)
-  STATUS: PASS
-  Elapsed: 0.015s
+  STATUS: FAIL
+  Elapsed: 0.012s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=397, Price_L=142, Brand=Medium, Product=Medium
-    Team B: Price_B=340, Price_L=175, Brand=High, Product=Medium
-    Team C: Price_B=332, Price_L=188, Brand=Low
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_09/decisions.csv'
 
 
 ========================================================================
   Scenario 10: Four airlines: random prices
-  STATUS: PASS
-  Elapsed: 0.026s
+  STATUS: FAIL
+  Elapsed: 0.012s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=396, Price_L=141
-    Team B: Price_B=366, Price_L=187
-    Team C: Price_B=339, Price_L=174
-    Team D: Price_B=434, Price_L=195
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_10/decisions.csv'
 
 
 ========================================================================
   Scenario 11: Five airlines: random prices
-  STATUS: PASS
-  Elapsed: 0.025s
+  STATUS: FAIL
+  Elapsed: 0.012s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=396, Price_L=141
-    Team B: Price_B=366, Price_L=187
-    Team C: Price_B=339, Price_L=174
-    Team D: Price_B=434, Price_L=195
-    Team E: Price_B=359, Price_L=188
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_11/decisions.csv'
 
 
 ========================================================================
   Scenario 12: Five airlines: prices+brand+product
-  STATUS: PASS
-  Elapsed: 0.029s
+  STATUS: FAIL
+  Elapsed: 0.012s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Medium
-    Team B: Price_B=339, Price_L=174, Brand=High, Product=Medium
-    Team C: Price_B=331, Price_L=187, Brand=Low
-    Team D: Price_B=356, Price_L=211, Brand=High, Product=High
-    Team E: Price_B=409, Price_L=211
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_12/decisions.csv'
 
 
 ========================================================================
   Scenario 13: All prices; five brand+product
-  STATUS: PASS
-  Elapsed: 0.017s
+  STATUS: FAIL
+  Elapsed: 0.013s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Low
-    Team B: Price_B=366, Price_L=187, Brand=High, Product=High
-    Team C: Price_B=339, Price_L=174, Brand=High, Product=Low
-    Team D: Price_B=434, Price_L=195, Product=Medium
-    Team E: Price_B=359, Price_L=188, Brand=High, Product=Low
-    Team F: Price_B=354, Price_L=168
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_13/decisions.csv'
 
 
 ========================================================================
   Scenario 14: All prices+brand+product
-  STATUS: PASS
-  Elapsed: 0.014s
+  STATUS: FAIL
+  Elapsed: 0.013s
 
-  Inputs applied (changes from baseline):
-    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Medium
-    Team B: Price_B=339, Price_L=174, Brand=High, Product=Medium
-    Team C: Price_B=331, Price_L=187, Brand=Low
-    Team D: Price_B=356, Price_L=211, Brand=High, Product=High
-    Team E: Price_B=409, Price_L=211
-    Team F: Price_B=342, Price_L=208, Brand=High, Product=Medium
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_14/decisions.csv'
 
 
 ========================================================================
   Scenario 15: One airline: flights only
-  STATUS: PASS
-  Elapsed: 0.015s
+  STATUS: FAIL
+  Elapsed: 0.013s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=4
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_15/decisions.csv'
 
 
 ========================================================================
   Scenario 16: Two airlines: flights only
-  STATUS: PASS
-  Elapsed: 0.016s
+  STATUS: FAIL
+  Elapsed: 0.015s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=4
-    Team B: FlightsPerDay=3
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_16/decisions.csv'
 
 
 ========================================================================
   Scenario 17: Three airlines: flights only
-  STATUS: PASS
-  Elapsed: 0.028s
+  STATUS: FAIL
+  Elapsed: 0.013s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3
-    Team B: FlightsPerDay=0
-    Team C: FlightsPerDay=2
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_17/decisions.csv'
 
 
 ========================================================================
   Scenario 18: Four airlines: flights only
-  STATUS: PASS
-  Elapsed: 0.015s
+  STATUS: FAIL
+  Elapsed: 0.010s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3
-    Team B: FlightsPerDay=0
-    Team C: FlightsPerDay=2
-    Team D: FlightsPerDay=2
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_18/decisions.csv'
 
 
 ========================================================================
   Scenario 19: Five airlines: flights only
-  STATUS: PASS
-  Elapsed: 0.015s
+  STATUS: FAIL
+  Elapsed: 0.011s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3
-    Team B: FlightsPerDay=0
-    Team C: FlightsPerDay=2
-    Team D: FlightsPerDay=2
-    Team E: FlightsPerDay=1
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_19/decisions.csv'
 
 
 ========================================================================
   Scenario 20: Six airlines: flights only
-  STATUS: PASS
-  Elapsed: 0.014s
+  STATUS: FAIL
+  Elapsed: 0.010s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3
-    Team B: FlightsPerDay=0
-    Team C: FlightsPerDay=2
-    Team D: FlightsPerDay=2
-    Team E: FlightsPerDay=1
-    Team F: FlightsPerDay=2
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_20/decisions.csv'
 
 
 ========================================================================
   Scenario 21: One airline: flights+prices
-  STATUS: PASS
-  Elapsed: 0.014s
+  STATUS: FAIL
+  Elapsed: 0.010s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_21/decisions.csv'
 
 
 ========================================================================
   Scenario 22: Two airlines: flights+prices
-  STATUS: PASS
-  Elapsed: 0.015s
+  STATUS: FAIL
+  Elapsed: 0.011s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
-    Team B: FlightsPerDay=2, Price_B=339, Price_L=174
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_22/decisions.csv'
 
 
 ========================================================================
   Scenario 23: Three airlines: flights+prices
-  STATUS: PASS
-  Elapsed: 0.014s
+  STATUS: FAIL
+  Elapsed: 0.010s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
-    Team B: FlightsPerDay=2, Price_B=339, Price_L=174
-    Team C: FlightsPerDay=5, Price_B=401, Price_L=160
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_23/decisions.csv'
 
 
 ========================================================================
   Scenario 24: Four airlines: flights+prices
-  STATUS: PASS
-  Elapsed: 0.013s
+  STATUS: FAIL
+  Elapsed: 0.010s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
-    Team B: FlightsPerDay=2, Price_B=339, Price_L=174
-    Team C: FlightsPerDay=5, Price_B=401, Price_L=160
-    Team D: FlightsPerDay=2, Price_B=321, Price_L=195
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_24/decisions.csv'
 
 
 ========================================================================
   Scenario 25: Five airlines: flights+prices
-  STATUS: PASS
-  Elapsed: 0.034s
+  STATUS: FAIL
+  Elapsed: 0.011s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
-    Team B: FlightsPerDay=2, Price_B=339, Price_L=174
-    Team C: FlightsPerDay=5, Price_B=401, Price_L=160
-    Team D: FlightsPerDay=2, Price_B=321, Price_L=195
-    Team E: FlightsPerDay=2, Price_B=435, Price_L=200
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_25/decisions.csv'
 
 
 ========================================================================
   Scenario 26: All airlines: flights+prices
-  STATUS: PASS
-  Elapsed: 0.019s
+  STATUS: FAIL
+  Elapsed: 0.010s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
-    Team B: FlightsPerDay=2, Price_B=339, Price_L=174
-    Team C: FlightsPerDay=5, Price_B=401, Price_L=160
-    Team D: FlightsPerDay=2, Price_B=321, Price_L=195
-    Team E: FlightsPerDay=2, Price_B=435, Price_L=200
-    Team F: FlightsPerDay=1, Price_B=433, Price_L=171
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_26/decisions.csv'
 
 
 ========================================================================
   Scenario 27: All airlines: flights+prices+brand+product
-  STATUS: PASS
-  Elapsed: 0.020s
+  STATUS: FAIL
+  Elapsed: 0.010s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Brand=Medium
-    Team B: FlightsPerDay=2, Price_B=434, Price_L=195, Brand=Low, Product=Medium
-    Team C: FlightsPerDay=0, Price_B=400, Price_L=173, Brand=High, Product=Low
-    Team D: FlightsPerDay=1, Price_B=446, Price_L=210, Product=Medium
-    Team E: FlightsPerDay=0, Price_B=427, Price_L=220, Brand=Medium, Product=Low
-    Team F: FlightsPerDay=5, Price_B=334, Price_L=182, Brand=Low
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_27/decisions.csv'
 
 
 ========================================================================
   Scenario 28: Five airlines: flights+prices+product
-  STATUS: PASS
-  Elapsed: 0.021s
+  STATUS: FAIL
+  Elapsed: 0.010s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Medium
-    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=Medium
-    Team C: FlightsPerDay=1, Price_B=385, Price_L=155
-    Team D: FlightsPerDay=2, Price_B=433, Price_L=220, Product=High
-    Team E: FlightsPerDay=5, Price_B=433, Price_L=178
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_28/decisions.csv'
 
 
 ========================================================================
   Scenario 29: Four airlines: flights+prices+product
-  STATUS: PASS
-  Elapsed: 0.019s
+  STATUS: FAIL
+  Elapsed: 0.014s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Medium
-    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=Medium
-    Team C: FlightsPerDay=1, Price_B=385, Price_L=155
-    Team D: FlightsPerDay=2, Price_B=433, Price_L=220, Product=High
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_29/decisions.csv'
 
 
 ========================================================================
   Scenario 30: Three airlines: flights+prices+product
-  STATUS: PASS
-  Elapsed: 0.014s
+  STATUS: FAIL
+  Elapsed: 0.010s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Medium
-    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=Medium
-    Team C: FlightsPerDay=1, Price_B=385, Price_L=155
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_30/decisions.csv'
 
 
 ========================================================================
   Scenario 31: Two airlines: flights+prices+product
-  STATUS: PASS
+  STATUS: FAIL
   Elapsed: 0.011s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Medium
-    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=Medium
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_31/decisions.csv'
 
 
 ========================================================================
   Scenario 32: One airline: flights+prices+product
-  STATUS: PASS
+  STATUS: FAIL
   Elapsed: 0.010s
 
-  Inputs applied (changes from baseline):
-    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Medium
-
-  Decision Overwrite Check: PASS
-
-  Engine-based comparison (CSV pipeline fidelity):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
-
-  Independent cross-check (formula correctness):
-    Invariant checks:
-      [PASS] carried_total <= capacity
-      [PASS] Profit == Revenue - Cost
-      [PASS] Total_cost == sum(components)
-      [PASS] Sum(market_share_volume) ≈ 1
-      [PASS] Market total_passengers == sum(team pax)
-
-    All fields match: PASS
+  Exception: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/airline_test_suite_jkujaihy/TS_32/decisions.csv'
 
 
 ========================================================================
   Skipped scenarios: 0
-  Total runtime: 0.68s
+  Total runtime: 0.40s
 ========================================================================

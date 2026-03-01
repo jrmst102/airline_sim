@@ -1,20 +1,9 @@
 from __future__ import annotations
 
 import argparse
-import csv
 from pathlib import Path
 
-
-def _simulation_path(root_dir: Path | str, simulation_id: str) -> Path:
-	return Path(root_dir) / simulation_id
-
-
-def _load_csv_rows(path: Path) -> list[dict[str, str]]:
-	if not path.exists():
-		raise FileNotFoundError(f"Required file not found: {path}")
-	with path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		return list(reader)
+from app.data.csv_manager import read_csv_rows
 
 
 def _as_int(value: str, default: int = 0) -> int:
@@ -24,8 +13,8 @@ def _as_int(value: str, default: int = 0) -> int:
 		return default
 
 
-def _team_name_by_id(simulation_dir: Path) -> dict[str, str]:
-	team_rows = _load_csv_rows(simulation_dir / "teams.csv")
+def _team_name_by_id(simulation_id: str) -> dict[str, str]:
+	team_rows = read_csv_rows(simulation_id, "teams.csv")
 	return {row["team_id"]: row["team_name"] for row in team_rows}
 
 
@@ -39,8 +28,7 @@ def get_team_results(
 	team_id: str | None = None,
 	root_dir: Path | str = Path("simulations"),
 ) -> list[dict[str, str]]:
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	rows = _load_csv_rows(simulation_dir / "round_results_team.csv")
+	rows = read_csv_rows(simulation_id, "round_results_team.csv")
 
 	if round_number is not None:
 		rows = [row for row in rows if _as_int(row.get("round_number", "0")) == round_number]
@@ -48,7 +36,7 @@ def get_team_results(
 	if team_id is not None:
 		rows = [row for row in rows if row.get("team_id", "") == team_id]
 
-	team_name_map = _team_name_by_id(simulation_dir)
+	team_name_map = _team_name_by_id(simulation_id)
 	for row in rows:
 		row["team_name"] = team_name_map.get(row.get("team_id", ""), "")
 
@@ -60,8 +48,7 @@ def get_market_results(
 	round_number: int | None = None,
 	root_dir: Path | str = Path("simulations"),
 ) -> list[dict[str, str]]:
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	rows = _load_csv_rows(simulation_dir / "round_results_market.csv")
+	rows = read_csv_rows(simulation_id, "round_results_market.csv")
 
 	if round_number is not None:
 		rows = [row for row in rows if _as_int(row.get("round_number", "0")) == round_number]

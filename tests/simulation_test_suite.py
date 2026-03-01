@@ -54,6 +54,7 @@ from app.modules.enter_decisions import enter_decision
 from app.modules.move_next_round import move_next_round
 from app.modules.setup_simulation import setup_simulation, TEAM_LETTERS
 from app.modules.start_simulation import start_simulation
+from app.storage.spaces_store import LocalStore, set_store, reset_store
 
 from tests.helpers.comparator import ComparisonResult, compare_expected_actual, compare_independent_vs_actual
 from tests.helpers.constraints import Constraints, get_constraints
@@ -346,6 +347,9 @@ def run_all_scenarios(
 
     overall_start = time.monotonic()
     tmp_root = Path(tempfile.mkdtemp(prefix="airline_test_suite_"))
+
+    # Point the storage layer at the temp directory
+    set_store(LocalStore(root=tmp_root))
 
     try:
         for spec in ALL_SCENARIOS:

@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.data.csv_manager import load_csv, write_csv
 from app.data.log_manager import append_log_event
 
 
@@ -25,25 +26,6 @@ class RestoreSimulationResult:
 
 def _utc_now() -> str:
 	return datetime.now(timezone.utc).isoformat()
-
-
-def _load_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-	if not path.exists():
-		raise FileNotFoundError(f"Required file not found: {path}")
-	with path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		fieldnames = reader.fieldnames
-		if not fieldnames:
-			raise ValueError(f"Missing CSV header in {path}")
-		return fieldnames, list(reader)
-
-
-def _write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
-	with path.open("w", newline="", encoding="utf-8") as handle:
-		writer = csv.DictWriter(handle, fieldnames=fieldnames)
-		writer.writeheader()
-		if rows:
-			writer.writerows(rows)
 
 
 def _next_event_id(admin_action_rows: list[dict[str, str]]) -> str:
@@ -141,8 +123,7 @@ def restore_simulation(
 		_rewrite_simulation_id_fields(target_dir, target_simulation_id)
 
 	timestamp = _utc_now()
-	admin_actions_csv = target_dir / "admin_actions.csv"
-	admin_fieldnames, admin_rows = _load_csv(admin_actions_csv)
+	admin_fieldnames, admin_rows = load_csv(target_simulation_id, "admin_actions.csv")
 	admin_rows.append(
 		{
 			"event_id": _next_event_id(admin_rows),
@@ -158,9 +139,8 @@ def restore_simulation(
 			"event_at_utc": timestamp,
 		}
 	)
-	_write_csv(admin_actions_csv, admin_fieldnames, admin_rows)
+	write_csv(target_simulation_id, "admin_actions.csv", admin_fieldnames, admin_rows)
 	append_log_event(
-		simulation_dir=target_dir,
 		simulation_id=target_simulation_id,
 		actor_user_id=admin_user_id,
 		action="RESTORE_SIMULATION",

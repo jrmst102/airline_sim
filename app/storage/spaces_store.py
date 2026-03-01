@@ -194,8 +194,9 @@ def get_store() -> Store:
         cfg = load_spaces_config()
         _store_instance = SpacesStore(cfg)
     else:
-        # Use project root for local development
-        _store_instance = LocalStore(root=Path(__file__).resolve().parent.parent.parent)
+        # Use simulations/ dir under project root for local development
+        project_root = Path(__file__).resolve().parent.parent.parent
+        _store_instance = LocalStore(root=project_root / "simulations")
 
     return _store_instance
 
@@ -204,3 +205,9 @@ def reset_store() -> None:
     """Reset the cached store instance (useful for testing)."""
     global _store_instance
     _store_instance = None
+
+
+def set_store(store: Store) -> None:
+    """Inject a custom Store instance (useful for testing)."""
+    global _store_instance
+    _store_instance = store

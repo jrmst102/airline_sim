@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.modules.setup_simulation import (
-	load_parameters,
 	get_parameter_float,
 	get_parameter_int,
 )

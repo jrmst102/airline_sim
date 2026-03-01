@@ -34,9 +34,9 @@ def sim_key(simulation_id: str, filename: str) -> str:
     Example::
 
         sim_key("sim_001", "teams.csv")
-        # → "simulations/sim_001/teams.csv"
+        # → "sim_001/teams.csv"
     """
-    return f"simulations/{simulation_id}/{filename}"
+    return f"{simulation_id}/{filename}"
 
 
 # ── Read helpers ───────────────────────────────────────────────────────

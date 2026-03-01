@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,6 +8,7 @@ from typing import Any
 
 import bcrypt
 
+from app.data.csv_manager import load_csv, write_csv, read_csv_rows
 from app.data.log_manager import append_log_event
 
 
@@ -35,25 +35,6 @@ def _utc_now() -> str:
 	return datetime.now(timezone.utc).isoformat()
 
 
-def _simulation_path(root_dir: Path | str, simulation_id: str) -> Path:
-	return Path(root_dir) / simulation_id
-
-
-def _read_csv_rows(path: Path) -> list[dict[str, str]]:
-	if not path.exists():
-		raise FileNotFoundError(f"Required file not found: {path}")
-	with path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		return list(reader)
-
-
-def _write_csv_rows(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
-	with path.open("w", newline="", encoding="utf-8") as handle:
-		writer = csv.DictWriter(handle, fieldnames=fieldnames)
-		writer.writeheader()
-		writer.writerows(rows)
-
-
 def _next_numeric_suffix(existing_ids: list[str], prefix: str) -> int:
 	max_suffix = 0
 	for user_id in existing_ids:
@@ -64,24 +45,17 @@ def _next_numeric_suffix(existing_ids: list[str], prefix: str) -> int:
 	return max_suffix + 1
 
 
-def _load_users(users_csv_path: Path) -> tuple[list[str], list[dict[str, str]]]:
-	with users_csv_path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		fieldnames = reader.fieldnames
-		if not fieldnames:
-			raise ValueError(f"Missing users.csv header in {users_csv_path}")
-		return fieldnames, list(reader)
+def _load_users(simulation_id: str) -> tuple[list[str], list[dict[str, str]]]:
+	return load_csv(simulation_id, "users.csv")
 
 
 def _append_login_event(
-	simulation_dir: Path,
 	simulation_id: str,
 	user_id: str,
 	username: str,
 	event_type: str,
 ) -> None:
-	log_path = simulation_dir / "login_log.csv"
-	rows = _read_csv_rows(log_path)
+	rows = read_csv_rows(simulation_id, "login_log.csv")
 	next_id = f"E{len(rows) + 1}"
 	now = _utc_now()
 	rows.append(
@@ -94,16 +68,16 @@ def _append_login_event(
 			"event_at_utc": now,
 		}
 	)
-	_write_csv_rows(
-		log_path,
+	write_csv(
+		simulation_id,
+		"login_log.csv",
 		["event_id", "simulation_id", "user_id", "username", "event_type", "event_at_utc"],
 		rows,
 	)
 
 
 def list_users(simulation_id: str, root_dir: Path | str = Path("simulations")) -> list[UserRecord]:
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	users_rows = _read_csv_rows(simulation_dir / "users.csv")
+	users_rows = read_csv_rows(simulation_id, "users.csv")
 	return [
 		UserRecord(
 			simulation_id=row["simulation_id"],
@@ -138,10 +112,10 @@ def create_user(
 	if normalized_role in {"TEAM_LEAD", "TEAM_MEMBER"} and not team_id.strip():
 		raise ValueError("team_id is required for TEAM_LEAD and TEAM_MEMBER")
 
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	users_csv = simulation_dir / "users.csv"
+	simulation_dir = None  # kept for signature compat
+	users_csv = None  # no longer used
 
-	fieldnames, rows = _load_users(users_csv)
+	fieldnames, rows = _load_users(simulation_id)
 	existing_usernames = {row["username"].casefold() for row in rows}
 	if username.casefold() in existing_usernames:
 		raise ValueError(f"username '{username}' already exists")
@@ -162,9 +136,8 @@ def create_user(
 		"created_at_utc": now,
 	}
 	rows.append(new_row)
-	_write_csv_rows(users_csv, fieldnames, rows)
+	write_csv(simulation_id, "users.csv", fieldnames, rows)
 	append_log_event(
-		simulation_dir=simulation_dir,
 		simulation_id=simulation_id,
 		actor_user_id=admin_user_id,
 		action="CREATE_USER",
@@ -182,9 +155,9 @@ def set_user_lock(
 	root_dir: Path | str = Path("simulations"),
 	admin_user_id: str = "U_ADMIN",
 ) -> UserRecord:
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	users_csv = simulation_dir / "users.csv"
-	fieldnames, rows = _load_users(users_csv)
+	simulation_dir = None  # kept for signature compat
+	users_csv = None  # no longer used
+	fieldnames, rows = _load_users(simulation_id)
 
 	target_index = -1
 	for index, row in enumerate(rows):
@@ -197,10 +170,9 @@ def set_user_lock(
 
 	rows[target_index]["is_locked"] = "1" if is_locked else "0"
 	now = _utc_now()
-	_write_csv_rows(users_csv, fieldnames, rows)
+	write_csv(simulation_id, "users.csv", fieldnames, rows)
 	updated = UserRecord(**rows[target_index])
 	append_log_event(
-		simulation_dir=simulation_dir,
 		simulation_id=simulation_id,
 		actor_user_id=admin_user_id,
 		action="LOCK_USER" if is_locked else "UNLOCK_USER",
@@ -217,15 +189,13 @@ def authenticate_user(
 	password: str,
 	root_dir: Path | str = Path("simulations"),
 ) -> UserRecord | None:
-	simulation_dir = _simulation_path(root_dir, simulation_id)
 	users = list_users(simulation_id=simulation_id, root_dir=root_dir)
 
 	matched = next((user for user in users if user.username.casefold() == username.casefold()), None)
 	if matched is None:
 		now = _utc_now()
-		_append_login_event(simulation_dir, simulation_id, "", username, "LOGIN_FAILURE_UNKNOWN_USER")
+		_append_login_event(simulation_id, "", username, "LOGIN_FAILURE_UNKNOWN_USER")
 		append_log_event(
-			simulation_dir=simulation_dir,
 			simulation_id=simulation_id,
 			actor_user_id="UNKNOWN",
 			action="LOGIN_FAILURE_UNKNOWN_USER",
@@ -236,9 +206,8 @@ def authenticate_user(
 
 	if matched.locked:
 		now = _utc_now()
-		_append_login_event(simulation_dir, simulation_id, matched.user_id, matched.username, "LOGIN_FAILURE_LOCKED")
+		_append_login_event(simulation_id, matched.user_id, matched.username, "LOGIN_FAILURE_LOCKED")
 		append_log_event(
-			simulation_dir=simulation_dir,
 			simulation_id=simulation_id,
 			actor_user_id=matched.user_id,
 			action="LOGIN_FAILURE_LOCKED",
@@ -249,9 +218,8 @@ def authenticate_user(
 
 	if not matched.password_hash:
 		now = _utc_now()
-		_append_login_event(simulation_dir, simulation_id, matched.user_id, matched.username, "LOGIN_FAILURE_NO_PASSWORD")
+		_append_login_event(simulation_id, matched.user_id, matched.username, "LOGIN_FAILURE_NO_PASSWORD")
 		append_log_event(
-			simulation_dir=simulation_dir,
 			simulation_id=simulation_id,
 			actor_user_id=matched.user_id,
 			action="LOGIN_FAILURE_NO_PASSWORD",
@@ -263,9 +231,8 @@ def authenticate_user(
 	password_ok = bcrypt.checkpw(password.encode("utf-8"), matched.password_hash.encode("utf-8"))
 	if password_ok:
 		now = _utc_now()
-		_append_login_event(simulation_dir, simulation_id, matched.user_id, matched.username, "LOGIN_SUCCESS")
+		_append_login_event(simulation_id, matched.user_id, matched.username, "LOGIN_SUCCESS")
 		append_log_event(
-			simulation_dir=simulation_dir,
 			simulation_id=simulation_id,
 			actor_user_id=matched.user_id,
 			action="LOGIN_SUCCESS",
@@ -275,9 +242,8 @@ def authenticate_user(
 		return matched
 
 	now = _utc_now()
-	_append_login_event(simulation_dir, simulation_id, matched.user_id, matched.username, "LOGIN_FAILURE_BAD_PASSWORD")
+	_append_login_event(simulation_id, matched.user_id, matched.username, "LOGIN_FAILURE_BAD_PASSWORD")
 	append_log_event(
-		simulation_dir=simulation_dir,
 		simulation_id=simulation_id,
 		actor_user_id=matched.user_id,
 		action="LOGIN_FAILURE_BAD_PASSWORD",

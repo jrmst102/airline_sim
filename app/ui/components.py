@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import html
 import importlib
 from contextlib import contextmanager
@@ -8,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
+from app.data.csv_manager import read_csv_rows
 from app.ui.layout import load_css, render_header
 
 
@@ -359,15 +359,8 @@ def _fmt_percent(value: float | None) -> str:
 	return f"{value:.1f}%"
 
 
-def _read_csv_rows(path: Path) -> list[dict[str, str]]:
-	if not path.exists():
-		return []
-	with path.open("r", newline="", encoding="utf-8") as handle:
-		return list(csv.DictReader(handle))
-
-
 def build_ui_snapshot(*, simulation_id: str, root_dir: Path, team_id: str | None = None) -> UISnapshot:
-	simulation_rows = _read_csv_rows(root_dir / simulation_id / "simulation.csv")
+	simulation_rows = read_csv_rows(simulation_id, "simulation.csv")
 	simulation_row = simulation_rows[0] if simulation_rows else {}
 	status = simulation_row.get("status", "CREATED")
 	current_round = int(simulation_row.get("current_round", "0") or 0)
@@ -378,16 +371,16 @@ def build_ui_snapshot(*, simulation_id: str, root_dir: Path, team_id: str | None
 	elif status == "STARTED":
 		phase = "Results"
 
-	teams = _read_csv_rows(root_dir / simulation_id / "teams.csv")
+	teams = read_csv_rows(simulation_id, "teams.csv")
 	team_count = len(teams)
 
-	team_rows = _read_csv_rows(root_dir / simulation_id / "round_results_team.csv")
+	team_rows = read_csv_rows(simulation_id, "round_results_team.csv")
 	if team_id:
 		team_rows = [row for row in team_rows if row.get("team_id") == team_id]
 	team_rows = sorted(team_rows, key=lambda row: int(row.get("round_number", "0") or 0))
 	latest_team = team_rows[-1] if team_rows else {}
 
-	market_rows = _read_csv_rows(root_dir / simulation_id / "round_results_market.csv")
+	market_rows = read_csv_rows(simulation_id, "round_results_market.csv")
 	market_rows = sorted(market_rows, key=lambda row: int(row.get("round_number", "0") or 0))
 	latest_market = market_rows[-1] if market_rows else {}
 

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import shutil
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
+from app.data.csv_manager import load_csv, write_csv
 from app.data.log_manager import append_log_event
 
 
@@ -26,25 +25,6 @@ def _utc_now() -> str:
 
 def _safe_timestamp_for_filename(iso_timestamp: str) -> str:
 	return iso_timestamp.replace(":", "-")
-
-
-def _load_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-	if not path.exists():
-		raise FileNotFoundError(f"Required file not found: {path}")
-	with path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		fieldnames = reader.fieldnames
-		if not fieldnames:
-			raise ValueError(f"Missing CSV header in {path}")
-		return fieldnames, list(reader)
-
-
-def _write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
-	with path.open("w", newline="", encoding="utf-8") as handle:
-		writer = csv.DictWriter(handle, fieldnames=fieldnames)
-		writer.writeheader()
-		if rows:
-			writer.writerows(rows)
 
 
 def _next_event_id(admin_action_rows: list[dict[str, str]]) -> str:
@@ -106,7 +86,7 @@ def destroy_simulation(
 		timestamp=timestamp,
 	)
 
-	admin_fieldnames, admin_rows = _load_csv(admin_actions_csv)
+	admin_fieldnames, admin_rows = load_csv(simulation_id, "admin_actions.csv")
 	action = "DESTROY_SIMULATION_ARCHIVE" if normalized_mode == "archive" else "DESTROY_SIMULATION_DELETE"
 	details = (
 		f"mode={normalized_mode}; "
@@ -123,9 +103,8 @@ def destroy_simulation(
 			"event_at_utc": timestamp,
 		}
 	)
-	_write_csv(admin_actions_csv, admin_fieldnames, admin_rows)
+	write_csv(simulation_id, "admin_actions.csv", admin_fieldnames, admin_rows)
 	append_log_event(
-		simulation_dir=simulation_dir,
 		simulation_id=simulation_id,
 		actor_user_id=admin_user_id,
 		action=action,

@@ -19,6 +19,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.data.csv_manager import write_csv as _cm_write_csv
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Case Appendix – Baseline Constants
@@ -719,11 +721,12 @@ def setup_simulation(
         "log.csv":                 log_rows,
     }
 
-    # ── Write all CSVs (atomic: .tmp → rename) ────────────────────
+    # ── Write all CSVs through csv_manager (storage-agnostic) ────
     for csv_name, headers in CSV_SCHEMAS.items():
-        _atomic_write_csv(
-            sim_dir / csv_name,
-            headers=headers,
+        _cm_write_csv(
+            simulation_id,
+            csv_name,
+            fieldnames=headers,
             rows=seed_data.get(csv_name, []),
         )
 
