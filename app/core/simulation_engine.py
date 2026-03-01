@@ -255,6 +255,7 @@ def compute_round_results(
 	# ── Market shares ─────────────────────────────────────────────
 	total_passengers = sum(tot_pax.values())
 	total_positive_profit = sum(max(p, 0.0) for p in profits.values())
+	total_profit = sum(profits.values())
 
 	# ── Assemble team results ─────────────────────────────────────
 	team_results: list[TeamRoundResult] = []
@@ -271,7 +272,13 @@ def compute_round_results(
 		avg_cost = tc / mf if mf > 0 else 0.0
 		avg_prof = pr / mf if mf > 0 else 0.0
 		ms_vol = pax / total_passengers if total_passengers > 0 else 0.0
-		ms_prof = max(pr, 0.0) / total_positive_profit if total_positive_profit > 0 else 0.0
+		if total_positive_profit > 0:
+			ms_prof = max(pr, 0.0) / total_positive_profit
+		elif total_profit != 0:
+			# All profits non-positive: distribute proportionally
+			ms_prof = pr / total_profit
+		else:
+			ms_prof = 1.0 / len(decisions)
 
 		team_results.append(TeamRoundResult(
 			team_id=d.team_id,

@@ -129,10 +129,14 @@ def move_next_round(
 
 	# Map team_id → variable_cost_per_passenger from teams.csv
 	var_cost_map: dict[str, float] = {}
+	csi_map: dict[str, str] = {}
+	oei_map: dict[str, str] = {}
 	for row in active_teams:
 		var_cost_map[row["team_id"]] = _as_float(
 			row.get("variable_cost_per_passenger", "0")
 		)
+		csi_map[row["team_id"]] = row.get("baseline_csi", "")
+		oei_map[row["team_id"]] = row.get("baseline_oei", "")
 
 	round_fieldnames, round_rows = _load_csv(rounds_csv)
 	open_resolution = resolve_open_round(round_rows, expected_round=current_round)
@@ -195,8 +199,8 @@ def move_next_round(
 				"avg_profit_per_flight": _fmt_number(tr.avg_profit_per_flight, 2),
 				"price_business": _fmt_number(tr.price_business, 2),
 				"price_leisure": _fmt_number(tr.price_leisure, 2),
-				"csi": "",
-				"oei": "",
+				"csi": csi_map.get(tr.team_id, ""),
+				"oei": oei_map.get(tr.team_id, ""),
 				"created_at_utc": now,
 			}
 		)
