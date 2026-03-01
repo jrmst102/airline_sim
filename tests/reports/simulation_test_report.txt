@@ -2,13 +2,13 @@
   Airline Simulation Test Suite Report
 ========================================================================
 
-  Timestamp  : 2026-03-01T15:01:58.403987+00:00
+  Timestamp  : 2026-03-01T15:11:59.809054+00:00
   RNG Seed   : 12345
-  Git Commit : 2b0c48a
+  Git Commit : ecf29c5
   Total Run  : 32 / 32 scenarios
   PASSED     : 32
   FAILED     : 0
-  Runtime    : 0.39s
+  Runtime    : 0.50s
 
 ------------------------------------------------------------------------
    ID  Scenario Name                                    Status  Notes
@@ -50,79 +50,131 @@
 ========================================================================
   Scenario 01: No changes
   STATUS: PASS
-  Elapsed: 0.017s
+  Elapsed: 0.020s
 
   Inputs applied (changes from baseline):
     (no changes from baseline)
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 02: One airline lowest prices
   STATUS: PASS
-  Elapsed: 0.017s
+  Elapsed: 0.021s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=280, Price_L=130
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 03: One airline highest prices
   STATUS: PASS
-  Elapsed: 0.016s
+  Elapsed: 0.020s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=460, Price_L=230
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 04: One airline brand+product only
   STATUS: PASS
-  Elapsed: 0.014s
+  Elapsed: 0.016s
 
   Inputs applied (changes from baseline):
     Team A: Brand=Medium
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 05: Two airlines: lowest vs highest prices
   STATUS: PASS
-  Elapsed: 0.024s
+  Elapsed: 0.026s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=280, Price_L=130
@@ -130,36 +182,62 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 06: Two airlines: High vs Low brand+product
   STATUS: PASS
-  Elapsed: 0.014s
+  Elapsed: 0.020s
 
   Inputs applied (changes from baseline):
     Team B: Brand=Low, Product=Basic Economy
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 07: Two airlines: mid prices + brand+product
   STATUS: PASS
-  Elapsed: 0.014s
+  Elapsed: 0.017s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=397, Price_L=142, Brand=Medium, Product=Digital/Loyalty
@@ -167,18 +245,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 08: Three airlines: highest/lowest/random prices
   STATUS: PASS
-  Elapsed: 0.014s
+  Elapsed: 0.021s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=460, Price_L=230
@@ -187,18 +278,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 09: Three airlines: prices+brand+product (no extremes)
   STATUS: PASS
-  Elapsed: 0.013s
+  Elapsed: 0.012s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=397, Price_L=142, Brand=Medium, Product=Digital/Loyalty
@@ -207,18 +311,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 10: Four airlines: random prices
   STATUS: PASS
-  Elapsed: 0.012s
+  Elapsed: 0.011s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=396, Price_L=141
@@ -228,12 +345,25 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
@@ -250,18 +380,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 12: Five airlines: prices+brand+product
   STATUS: PASS
-  Elapsed: 0.010s
+  Elapsed: 0.011s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Digital/Loyalty
@@ -272,18 +415,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 13: All prices; five brand+product
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.010s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Basic Economy
@@ -295,18 +451,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 14: All prices+brand+product
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.011s
 
   Inputs applied (changes from baseline):
     Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Digital/Loyalty
@@ -318,36 +487,62 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 15: One airline: flights only
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.013s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=4
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 16: Two airlines: flights only
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.018s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=4
@@ -355,18 +550,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 17: Three airlines: flights only
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.016s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3
@@ -375,18 +583,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 18: Four airlines: flights only
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.017s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3
@@ -396,18 +617,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 19: Five airlines: flights only
   STATUS: PASS
-  Elapsed: 0.011s
+  Elapsed: 0.015s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3
@@ -418,18 +652,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 20: Six airlines: flights only
   STATUS: PASS
-  Elapsed: 0.012s
+  Elapsed: 0.015s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3
@@ -441,36 +688,62 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 21: One airline: flights+prices
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.017s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 22: Two airlines: flights+prices
   STATUS: PASS
-  Elapsed: 0.012s
+  Elapsed: 0.016s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -478,18 +751,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 23: Three airlines: flights+prices
   STATUS: PASS
-  Elapsed: 0.013s
+  Elapsed: 0.015s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -498,18 +784,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 24: Four airlines: flights+prices
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.015s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -519,18 +818,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 25: Five airlines: flights+prices
   STATUS: PASS
-  Elapsed: 0.011s
+  Elapsed: 0.016s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -541,18 +853,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 26: All airlines: flights+prices
   STATUS: PASS
-  Elapsed: 0.010s
+  Elapsed: 0.012s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178
@@ -564,18 +889,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 27: All airlines: flights+prices+brand+product
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.010s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Brand=Medium, Product=Basic Economy
@@ -587,18 +925,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 28: Five airlines: flights+prices+product
   STATUS: PASS
-  Elapsed: 0.012s
+  Elapsed: 0.013s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
@@ -609,18 +960,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 29: Four airlines: flights+prices+product
   STATUS: PASS
-  Elapsed: 0.011s
+  Elapsed: 0.015s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
@@ -630,18 +994,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 30: Three airlines: flights+prices+product
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.012s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
@@ -650,18 +1027,31 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 31: Two airlines: flights+prices+product
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.012s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
@@ -669,33 +1059,59 @@
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Scenario 32: One airline: flights+prices+product
   STATUS: PASS
-  Elapsed: 0.009s
+  Elapsed: 0.010s
 
   Inputs applied (changes from baseline):
     Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
 
   Decision Overwrite Check: PASS
 
-  Invariant checks:
-    [PASS] carried_total <= capacity
-    [PASS] Profit == Revenue - Cost
-    [PASS] Total_cost == sum(components)
-    [PASS] Sum(market_share_volume) ≈ 1
-    [PASS] Market total_passengers == sum(team pax)
+  Engine-based comparison (CSV pipeline fidelity):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
+
+  Independent cross-check (formula correctness):
+    Invariant checks:
+      [PASS] carried_total <= capacity
+      [PASS] Profit == Revenue - Cost
+      [PASS] Total_cost == sum(components)
+      [PASS] Sum(market_share_volume) ≈ 1
+      [PASS] Market total_passengers == sum(team pax)
+
+    All fields match: PASS
 
 
 ========================================================================
   Skipped scenarios: 0
-  Total runtime: 0.39s
+  Total runtime: 0.50s
 ========================================================================

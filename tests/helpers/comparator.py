@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from tests.helpers.expected_calculator import ExpectedResults
+from tests.helpers.independent_calculator import IndependentResults
 
 
 # ── Diff representation ───────────────────────────────────────────────
@@ -162,6 +163,89 @@ def compare_expected_actual(
         em = expected.market_result
         for field_name, field_type in _MARKET_COMPARE_FIELDS:
             exp_val = getattr(em, field_name)
+            act_val = actual_market.get(field_name, "")
+            if field_type == "int":
+                exp_str = str(exp_val)
+                act_str = str(act_val).split(".")[0]
+                if exp_str != act_str:
+                    result.diffs.append(Diff("MARKET", field_name, exp_str, act_str))
+            else:
+                if str(exp_val) != str(act_val):
+                    result.diffs.append(Diff("MARKET", field_name, str(exp_val), str(act_val)))
+
+    # ── Invariant checks ──────────────────────────────────────────
+    _check_invariants(result, actual_team, actual_market)
+
+    return result
+
+
+# ── Independent cross-check ────────────────────────────────────────────
+
+def compare_independent_vs_actual(
+    independent: IndependentResults,
+    sim_path: Path,
+    round_number: int,
+) -> ComparisonResult:
+    """Compare independently-calculated results against actual CSV outputs.
+
+    This is structurally identical to ``compare_expected_actual`` but uses
+    the ``IndependentResults`` from the from-scratch calculator (which does
+    NOT call ``compute_round_results``).  If this comparison fails but the
+    engine-based one passes, we have a formula-level bug in the engine.
+    """
+    result = ComparisonResult()
+
+    # ── Load actual team results ───────────────────────────────────
+    team_rows = _load_csv_rows(sim_path / "round_results_team.csv")
+    actual_team: dict[str, dict[str, str]] = {}
+    for row in team_rows:
+        try:
+            rn = int(float(row.get("round_number", "0")))
+        except ValueError:
+            continue
+        if rn == round_number:
+            actual_team[row["team_id"]] = row
+
+    # ── Missing / extra teams ──────────────────────────────────────
+    expected_ids = set(independent.team_results.keys())
+    actual_ids = set(actual_team.keys())
+    result.missing_teams = sorted(expected_ids - actual_ids)
+    result.extra_teams = sorted(actual_ids - expected_ids)
+
+    # ── Field-level comparison ─────────────────────────────────────
+    for tid in sorted(expected_ids & actual_ids):
+        exp = independent.team_results[tid]
+        act = actual_team[tid]
+        for field_name, field_type in _TEAM_COMPARE_FIELDS:
+            exp_val = getattr(exp, field_name)
+            act_val = act.get(field_name, "")
+            if field_type == "int":
+                exp_str = str(exp_val)
+                act_str = str(act_val).split(".")[0]
+                if exp_str != act_str:
+                    result.diffs.append(Diff(tid, field_name, exp_str, act_str))
+            else:
+                if str(exp_val) != str(act_val):
+                    result.diffs.append(Diff(tid, field_name, str(exp_val), str(act_val)))
+
+    # ── Market comparison ──────────────────────────────────────────
+    market_rows = _load_csv_rows(sim_path / "round_results_market.csv")
+    actual_market: dict[str, str] | None = None
+    for row in market_rows:
+        try:
+            rn = int(float(row.get("round_number", "0")))
+        except ValueError:
+            continue
+        if rn == round_number:
+            actual_market = row
+            break
+
+    if actual_market is None:
+        result.diffs.append(Diff("", "market_row", "present", "missing"))
+    elif independent.market_result is not None:
+        im = independent.market_result
+        for field_name, field_type in _MARKET_COMPARE_FIELDS:
+            exp_val = getattr(im, field_name)
             act_val = actual_market.get(field_name, "")
             if field_type == "int":
                 exp_str = str(exp_val)

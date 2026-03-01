@@ -20,10 +20,12 @@ Each scenario:
   1. Creates a fresh simulation (isolated temp folder)
   2. Starts simulation, writes scenario-specific decisions
   3. Calls move_next_round (engine computes results, writes CSVs)
-  4. Re-computes expected results independently via engine pure functions
-  5. Compares actual CSV values against expected values
-  6. Checks structural invariants
-  7. Records PASS/FAIL with detailed diffs
+  4. Re-computes expected results via engine pure functions (CSV pipeline check)
+  5. Re-computes expected results via independent from-scratch calculator
+     (formula correctness check — does NOT call compute_round_results)
+  6. Compares actual CSV values against both expected sets
+  7. Checks structural invariants
+  8. Records PASS/FAIL with detailed diffs
 """
 
 from __future__ import annotations
@@ -53,9 +55,10 @@ from app.modules.move_next_round import move_next_round
 from app.modules.setup_simulation import setup_simulation, TEAM_LETTERS
 from app.modules.start_simulation import start_simulation
 
-from tests.helpers.comparator import ComparisonResult, compare_expected_actual
+from tests.helpers.comparator import ComparisonResult, compare_expected_actual, compare_independent_vs_actual
 from tests.helpers.constraints import Constraints, get_constraints
 from tests.helpers.expected_calculator import compute_expected
+from tests.helpers.independent_calculator import compute_independent
 from tests.helpers.scenarios import (
     ALL_SCENARIOS,
     Decision,
@@ -83,6 +86,7 @@ class ScenarioResult:
     status: str          # "PASS" or "FAIL"
     failure_type: str = ""
     comparison: ComparisonResult | None = None
+    independent_comparison: ComparisonResult | None = None
     overwrite_check: OverwriteCheckResult | None = None
     decisions_applied: list[Decision] = field(default_factory=list)
     exception: str = ""
@@ -259,37 +263,50 @@ def run_scenario(
         # ── 7) Advance round (engine computes + writes CSVs) ──────
         move_next_round(simulation_id=sim_id, root_dir=tmp_root)
 
-        # ── 8) Compute expected results independently ──────────────
+        # ── 8) Compute expected results (engine-based) ────────────
         expected = compute_expected(sim_path, round_number=1)
 
-        # ── 9) Compare actual vs expected ──────────────────────────
+        # ── 8b) Compute expected results (independent / from-scratch)
+        independent = compute_independent(sim_path, round_number=1)
+
+        # ── 9) Compare actual vs engine-expected ──────────────────
         comparison = compare_expected_actual(expected, sim_path, round_number=1)
 
+        # ── 9b) Compare actual vs independent (formula cross-check)
+        ind_comparison = compare_independent_vs_actual(
+            independent, sim_path, round_number=1,
+        )
+
         elapsed = time.monotonic() - start_time
-        if comparison.passed:
+        both_passed = comparison.passed and ind_comparison.passed
+        if both_passed:
             return ScenarioResult(
                 scenario_id=spec.id,
                 scenario_name=spec.name,
                 status="PASS",
                 comparison=comparison,
+                independent_comparison=ind_comparison,
                 overwrite_check=overwrite_check,
                 decisions_applied=decisions,
                 elapsed_seconds=elapsed,
             )
         else:
-            # Determine failure type
-            if comparison.missing_teams or comparison.extra_teams:
-                ftype = "Missing Row"
-            elif comparison.diffs:
-                ftype = "Mismatch"
+            # Determine failure type from whichever comparison failed
+            failing = comparison if not comparison.passed else ind_comparison
+            prefix = "" if not comparison.passed else "Independent: "
+            if failing.missing_teams or failing.extra_teams:
+                ftype = f"{prefix}Missing Row"
+            elif failing.diffs:
+                ftype = f"{prefix}Mismatch"
             else:
-                ftype = "Invariant Violation"
+                ftype = f"{prefix}Invariant Violation"
             return ScenarioResult(
                 scenario_id=spec.id,
                 scenario_name=spec.name,
                 status="FAIL",
                 failure_type=ftype,
                 comparison=comparison,
+                independent_comparison=ind_comparison,
                 overwrite_check=overwrite_check,
                 decisions_applied=decisions,
                 elapsed_seconds=elapsed,
@@ -447,38 +464,79 @@ def write_text_report(report: Report, out_path: Path) -> None:
                 lines.append(f"    {r.overwrite_check.detail}")
             lines.append("")
 
-        # Comparison details
+        # Comparison details (engine-based)
         if r.comparison:
             comp = r.comparison
+            lines.append("  Engine-based comparison (CSV pipeline fidelity):")
 
             # Missing / extra teams
             if comp.missing_teams:
-                lines.append(f"  Missing teams in actual: {comp.missing_teams}")
+                lines.append(f"    Missing teams in actual: {comp.missing_teams}")
             if comp.extra_teams:
-                lines.append(f"  Extra teams in actual: {comp.extra_teams}")
+                lines.append(f"    Extra teams in actual: {comp.extra_teams}")
 
             # Diffs
             if comp.diffs:
                 total_diffs = len(comp.diffs)
                 shown = min(total_diffs, _MAX_DIFFS_PER_SCENARIO)
-                lines.append(f"  Mismatches: {total_diffs} total (showing first {shown})")
+                lines.append(f"    Mismatches: {total_diffs} total (showing first {shown})")
                 lines.append("")
-                lines.append(f"    {'Team':<8} {'Field':<28} {'Expected':<20} {'Actual':<20}")
-                lines.append(f"    {'-'*8} {'-'*28} {'-'*20} {'-'*20}")
+                lines.append(f"      {'Team':<8} {'Field':<28} {'Expected':<20} {'Actual':<20}")
+                lines.append(f"      {'-'*8} {'-'*28} {'-'*20} {'-'*20}")
                 for diff in comp.diffs[:shown]:
                     tid = diff.team_id or "(none)"
                     lines.append(
-                        f"    {tid:<8} {diff.field:<28} {diff.expected:<20} {diff.actual:<20}"
+                        f"      {tid:<8} {diff.field:<28} {diff.expected:<20} {diff.actual:<20}"
                     )
                 lines.append("")
 
             # Invariants
             if comp.invariants:
-                lines.append("  Invariant checks:")
+                lines.append("    Invariant checks:")
                 for inv in comp.invariants:
                     inv_stat = "PASS" if inv.passed else "FAIL"
                     detail_str = f"  ({inv.detail})" if inv.detail else ""
-                    lines.append(f"    [{inv_stat}] {inv.name}{detail_str}")
+                    lines.append(f"      [{inv_stat}] {inv.name}{detail_str}")
+                lines.append("")
+
+            if not comp.diffs and not comp.missing_teams and not comp.extra_teams:
+                lines.append("    All fields match: PASS")
+                lines.append("")
+
+        # Independent cross-check (formula correctness)
+        if r.independent_comparison:
+            icomp = r.independent_comparison
+            lines.append("  Independent cross-check (formula correctness):")
+
+            if icomp.missing_teams:
+                lines.append(f"    Missing teams: {icomp.missing_teams}")
+            if icomp.extra_teams:
+                lines.append(f"    Extra teams: {icomp.extra_teams}")
+
+            if icomp.diffs:
+                total_diffs = len(icomp.diffs)
+                shown = min(total_diffs, _MAX_DIFFS_PER_SCENARIO)
+                lines.append(f"    Mismatches: {total_diffs} total (showing first {shown})")
+                lines.append("")
+                lines.append(f"      {'Team':<8} {'Field':<28} {'Independent':<20} {'Actual':<20}")
+                lines.append(f"      {'-'*8} {'-'*28} {'-'*20} {'-'*20}")
+                for diff in icomp.diffs[:shown]:
+                    tid = diff.team_id or "(none)"
+                    lines.append(
+                        f"      {tid:<8} {diff.field:<28} {diff.expected:<20} {diff.actual:<20}"
+                    )
+                lines.append("")
+
+            if icomp.invariants:
+                lines.append("    Invariant checks:")
+                for inv in icomp.invariants:
+                    inv_stat = "PASS" if inv.passed else "FAIL"
+                    detail_str = f"  ({inv.detail})" if inv.detail else ""
+                    lines.append(f"      [{inv_stat}] {inv.name}{detail_str}")
+                lines.append("")
+
+            if not icomp.diffs and not icomp.missing_teams and not icomp.extra_teams:
+                lines.append("    All fields match: PASS")
                 lines.append("")
 
         lines.append("")
