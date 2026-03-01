@@ -62,74 +62,110 @@ PRODUCT_COSTS: dict[str, int] = {
 }
 
 # ── Per-team baseline data, keyed by letter A–F (Case Appendix) ───────
-# Baseline branding / product – all airlines are established carriers with
-# existing marketing budgets and loyalty programs before the game starts.
-BASELINE_BRANDING = "Medium"      # $3 M / month
-BASELINE_PRODUCT  = "Digital/Loyalty"  # $2 M / month
+# Strategic Baseline (Round 0 Positioning) — each airline starts with
+# a distinct archetype defining capacity, pricing, branding, product
+# strategy, and customer / operating indices.
+
+# Valid enum values (for baseline consistency enforcement)
+VALID_PRICING_POSTURES  = ("Premium", "Match", "Discount")
+VALID_BRANDING_LEVELS   = ("Low", "Medium", "High")
+VALID_PRODUCT_STRATEGIES = ("Premium Cabin", "Basic Economy", "Digital/Loyalty", "None")
 
 TEAM_BASELINES: dict[str, dict[str, Any]] = {
-    "A": {
+    "A": {  # Premium Leader
         "baseline_passengers":      26_400,
         "baseline_volume_share":    0.22,
         "baseline_profit_millions": 6.5,
         "baseline_profit_share":    0.26,
         "variable_cost_per_pax":    155,
         "baseline_flights_per_day": 5,
-        "baseline_branding":        BASELINE_BRANDING,
-        "baseline_product":         BASELINE_PRODUCT,
+        "baseline_pricing_posture": "Premium",
+        "baseline_branding":        "High",
+        "baseline_product":         "Premium Cabin",
+        "baseline_csi":             88,
+        "baseline_oei":             78,
     },
-    "B": {
+    "B": {  # Strong Full-Service Carrier
         "baseline_passengers":      22_800,
         "baseline_volume_share":    0.19,
         "baseline_profit_millions": 4.8,
         "baseline_profit_share":    0.19,
         "variable_cost_per_pax":    170,
-        "baseline_flights_per_day": 5,
-        "baseline_branding":        BASELINE_BRANDING,
-        "baseline_product":         BASELINE_PRODUCT,
+        "baseline_flights_per_day": 4,
+        "baseline_pricing_posture": "Match",
+        "baseline_branding":        "Medium",
+        "baseline_product":         "Digital/Loyalty",
+        "baseline_csi":             82,
+        "baseline_oei":             72,
     },
-    "C": {
+    "C": {  # Balanced Competitor
         "baseline_passengers":      21_600,
         "baseline_volume_share":    0.18,
         "baseline_profit_millions": 4.2,
         "baseline_profit_share":    0.17,
         "variable_cost_per_pax":    160,
         "baseline_flights_per_day": 4,
-        "baseline_branding":        BASELINE_BRANDING,
-        "baseline_product":         BASELINE_PRODUCT,
+        "baseline_pricing_posture": "Match",
+        "baseline_branding":        "Medium",
+        "baseline_product":         "Basic Economy",
+        "baseline_csi":             76,
+        "baseline_oei":             74,
     },
-    "D": {
+    "D": {  # Efficient Value Carrier
         "baseline_passengers":      19_200,
         "baseline_volume_share":    0.16,
         "baseline_profit_millions": 4.5,
         "baseline_profit_share":    0.18,
         "variable_cost_per_pax":    130,
         "baseline_flights_per_day": 4,
-        "baseline_branding":        BASELINE_BRANDING,
-        "baseline_product":         BASELINE_PRODUCT,
+        "baseline_pricing_posture": "Discount",
+        "baseline_branding":        "Low",
+        "baseline_product":         "None",
+        "baseline_csi":             68,
+        "baseline_oei":             86,
     },
-    "E": {
+    "E": {  # Ultra Low-Cost Challenger
         "baseline_passengers":      15_600,
         "baseline_volume_share":    0.13,
         "baseline_profit_millions": 2.0,
         "baseline_profit_share":    0.08,
         "variable_cost_per_pax":    110,
         "baseline_flights_per_day": 3,
-        "baseline_branding":        BASELINE_BRANDING,
-        "baseline_product":         BASELINE_PRODUCT,
+        "baseline_pricing_posture": "Discount",
+        "baseline_branding":        "Low",
+        "baseline_product":         "Basic Economy",
+        "baseline_csi":             62,
+        "baseline_oei":             90,
     },
-    "F": {
+    "F": {  # Niche Quality/Value Carrier
         "baseline_passengers":      14_400,
         "baseline_volume_share":    0.12,
         "baseline_profit_millions": 3.0,
         "baseline_profit_share":    0.12,
         "variable_cost_per_pax":    145,
         "baseline_flights_per_day": 3,
-        "baseline_branding":        BASELINE_BRANDING,
-        "baseline_product":         BASELINE_PRODUCT,
+        "baseline_pricing_posture": "Premium",
+        "baseline_branding":        "Medium",
+        "baseline_product":         "Digital/Loyalty",
+        "baseline_csi":             80,
+        "baseline_oei":             76,
     },
 }
 TEAM_LETTERS = list(TEAM_BASELINES.keys())  # ["A", "B", … "F"]
+
+
+def _validate_baseline_enums() -> None:
+    """Enforce consistent enum values in TEAM_BASELINES at import time."""
+    for tid, bl in TEAM_BASELINES.items():
+        assert bl["baseline_pricing_posture"] in VALID_PRICING_POSTURES, \
+            f"Team {tid}: invalid pricing_posture '{bl['baseline_pricing_posture']}'"
+        assert bl["baseline_branding"] in VALID_BRANDING_LEVELS, \
+            f"Team {tid}: invalid branding_level '{bl['baseline_branding']}'"
+        assert bl["baseline_product"] in VALID_PRODUCT_STRATEGIES, \
+            f"Team {tid}: invalid product_strategy '{bl['baseline_product']}'"
+
+
+_validate_baseline_enums()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -160,6 +196,12 @@ CSV_SCHEMAS: dict[str, list[str]] = {
         "baseline_profit_millions",
         "baseline_profit_share",
         "variable_cost_per_passenger",
+        "baseline_flights_per_day",
+        "baseline_pricing_posture",
+        "baseline_branding_level",
+        "baseline_product_strategy",
+        "baseline_csi",
+        "baseline_oei",
         "created_at_utc",
     ],
     "users.csv": [
@@ -467,6 +509,7 @@ def setup_simulation(
     parameter_rows = _build_parameter_rows()
 
     # ── 3) teams.csv  (6 airlines with baselines, Case Appendix) ──
+    #   Strategic Baseline (Round 0 Positioning) — differentiated per team.
     team_rows: list[dict[str, Any]] = []
     for i, letter in enumerate(TEAM_LETTERS):
         bl = TEAM_BASELINES[letter]
@@ -480,6 +523,12 @@ def setup_simulation(
             "baseline_profit_millions": str(bl["baseline_profit_millions"]),
             "baseline_profit_share":    str(bl["baseline_profit_share"]),
             "variable_cost_per_passenger": str(bl["variable_cost_per_pax"]),
+            "baseline_flights_per_day": str(bl["baseline_flights_per_day"]),
+            "baseline_pricing_posture": bl["baseline_pricing_posture"],
+            "baseline_branding_level":  bl["baseline_branding"],
+            "baseline_product_strategy": bl["baseline_product"],
+            "baseline_csi":             str(bl["baseline_csi"]),
+            "baseline_oei":             str(bl["baseline_oei"]),
             "created_at_utc":           now,
         })
 
@@ -534,8 +583,25 @@ def setup_simulation(
         for rn in range(1, total_rounds + 1)
     ]
 
-    # ── 5) decisions.csv  (headers only) ───────────────────────────
+    # ── 5) decisions.csv  (Round 1 baseline decisions) ─────────────
+    #   Strategic Baseline (Round 0 Positioning) — pre-populate round 1
+    #   with each team's archetype decisions so the Team View starts
+    #   pre-filled and the simulation begins with strategic asymmetry.
     decision_rows: list[dict[str, Any]] = []
+    for letter in TEAM_LETTERS:
+        bl = TEAM_BASELINES[letter]
+        posture = bl["baseline_pricing_posture"]
+        decision_rows.append({
+            "simulation_id":   simulation_id,
+            "round_number":    "1",
+            "team_id":         letter,
+            "flights_per_day": str(bl["baseline_flights_per_day"]),
+            "price_business":  str(FARES[posture]["business"]),
+            "price_leisure":   str(FARES[posture]["leisure"]),
+            "branding_level":  bl["baseline_branding"],
+            "product_strategy": bl["baseline_product"],
+            "submitted_at_utc": now,
+        })
 
     # ── 6) round_results_team.csv  (Round 0 baseline snapshot) ─────
     #   Passengers & profit match Case Appendix exactly.
@@ -582,10 +648,10 @@ def setup_simulation(
             "avg_revenue_per_flight": str(round(avg_rev, 2)),
             "avg_cost_per_flight":  str(round(avg_cost, 2)),
             "avg_profit_per_flight": str(round(avg_prof, 2)),
-            "price_business":       str(FARES["Match"]["business"]),  # baseline Match price
-            "price_leisure":        str(FARES["Match"]["leisure"]),   # baseline Match price
-            "csi":                  "100.0",  # neutral baseline index
-            "oei":                  "100.0",  # neutral baseline index
+            "price_business":       str(FARES[bl["baseline_pricing_posture"]]["business"]),
+            "price_leisure":        str(FARES[bl["baseline_pricing_posture"]]["leisure"]),
+            "csi":                  str(bl["baseline_csi"]),
+            "oei":                  str(bl["baseline_oei"]),
             "created_at_utc":       now,
         })
 
