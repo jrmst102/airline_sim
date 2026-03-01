@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,8 +13,8 @@ from app.core.simulation_engine import (
 	compute_round_results,
 )
 from app.core.state_machine import can_move_next_round, validate_simulation_state
+from app.data.csv_manager import load_csv, write_csv, load_parameters as load_params_kv
 from app.data.log_manager import append_log_event
-from app.modules.setup_simulation import load_parameters
 
 
 @dataclass(frozen=True)
@@ -30,29 +29,6 @@ class MoveNextRoundResult:
 
 def _utc_now() -> str:
 	return datetime.now(timezone.utc).isoformat()
-
-
-def _simulation_path(root_dir: Path | str, simulation_id: str) -> Path:
-	return Path(root_dir) / simulation_id
-
-
-def _load_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-	if not path.exists():
-		raise FileNotFoundError(f"Required file not found: {path}")
-	with path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		fieldnames = reader.fieldnames
-		if not fieldnames:
-			raise ValueError(f"Missing CSV header in {path}")
-		return fieldnames, list(reader)
-
-
-def _write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
-	with path.open("w", newline="", encoding="utf-8") as handle:
-		writer = csv.DictWriter(handle, fieldnames=fieldnames)
-		writer.writeheader()
-		if rows:
-			writer.writerows(rows)
 
 
 def _as_int(value: str, default: int = 0) -> int:
@@ -93,17 +69,7 @@ def move_next_round(
 	admin_user_id: str = "U_ADMIN",
 	root_dir: Path | str = Path("simulations"),
 ) -> MoveNextRoundResult:
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	simulation_csv = simulation_dir / "simulation.csv"
-	parameters_csv = simulation_dir / "parameters.csv"
-	teams_csv = simulation_dir / "teams.csv"
-	rounds_csv = simulation_dir / "rounds.csv"
-	decisions_csv = simulation_dir / "decisions.csv"
-	round_results_team_csv = simulation_dir / "round_results_team.csv"
-	round_results_market_csv = simulation_dir / "round_results_market.csv"
-	admin_actions_csv = simulation_dir / "admin_actions.csv"
-
-	sim_fieldnames, sim_rows = _load_csv(simulation_csv)
+	sim_fieldnames, sim_rows = load_csv(simulation_id, "simulation.csv")
 	if len(sim_rows) != 1:
 		raise ValueError(f"Expected exactly 1 simulation row in {simulation_csv}")
 	sim_row = sim_rows[0]
@@ -117,11 +83,11 @@ def move_next_round(
 		raise ValueError("Simulation current_round must be >= 1 before moving to next round")
 
 	# ── Load key-value parameters ─────────────────────────────────
-	params_dict = load_parameters(parameters_csv)
+	params_dict = load_params_kv(simulation_id)
 	engine_parameters = build_parameters_from_csv(params_dict)
 
 	# ── Teams (need variable_cost_per_passenger) ──────────────────
-	_, team_rows = _load_csv(teams_csv)
+	_, team_rows = load_csv(simulation_id, "teams.csv")
 	active_teams = _active_team_rows(team_rows)
 	if not active_teams:
 		raise ValueError("No active teams found")
@@ -138,11 +104,11 @@ def move_next_round(
 		csi_map[row["team_id"]] = row.get("baseline_csi", "")
 		oei_map[row["team_id"]] = row.get("baseline_oei", "")
 
-	round_fieldnames, round_rows = _load_csv(rounds_csv)
+	round_fieldnames, round_rows = load_csv(simulation_id, "rounds.csv")
 	open_resolution = resolve_open_round(round_rows, expected_round=current_round)
 	open_round_number = open_resolution.open_round_number
 
-	_, decision_rows_all = _load_csv(decisions_csv)
+	_, decision_rows_all = load_csv(simulation_id, "decisions.csv")
 	round_decisions = [
 		row
 		for row in decision_rows_all
@@ -173,7 +139,7 @@ def move_next_round(
 	now = _utc_now()
 
 	# ── Write team results ────────────────────────────────────────
-	team_result_fieldnames, team_result_rows = _load_csv(round_results_team_csv)
+	team_result_fieldnames, team_result_rows = load_csv(simulation_id, "round_results_team.csv")
 	team_result_rows = [
 		row for row in team_result_rows if _as_int(row.get("round_number", "0")) != open_round_number
 	]
@@ -207,7 +173,7 @@ def move_next_round(
 
 	# ── Write market results ──────────────────────────────────────
 	mr = engine_result.market_result
-	market_result_fieldnames, market_result_rows = _load_csv(round_results_market_csv)
+	market_result_fieldnames, market_result_rows = load_csv(simulation_id, "round_results_market.csv")
 	market_result_rows = [
 		row for row in market_result_rows if _as_int(row.get("round_number", "0")) != open_round_number
 	]
@@ -237,7 +203,7 @@ def move_next_round(
 	sim_row["status"] = new_status
 	sim_row["updated_at_utc"] = now
 
-	admin_fieldnames, admin_rows = _load_csv(admin_actions_csv)
+	admin_fieldnames, admin_rows = load_csv(simulation_id, "admin_actions.csv")
 	admin_rows.append(
 		{
 			"event_id": _next_event_id(admin_rows),
@@ -252,13 +218,12 @@ def move_next_round(
 		}
 	)
 
-	_write_csv(round_results_team_csv, team_result_fieldnames, team_result_rows)
-	_write_csv(round_results_market_csv, market_result_fieldnames, market_result_rows)
-	_write_csv(rounds_csv, round_fieldnames, round_rows)
-	_write_csv(simulation_csv, sim_fieldnames, sim_rows)
-	_write_csv(admin_actions_csv, admin_fieldnames, admin_rows)
+	write_csv(simulation_id, "round_results_team.csv", team_result_fieldnames, team_result_rows)
+	write_csv(simulation_id, "round_results_market.csv", market_result_fieldnames, market_result_rows)
+	write_csv(simulation_id, "rounds.csv", round_fieldnames, round_rows)
+	write_csv(simulation_id, "simulation.csv", sim_fieldnames, sim_rows)
+	write_csv(simulation_id, "admin_actions.csv", admin_fieldnames, admin_rows)
 	append_log_event(
-		simulation_dir=simulation_dir,
 		simulation_id=simulation_id,
 		actor_user_id=admin_user_id,
 		action="MOVE_NEXT_ROUND",

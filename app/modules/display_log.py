@@ -5,17 +5,7 @@ import csv
 from io import StringIO
 from pathlib import Path
 
-
-def _simulation_path(root_dir: Path | str, simulation_id: str) -> Path:
-	return Path(root_dir) / simulation_id
-
-
-def _read_csv_rows(csv_path: Path) -> list[dict[str, str]]:
-	if not csv_path.exists():
-		return []
-	with csv_path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		return list(reader)
+from app.data.csv_manager import csv_exists, read_csv_rows, read_text, sim_key
 
 
 def _render_log_csv(rows: list[dict[str, str]]) -> str:
@@ -30,13 +20,10 @@ def _render_log_csv(rows: list[dict[str, str]]) -> str:
 	return buffer.getvalue()
 
 
-def _build_legacy_log_text(simulation_dir: Path) -> str:
-	admin_actions_csv = simulation_dir / "admin_actions.csv"
-	login_log_csv = simulation_dir / "login_log.csv"
-
+def _build_legacy_log_text(simulation_id: str) -> str:
 	normalized_rows: list[dict[str, str]] = []
 
-	for row in _read_csv_rows(admin_actions_csv):
+	for row in read_csv_rows(simulation_id, "admin_actions.csv"):
 		normalized_rows.append(
 			{
 				"event_id": row.get("event_id", ""),
@@ -48,7 +35,7 @@ def _build_legacy_log_text(simulation_dir: Path) -> str:
 			}
 		)
 
-	for row in _read_csv_rows(login_log_csv):
+	for row in read_csv_rows(simulation_id, "login_log.csv"):
 		username = row.get("username", "")
 		details = f"username={username}" if username else ""
 		normalized_rows.append(
@@ -70,15 +57,11 @@ def display_log(
 	simulation_id: str,
 	root_dir: Path | str = Path("simulations"),
 ) -> str:
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	log_csv = simulation_dir / "log.csv"
-	if not log_csv.exists():
-		legacy_admin = simulation_dir / "admin_actions.csv"
-		legacy_login = simulation_dir / "login_log.csv"
-		if legacy_admin.exists() or legacy_login.exists():
-			return _build_legacy_log_text(simulation_dir)
-		raise FileNotFoundError(f"Required file not found: {log_csv}")
-	return log_csv.read_text(encoding="utf-8")
+	if not csv_exists(simulation_id, "log.csv"):
+		if csv_exists(simulation_id, "admin_actions.csv") or csv_exists(simulation_id, "login_log.csv"):
+			return _build_legacy_log_text(simulation_id)
+		raise FileNotFoundError(f"Required file not found: {sim_key(simulation_id, 'log.csv')}")
+	return read_text(sim_key(simulation_id, "log.csv"))
 
 
 def _parse_cli_args() -> argparse.Namespace:

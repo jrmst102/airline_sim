@@ -12,12 +12,11 @@ them back.
 from __future__ import annotations
 
 import argparse
-import csv
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
+from app.data.csv_manager import load_csv, write_csv
 from app.data.log_manager import append_log_event
 
 
@@ -57,29 +56,6 @@ def _utc_now() -> str:
 	return datetime.now(timezone.utc).isoformat()
 
 
-def _simulation_path(root_dir: Path | str, simulation_id: str) -> Path:
-	return Path(root_dir) / simulation_id
-
-
-def _load_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-	if not path.exists():
-		raise FileNotFoundError(f"Required file not found: {path}")
-	with path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		fieldnames = reader.fieldnames
-		if not fieldnames:
-			raise ValueError(f"Missing CSV header in {path}")
-		return fieldnames, list(reader)
-
-
-def _write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
-	with path.open("w", newline="", encoding="utf-8") as handle:
-		writer = csv.DictWriter(handle, fieldnames=fieldnames)
-		writer.writeheader()
-		if rows:
-			writer.writerows(rows)
-
-
 def _next_event_id(admin_action_rows: list[dict[str, str]]) -> str:
 	max_suffix = 0
 	for row in admin_action_rows:
@@ -114,14 +90,9 @@ def change_parameters_live(
 
 	_validate_updates(updates)
 
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	simulation_csv = simulation_dir / "simulation.csv"
-	parameters_csv = simulation_dir / "parameters.csv"
-	admin_actions_csv = simulation_dir / "admin_actions.csv"
-
-	sim_fieldnames, sim_rows = _load_csv(simulation_csv)
+	sim_fieldnames, sim_rows = load_csv(simulation_id, "simulation.csv")
 	if len(sim_rows) != 1:
-		raise ValueError(f"Expected exactly 1 simulation row in {simulation_csv}")
+		raise ValueError(f"Expected exactly 1 simulation row in simulation.csv")
 	sim_row = sim_rows[0]
 	status = sim_row.get("status", "")
 	if status not in {"CREATED", "STARTED"}:
@@ -130,7 +101,7 @@ def change_parameters_live(
 		)
 
 	# Read key-value parameters
-	param_fieldnames, param_rows = _load_csv(parameters_csv)
+	param_fieldnames, param_rows = load_csv(simulation_id, "parameters.csv")
 	if not param_rows:
 		raise ValueError("No parameters found in parameters.csv")
 
@@ -150,7 +121,7 @@ def change_parameters_live(
 	now = _utc_now()
 	sim_row["updated_at_utc"] = now
 
-	admin_fieldnames, admin_rows = _load_csv(admin_actions_csv)
+	admin_fieldnames, admin_rows = load_csv(simulation_id, "admin_actions.csv")
 	admin_rows.append(
 		{
 			"event_id": _next_event_id(admin_rows),
@@ -162,11 +133,10 @@ def change_parameters_live(
 		}
 	)
 
-	_write_csv(parameters_csv, param_fieldnames, param_rows)
-	_write_csv(admin_actions_csv, admin_fieldnames, admin_rows)
-	_write_csv(simulation_csv, sim_fieldnames, sim_rows)
+	write_csv(simulation_id, "parameters.csv", param_fieldnames, param_rows)
+	write_csv(simulation_id, "admin_actions.csv", admin_fieldnames, admin_rows)
+	write_csv(simulation_id, "simulation.csv", sim_fieldnames, sim_rows)
 	append_log_event(
-		simulation_dir=simulation_dir,
 		simulation_id=simulation_id,
 		actor_user_id=admin_user_id,
 		action="CHANGE_PARAMETERS_LIVE",

@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import argparse
-import csv
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from app.core.round_manager import undo_latest_round_transition
 from app.core.state_machine import can_undo_round, validate_simulation_state
+from app.data.csv_manager import load_csv, write_csv
 from app.data.log_manager import append_log_event
 
 
@@ -23,29 +22,6 @@ class UndoRoundResult:
 
 def _utc_now() -> str:
 	return datetime.now(timezone.utc).isoformat()
-
-
-def _simulation_path(root_dir: Path | str, simulation_id: str) -> Path:
-	return Path(root_dir) / simulation_id
-
-
-def _load_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-	if not path.exists():
-		raise FileNotFoundError(f"Required file not found: {path}")
-	with path.open("r", newline="", encoding="utf-8") as handle:
-		reader = csv.DictReader(handle)
-		fieldnames = reader.fieldnames
-		if not fieldnames:
-			raise ValueError(f"Missing CSV header in {path}")
-		return fieldnames, list(reader)
-
-
-def _write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
-	with path.open("w", newline="", encoding="utf-8") as handle:
-		writer = csv.DictWriter(handle, fieldnames=fieldnames)
-		writer.writeheader()
-		if rows:
-			writer.writerows(rows)
 
 
 def _as_int(value: str, default: int = 0) -> int:
@@ -71,24 +47,16 @@ def undo_round(
 	admin_user_id: str = "U_ADMIN",
 	root_dir: Path | str = Path("simulations"),
 ) -> UndoRoundResult:
-	simulation_dir = _simulation_path(root_dir, simulation_id)
-	simulation_csv = simulation_dir / "simulation.csv"
-	rounds_csv = simulation_dir / "rounds.csv"
-	decisions_csv = simulation_dir / "decisions.csv"
-	round_results_team_csv = simulation_dir / "round_results_team.csv"
-	round_results_market_csv = simulation_dir / "round_results_market.csv"
-	admin_actions_csv = simulation_dir / "admin_actions.csv"
-
-	sim_fieldnames, sim_rows = _load_csv(simulation_csv)
+	sim_fieldnames, sim_rows = load_csv(simulation_id, "simulation.csv")
 	if len(sim_rows) != 1:
-		raise ValueError(f"Expected exactly 1 simulation row in {simulation_csv}")
+		raise ValueError(f"Expected exactly 1 simulation row in simulation.csv")
 	sim_row = sim_rows[0]
 	status = sim_row.get("status", "")
 	validate_simulation_state(status)
 	if not can_undo_round(status):
 		raise ValueError(f"Simulation must be STARTED or ENDED to undo round (found '{status}')")
 
-	round_fieldnames, round_rows = _load_csv(rounds_csv)
+	round_fieldnames, round_rows = load_csv(simulation_id, "rounds.csv")
 	if not round_rows:
 		raise ValueError("No rounds configured")
 
@@ -103,26 +71,26 @@ def undo_round(
 	now = _utc_now()
 	sim_row["updated_at_utc"] = now
 
-	team_result_fieldnames, team_result_rows = _load_csv(round_results_team_csv)
+	team_result_fieldnames, team_result_rows = load_csv(simulation_id, "round_results_team.csv")
 	team_result_rows = [
 		row for row in team_result_rows if _as_int(row.get("round_number", "0")) != reopened_round
 	]
 
-	market_result_fieldnames, market_result_rows = _load_csv(round_results_market_csv)
+	market_result_fieldnames, market_result_rows = load_csv(simulation_id, "round_results_market.csv")
 	market_result_rows = [
 		row for row in market_result_rows if _as_int(row.get("round_number", "0")) != reopened_round
 	]
 
 	if rolled_back_open_round is not None:
-		decision_fieldnames, decision_rows = _load_csv(decisions_csv)
+		decision_fieldnames, decision_rows = load_csv(simulation_id, "decisions.csv")
 		decision_rows = [
 			row
 			for row in decision_rows
 			if _as_int(row.get("round_number", "0")) != rolled_back_open_round
 		]
-		_write_csv(decisions_csv, decision_fieldnames, decision_rows)
+		write_csv(simulation_id, "decisions.csv", decision_fieldnames, decision_rows)
 
-	admin_fieldnames, admin_rows = _load_csv(admin_actions_csv)
+	admin_fieldnames, admin_rows = load_csv(simulation_id, "admin_actions.csv")
 	admin_rows.append(
 		{
 			"event_id": _next_event_id(admin_rows),
@@ -137,13 +105,12 @@ def undo_round(
 		}
 	)
 
-	_write_csv(round_results_team_csv, team_result_fieldnames, team_result_rows)
-	_write_csv(round_results_market_csv, market_result_fieldnames, market_result_rows)
-	_write_csv(rounds_csv, round_fieldnames, round_rows)
-	_write_csv(simulation_csv, sim_fieldnames, sim_rows)
-	_write_csv(admin_actions_csv, admin_fieldnames, admin_rows)
+	write_csv(simulation_id, "round_results_team.csv", team_result_fieldnames, team_result_rows)
+	write_csv(simulation_id, "round_results_market.csv", market_result_fieldnames, market_result_rows)
+	write_csv(simulation_id, "rounds.csv", round_fieldnames, round_rows)
+	write_csv(simulation_id, "simulation.csv", sim_fieldnames, sim_rows)
+	write_csv(simulation_id, "admin_actions.csv", admin_fieldnames, admin_rows)
 	append_log_event(
-		simulation_dir=simulation_dir,
 		simulation_id=simulation_id,
 		actor_user_id=admin_user_id,
 		action="UNDO_ROUND",
