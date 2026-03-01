@@ -69,6 +69,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_millions": 6.5,
         "baseline_profit_share":    0.26,
         "variable_cost_per_pax":    155,
+        "baseline_flights_per_day": 5,
     },
     "B": {
         "baseline_passengers":      22_800,
@@ -76,6 +77,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_millions": 4.8,
         "baseline_profit_share":    0.19,
         "variable_cost_per_pax":    170,
+        "baseline_flights_per_day": 5,
     },
     "C": {
         "baseline_passengers":      21_600,
@@ -83,6 +85,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_millions": 4.2,
         "baseline_profit_share":    0.17,
         "variable_cost_per_pax":    160,
+        "baseline_flights_per_day": 4,
     },
     "D": {
         "baseline_passengers":      19_200,
@@ -90,6 +93,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_millions": 4.5,
         "baseline_profit_share":    0.18,
         "variable_cost_per_pax":    130,
+        "baseline_flights_per_day": 4,
     },
     "E": {
         "baseline_passengers":      15_600,
@@ -97,6 +101,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_millions": 2.0,
         "baseline_profit_share":    0.08,
         "variable_cost_per_pax":    110,
+        "baseline_flights_per_day": 3,
     },
     "F": {
         "baseline_passengers":      14_400,
@@ -104,6 +109,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_profit_millions": 3.0,
         "baseline_profit_share":    0.12,
         "variable_cost_per_pax":    145,
+        "baseline_flights_per_day": 3,
     },
 }
 TEAM_LETTERS = list(TEAM_BASELINES.keys())  # ["A", "B", … "F"]
@@ -512,45 +518,68 @@ def setup_simulation(
     decision_rows: list[dict[str, Any]] = []
 
     # ── 6) round_results_team.csv  (Round 0 baseline snapshot) ─────
-    #   Passengers and profit match Case Appendix exactly.
-    #   Fields not derivable from baseline are left blank.
+    #   Passengers & profit match Case Appendix exactly.
+    #   Costs are derived from baseline data; revenue = profit + total_cost.
+    #   CSI & OEI start at 100.0 (neutral index baseline).
     baseline_team_results: list[dict[str, Any]] = []
     for letter in TEAM_LETTERS:
         bl = TEAM_BASELINES[letter]
-        profit_dollars = bl["baseline_profit_millions"] * 1_000_000
+        pax           = bl["baseline_passengers"]
+        profit        = bl["baseline_profit_millions"] * 1_000_000
+        vcpp          = bl["variable_cost_per_pax"]
+        fpd           = bl["baseline_flights_per_day"]
+
+        monthly_flights = fpd * DAYS_PER_MONTH
+        capacity        = monthly_flights * SEATS_PER_FLIGHT
+
+        var_cost      = pax * vcpp
+        fix_cost      = monthly_flights * FIXED_COST_PER_FLIGHT
+        brand_cost    = 0          # no strategy chosen yet
+        prod_cost     = 0          # no strategy chosen yet
+        total_cost    = var_cost + fix_cost + brand_cost + prod_cost
+        revenue       = profit + total_cost   # derive to stay consistent
+
+        load_factor   = pax / capacity if capacity > 0 else 0.0
+        avg_rev       = revenue / monthly_flights if monthly_flights else 0.0
+        avg_cost      = total_cost / monthly_flights if monthly_flights else 0.0
+        avg_prof      = profit / monthly_flights if monthly_flights else 0.0
+
         baseline_team_results.append({
             "simulation_id":        simulation_id,
             "round_number":         "0",
             "team_id":              letter,
-            "passengers":           str(bl["baseline_passengers"]),
-            "revenue":              "",       # not provided in case baseline
-            "variable_cost":        "",
-            "fixed_cost":           "",
-            "branding_cost":        "",
-            "product_cost":         "",
-            "total_cost":           "",
-            "profit":               str(int(profit_dollars)),
+            "passengers":           str(pax),
+            "revenue":              str(round(revenue, 2)),
+            "variable_cost":        str(round(var_cost, 2)),
+            "fixed_cost":           str(round(fix_cost, 2)),
+            "branding_cost":        str(round(brand_cost, 2)),
+            "product_cost":         str(round(prod_cost, 2)),
+            "total_cost":           str(round(total_cost, 2)),
+            "profit":               str(int(profit)),
             "market_share_volume":  str(bl["baseline_volume_share"]),
             "market_share_profit":  str(bl["baseline_profit_share"]),
-            "load_factor":          "",
-            "avg_revenue_per_flight": "",
-            "avg_cost_per_flight":  "",
-            "avg_profit_per_flight": "",
-            "csi":                  "",       # not specified in case
-            "oei":                  "",       # not specified in case
+            "load_factor":          str(round(load_factor, 4)),
+            "avg_revenue_per_flight": str(round(avg_rev, 2)),
+            "avg_cost_per_flight":  str(round(avg_cost, 2)),
+            "avg_profit_per_flight": str(round(avg_prof, 2)),
+            "csi":                  "100.0",  # neutral baseline index
+            "oei":                  "100.0",  # neutral baseline index
             "created_at_utc":       now,
         })
 
     # ── 7) round_results_market.csv  (Round 0 baseline) ───────────
+    mkt_total_rev  = sum(float(r["revenue"])     for r in baseline_team_results)
+    mkt_total_cost = sum(float(r["total_cost"])  for r in baseline_team_results)
+    mkt_total_prof = sum(float(r["profit"])      for r in baseline_team_results)
     baseline_market_results = [
         {
             "simulation_id":   simulation_id,
             "round_number":    "0",
             "total_demand":    str(TOTAL_DEMAND),
             "total_passengers": str(TOTAL_DEMAND),   # baseline: all demand served
-            "total_revenue":   "",                   # not provided in case baseline
-            "total_cost":      "",
-            "total_profit":    str(25_000_000),       # Case Appendix: $25 M
+            "total_revenue":   str(round(mkt_total_rev, 2)),
+            "total_cost":      str(round(mkt_total_cost, 2)),
+            "total_profit":    str(round(mkt_total_prof, 2)),
             "created_at_utc":  now,
         }
     ]
