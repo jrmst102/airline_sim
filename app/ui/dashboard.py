@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import os
-import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -11,224 +9,166 @@ import streamlit as st
 AUTO_REFRESH_SECONDS = 60
 
 
-def load_css_local() -> None:
-    """
-    Loads theme.css and styles.css from the SAME folder as this dashboard.py file.
-    """
-    here = Path(__file__).resolve().parent
-    css_files = [here / "theme.css", here / "styles.css"]
+def _load_local_css() -> None:
+    base_dir = Path(__file__).resolve().parent
+    css_parts: list[str] = []
 
-    css_chunks: list[str] = []
-    for css_path in css_files:
-        if css_path.exists():
-            css_chunks.append(css_path.read_text(encoding="utf-8"))
+    # Load theme.css + styles.css from same directory as dashboard.py
+    for name in ("theme.css", "styles.css"):
+        p = base_dir / name
+        if p.exists():
+            css_parts.append(p.read_text(encoding="utf-8"))
 
-    if css_chunks:
-        st.markdown(f"<style>{'\n'.join(css_chunks)}</style>", unsafe_allow_html=True)
+    # Dashboard-only overrides
+    css_parts.append(
+        """
+        /* Hide Streamlit sidebar completely */
+        section[data-testid="stSidebar"] { display: none !important; }
+        [data-testid="collapsedControl"] { display: none !important; }
+
+        /* Header positioning override */
+        .air-header { left: 0 !important; }
+
+        /* Main content sizing/padding */
+        .main .block-container {
+            max-width: 1100px !important;
+            padding-top: 120px !important;
+        }
+
+        /* Force st.metric readability */
+        div[data-testid="stMetricLabel"] p,
+        div[data-testid="stMetricLabel"] label {
+            color: #e5e7eb !important;
+            opacity: 1 !important;
+        }
+        div[data-testid="stMetricValue"] {
+            color: #ffffff !important;
+        }
+
+        /* Small status card + footer */
+        .status-card {
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.04);
+            color: #e5e7eb;
+        }
+        .copyright {
+            margin-top: 22px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+        """
+    )
+
+    st.markdown(f"<style>{''.join(css_parts)}</style>", unsafe_allow_html=True)
 
 
-def auto_refresh() -> None:
-    """
-    Simple browser refresh every N seconds.
-    """
+def _auto_refresh() -> None:
     st.markdown(
         f"<meta http-equiv='refresh' content='{AUTO_REFRESH_SECONDS}'>",
         unsafe_allow_html=True,
     )
 
 
-def get_simulation_root() -> Path:
-    """
-    Resolve the simulation folder:
-      - SIMULATIONS_ROOT (default: ./simulations)
-      - SIMULATION_ID (default: sim_001)
-    """
-    sims_root = Path(os.getenv("SIMULATIONS_ROOT", "simulations")).resolve()
-    sim_id = os.getenv("SIMULATION_ID", "sim_001")
-    return sims_root / sim_id
+def _discover_csvs() -> list[Path]:
+    root = Path(__file__).resolve().parents[2]  # /workspaces/airline_sim
+    candidates = [root / "data", root / "output", root]
+    files: list[Path] = []
+    for d in candidates:
+        if d.exists():
+            files.extend(sorted(d.glob("*.csv")))
+    # de-duplicate
+    seen = set()
+    unique = []
+    for f in files:
+        key = str(f.resolve())
+        if key not in seen:
+            seen.add(key)
+            unique.append(f)
+    return unique
 
 
-def read_json_if_exists(path: Path) -> dict | None:
-    if not path.exists():
-        return None
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return None
+def _read_all_rows(csv_files: list[Path]) -> tuple[int, int | None, datetime | None]:
+    total_rows = 0
+    max_round: int | None = None
+    latest_mtime: datetime | None = None
 
+    for f in csv_files:
+        try:
+            df = pd.read_csv(f)
+            total_rows += len(df)
 
-def read_csv_if_exists(path: Path) -> pd.DataFrame | None:
-    if not path.exists():
-        return None
-    try:
-        df = pd.read_csv(path)
-        return df
-    except Exception:
-        return None
-
-
-def infer_status(sim_dir: Path) -> dict:
-    """
-    Infers status from common files in the simulation directory.
-    Minimal and robust: if files don't exist, we still show folder + timestamps.
-    """
-    status: dict = {
-        "simulation_dir": str(sim_dir),
-        "exists": sim_dir.exists(),
-        "current_round": None,
-        "phase": None,
-        "last_modified": None,
-        "files_found": [],
-    }
-
-    if not sim_dir.exists():
-        return status
-
-    # Folder last modified
-    try:
-        status["last_modified"] = datetime.fromtimestamp(sim_dir.stat().st_mtime).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-    except Exception:
-        pass
-
-    # Candidate files (safe guesses)
-    candidate_json = [
-        sim_dir / "state.json",
-        sim_dir / "status.json",
-        sim_dir / "simulation.json",
-        sim_dir / "meta.json",
-    ]
-    candidate_csv = [
-        sim_dir / "state.csv",
-        sim_dir / "status.csv",
-        sim_dir / "rounds.csv",
-    ]
-
-    for p in candidate_json + candidate_csv:
-        if p.exists():
-            status["files_found"].append(p.name)
-
-    # Prefer JSON state if present
-    state = read_json_if_exists(sim_dir / "state.json") or read_json_if_exists(sim_dir / "status.json")
-    if isinstance(state, dict):
-        # Try common field names
-        for k in ["round", "current_round", "round_number"]:
-            if k in state and state[k] is not None:
-                status["current_round"] = state[k]
-                break
-        for k in ["phase", "state", "stage"]:
-            if k in state and state[k] is not None:
-                status["phase"] = state[k]
-                break
-
-    # Fallback: CSV status/state
-    if status["current_round"] is None:
-        df = read_csv_if_exists(sim_dir / "state.csv") or read_csv_if_exists(sim_dir / "status.csv")
-        if df is not None and not df.empty:
-            for col in df.columns:
-                if col.strip().lower() in ["round", "current_round", "round_number"]:
-                    vals = pd.to_numeric(df[col], errors="coerce").dropna()
-                    if not vals.empty:
-                        status["current_round"] = int(vals.max())
-                        break
-
-            if status["phase"] is None:
-                for col in df.columns:
-                    if col.strip().lower() in ["phase", "state", "stage", "status"]:
-                        v = df[col].dropna()
-                        if not v.empty:
-                            status["phase"] = str(v.iloc[-1])
-                            break
-
-    # Fallback: rounds.csv (infer round)
-    if status["current_round"] is None:
-        rounds = read_csv_if_exists(sim_dir / "rounds.csv")
-        if rounds is not None and not rounds.empty:
-            cols = {c.strip().lower(): c for c in rounds.columns}
-            if "round" in cols:
-                vals = pd.to_numeric(rounds[cols["round"]], errors="coerce").dropna()
+            round_col = next((c for c in df.columns if c.strip().lower() == "round"), None)
+            if round_col is not None:
+                vals = pd.to_numeric(df[round_col], errors="coerce").dropna()
                 if not vals.empty:
-                    status["current_round"] = int(vals.max())
-            if status["phase"] is None and "status" in cols:
-                v = rounds[cols["status"]].dropna()
-                if not v.empty:
-                    status["phase"] = str(v.iloc[-1])
+                    candidate = int(vals.max())
+                    max_round = candidate if max_round is None else max(max_round, candidate)
 
-    return status
+            mtime = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc)
+            latest_mtime = mtime if latest_mtime is None else max(latest_mtime, mtime)
+        except Exception:
+            continue
+
+    return total_rows, max_round, latest_mtime
 
 
 def main() -> None:
-    st.set_page_config(page_title="Airline Simulation Dashboard", layout="wide")
+    st.set_page_config(page_title="Simulation Dashboard", layout="wide")
+    _load_local_css()
+    _auto_refresh()
 
-    load_css_local()
-    auto_refresh()
-
-    # Header (uses your CSS if present; otherwise still works)
+    # Header
     st.markdown(
         """
         <div class="air-header">
-          <div>
-            <div class="title">Airline Simulation Dashboard</div>
-            <div class="sub">Read-only status view • Auto-refresh every 60s</div>
-          </div>
+          <div class="title">Simulation Dashboard</div>
+          <div class="sub">Status-only view</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Controls row: only Refresh button + timestamp
-    c1, c2 = st.columns([1, 4])
-    with c1:
-        if st.button("Refresh", type="primary", use_container_width=True):
-            st.rerun()
-    with c2:
-        st.caption(f"Last refresh: {datetime.now().strftime('%H:%M:%S')}")
+    # Refresh button
+    if st.button("Refresh", type="primary"):
+        st.rerun()
 
-    sim_dir = get_simulation_root()
-    status = infer_status(sim_dir)
+    # KPIs (4)
+    csv_files = _discover_csvs()
+    total_rows, round_number, latest_mtime = _read_all_rows(csv_files)
 
-    # KPI row (minimal)
-    k1, k2, k3, k4 = st.columns(4)
-    with k1:
-        st.metric("Simulation Folder", "FOUND" if status["exists"] else "NOT FOUND")
-    with k2:
-        st.metric("Simulation ID", sim_dir.name)
-    with k3:
-        st.metric("Current Round", "-" if status["current_round"] is None else str(status["current_round"]))
-    with k4:
-        st.metric("Phase", "-" if status["phase"] is None else str(status["phase"]))
+    now = datetime.now(timezone.utc)
+    age_seconds = int((now - latest_mtime).total_seconds()) if latest_mtime else None
 
-    st.divider()
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Round", "-" if round_number is None else round_number)
+    c2.metric("CSV Files", len(csv_files))
+    c3.metric("Total Rows", total_rows)
+    c4.metric("Data Age (sec)", "-" if age_seconds is None else age_seconds)
 
-    if not status["exists"]:
-        st.error(f"No simulation folder found. Expected: {sim_dir}")
-        st.info("Fix: create that folder, or set env vars SIMULATIONS_ROOT and SIMULATION_ID.")
-        st.code(
-            "export SIMULATIONS_ROOT=simulations\nexport SIMULATION_ID=sim_001\nstreamlit run dashboard.py",
-            language="bash",
-        )
-    else:
-        # Minimal status detail
-        st.subheader("Simulation Status")
-        st.write(f"**Path:** `{status['simulation_dir']}`")
-        st.write(f"**Folder last modified:** `{status['last_modified'] or '-'}`")
-        st.write(f"**Files detected:** {', '.join(status['files_found']) if status['files_found'] else '-'}")
-
-    # Footer copyright
-    st.divider()
+    # Small status card
+    last_refresh_local = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    latest_data_local = (
+        latest_mtime.astimezone().strftime("%Y-%m-%d %H:%M:%S") if latest_mtime else "N/A"
+    )
     st.markdown(
-        """
-        <div style="
-            text-align:center;
-            margin-top:18px;
-            padding:12px 0;
-            font-size:12px;
-            color:#6b7280;
-            opacity:0.85;">
-            © 2026 by Dr. Jose Mendoza
+        f"""
+        <div class="status-card">
+          <strong>Status:</strong> {'OK' if csv_files else 'No CSV files found'}<br/>
+          <strong>Last refresh:</strong> {last_refresh_local}<br/>
+          <strong>Latest data timestamp:</strong> {latest_data_local}<br/>
+          <strong>Auto-refresh:</strong> every {AUTO_REFRESH_SECONDS} seconds
         </div>
         """,
+        unsafe_allow_html=True,
+    )
+
+    # Footer
+    st.markdown(
+        f"<div class='copyright'>© {datetime.now().year} Airline Simulation</div>",
         unsafe_allow_html=True,
     )
 
