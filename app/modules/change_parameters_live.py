@@ -82,7 +82,7 @@ def change_parameters_live(
 	simulation_id: str,
 	updates: dict[str, str],
 	admin_user_id: str = "U_ADMIN",
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> ChangeParametersResult:
 	"""Update parameter values in the key-value parameters.csv."""
 	if not updates:
@@ -167,7 +167,7 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	parser.add_argument(

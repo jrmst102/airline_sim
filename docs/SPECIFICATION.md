@@ -98,9 +98,11 @@ CSV Persistence Layer (File-based Data Manager)
     │       ├── dashboard.py
     │       └── components.py
     │
-    ├── simulations/
-    ├── backups/
-    ├── archive/
+    ├── simulation/
+    │   └── simulations/
+    ├── backup/
+    │   ├── backups/
+    │   └── archive/
     │
     ├── tests/
     ├── requirements.txt
@@ -112,7 +114,7 @@ CSV Persistence Layer (File-based Data Manager)
 
 Each simulation is stored in:
 
-simulations/{simulation_id}/
+simulation/simulations/{simulation_id}/
 
 Required CSV files:
 

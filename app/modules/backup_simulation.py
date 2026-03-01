@@ -51,8 +51,8 @@ def _create_backup_zip(simulation_dir: Path, backups_dir: Path, timestamp: str) 
 def backup_simulation(
 	simulation_id: str,
 	admin_user_id: str = "U_ADMIN",
-	root_dir: Path | str = Path("simulations"),
-	backups_dir: Path | str = Path("backups"),
+	root_dir: Path | str = Path("simulation/simulations"),
+	backups_dir: Path | str = Path("backup/backups"),
 ) -> BackupSimulationResult:
 	simulation_dir = Path(root_dir) / simulation_id
 	if not simulation_dir.exists() or not simulation_dir.is_dir():
@@ -99,13 +99,13 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	parser.add_argument(
 		"--backups-dir",
 		type=Path,
-		default=Path("backups"),
+		default=Path("backup/backups"),
 		help="Directory where backup zip files are stored",
 	)
 	parser.add_argument(

@@ -63,9 +63,9 @@ def destroy_simulation(
 	simulation_id: str,
 	admin_user_id: str = "U_ADMIN",
 	mode: str = "archive",
-	root_dir: Path | str = Path("simulations"),
-	backups_dir: Path | str = Path("backups"),
-	archive_dir: Path | str = Path("archive"),
+	root_dir: Path | str = Path("simulation/simulations"),
+	backups_dir: Path | str = Path("backup/backups"),
+	archive_dir: Path | str = Path("backup/archive"),
 ) -> DestroySimulationResult:
 	normalized_mode = mode.lower()
 	if normalized_mode not in {"archive", "delete"}:
@@ -140,24 +140,24 @@ def _parse_cli_args() -> argparse.Namespace:
 		"--mode",
 		choices=["archive", "delete"],
 		default="archive",
-		help="archive moves simulation into archive/ after backup; delete removes it permanently after backup",
+		help="archive moves simulation into backup/archive/ after backup; delete removes it permanently after backup",
 	)
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	parser.add_argument(
 		"--backups-dir",
 		type=Path,
-		default=Path("backups"),
+		default=Path("backup/backups"),
 		help="Directory where backup zip files are stored",
 	)
 	parser.add_argument(
 		"--archive-dir",
 		type=Path,
-		default=Path("archive"),
+		default=Path("backup/archive"),
 		help="Directory where destroyed simulations are archived when mode=archive",
 	)
 	parser.add_argument(

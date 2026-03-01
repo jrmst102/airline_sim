@@ -20,9 +20,9 @@ from dashboard_web.dashboard_data import get_dashboard_data
 
 # ── Paths ──────────────────────────────────────────────────────────────
 _THIS_DIR = Path(__file__).resolve().parent
-_PROJECT_ROOT = _THIS_DIR.parent
-_SIM_PATH = _PROJECT_ROOT / "simulations" / "sim_001"
-_LOGO_PATH = _PROJECT_ROOT / "app" / "images" / "sim_logo.png"
+_PROJECT_ROOT = _THIS_DIR.parent.parent
+_SIM_PATH = _PROJECT_ROOT / "simulation" / "simulations" / "sim_001"
+_LOGO_PATH = _PROJECT_ROOT / "images" / "sim_logo.png"
 _TEMPLATES_DIR = _THIS_DIR / "templates"
 _STATIC_DIR = _THIS_DIR / "static"
 

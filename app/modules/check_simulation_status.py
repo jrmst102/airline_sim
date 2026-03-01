@@ -8,7 +8,7 @@ from app.data.csv_manager import csv_exists, load_csv
 
 def check_simulation_status(
 	simulation_id: str,
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> str:
 	if not csv_exists(simulation_id, "simulation.csv"):
 		return "Simulation not found, please Setup Simulation"
@@ -33,7 +33,7 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	return parser.parse_args()

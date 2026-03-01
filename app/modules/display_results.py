@@ -26,7 +26,7 @@ def get_team_results(
 	simulation_id: str,
 	round_number: int | None = None,
 	team_id: str | None = None,
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> list[dict[str, str]]:
 	rows = read_csv_rows(simulation_id, "round_results_team.csv")
 
@@ -46,7 +46,7 @@ def get_team_results(
 def get_market_results(
 	simulation_id: str,
 	round_number: int | None = None,
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> list[dict[str, str]]:
 	rows = read_csv_rows(simulation_id, "round_results_market.csv")
 
@@ -111,7 +111,7 @@ def display_results(
 	round_number: int | None = None,
 	team_id: str | None = None,
 	section: str = "both",
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> str:
 	normalized_section = section.lower()
 	if normalized_section not in {"both", "market", "team"}:
@@ -177,7 +177,7 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	return parser.parse_args()

@@ -448,7 +448,7 @@ def setup_simulation(
     simulation_name: str,
     total_rounds: int = 3,
     team_names: list[str] | None = None,
-    root_dir: Path | str = Path("simulations"),
+    root_dir: Path | str = Path("simulation/simulations"),
     overwrite: bool = False,
 ) -> Path:
     """Create / overwrite a simulation folder and seed all CSVs.
@@ -762,7 +762,7 @@ def _parse_cli_args() -> argparse.Namespace:
     parser.add_argument(
         "--root",
         type=Path,
-        default=Path("simulations"),
+        default=Path("simulation/simulations"),
         help="Root simulations directory",
     )
     parser.add_argument(

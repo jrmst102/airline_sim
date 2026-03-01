@@ -160,7 +160,7 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	parser.add_argument(

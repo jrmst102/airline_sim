@@ -157,7 +157,7 @@ def enter_decision(
 	branding_level: str,
 	product_strategy: str,
 	round_number: int | None = None,
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> EnterDecisionResult:
 	"""Record or update one team's decision for the current OPEN round."""
 	_validate_inputs(
@@ -270,7 +270,7 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	return parser.parse_args()

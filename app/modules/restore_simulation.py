@@ -77,7 +77,7 @@ def restore_simulation(
 	backup_zip_path: Path | str,
 	restore_as_simulation_id: str | None = None,
 	admin_user_id: str = "U_ADMIN",
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 	overwrite: bool = False,
 ) -> RestoreSimulationResult:
 	backup_path = Path(backup_zip_path)
@@ -173,7 +173,7 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	parser.add_argument(

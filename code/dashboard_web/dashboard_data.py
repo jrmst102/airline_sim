@@ -17,7 +17,7 @@ from app.data.csv_manager import csv_exists, read_csv_rows
 # Default simulation ID
 DEFAULT_SIM_ID = "sim_001"
 # Keep legacy constant for backward compat
-DEFAULT_SIM_PATH = Path("simulations/sim_001")
+DEFAULT_SIM_PATH = Path("simulation/simulations/sim_001")
 
 
 def _float(v: str, default: float = 0.0) -> float:
@@ -40,7 +40,7 @@ def get_dashboard_data(sim_path: Path = DEFAULT_SIM_PATH) -> dict:
     Returns a dict with keys:
         round, as_of, profit_ranking, volume_ranking, table
     """
-    # Derive simulation_id from sim_path (e.g. simulations/sim_001 -> sim_001)
+    # Derive simulation_id from sim_path (e.g. simulation/simulations/sim_001 -> sim_001)
     simulation_id = sim_path.name if sim_path != DEFAULT_SIM_PATH else DEFAULT_SIM_ID
 
     if not csv_exists(simulation_id, "round_results_team.csv"):

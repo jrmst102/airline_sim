@@ -11,8 +11,8 @@ Usage::
     from app.storage.spaces_store import get_store
 
     store = get_store()
-    store.write_text("simulations/sim_001/teams.csv", csv_text)
-    text = store.read_text("simulations/sim_001/teams.csv")
+    store.write_text("sim_001/teams.csv", csv_text)
+    text = store.read_text("sim_001/teams.csv")
 """
 
 from __future__ import annotations
@@ -184,7 +184,7 @@ def get_store() -> Store:
     """Return the global Store instance (created on first call).
 
     When ``SPACES_ACCESS_KEY_ID`` is set → SpacesStore (cloud).
-    Otherwise → LocalStore (local filesystem, project root).
+    Otherwise → LocalStore (local filesystem, ``simulation/simulations`` under project root).
     """
     global _store_instance
     if _store_instance is not None:
@@ -194,9 +194,9 @@ def get_store() -> Store:
         cfg = load_spaces_config()
         _store_instance = SpacesStore(cfg)
     else:
-        # Use simulations/ dir under project root for local development
+        # Use simulation/simulations/ dir under project root for local development
         project_root = Path(__file__).resolve().parent.parent.parent
-        _store_instance = LocalStore(root=project_root / "simulations")
+        _store_instance = LocalStore(root=project_root / "simulation" / "simulations")
 
     return _store_instance
 

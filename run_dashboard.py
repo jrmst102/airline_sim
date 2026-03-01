@@ -7,6 +7,9 @@ Usage:
 """
 
 import argparse
+import sys
+from pathlib import Path
+
 import uvicorn
 
 
@@ -16,6 +19,11 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8000, help="Port (default: 8000)")
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
     args = parser.parse_args()
+
+    project_root = Path(__file__).resolve().parent
+    code_root = project_root / "code"
+    if str(code_root) not in sys.path:
+        sys.path.insert(0, str(code_root))
 
     uvicorn.run(
         "dashboard_web.app:app",

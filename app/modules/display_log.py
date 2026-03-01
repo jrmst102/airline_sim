@@ -55,7 +55,7 @@ def _build_legacy_log_text(simulation_id: str) -> str:
 
 def display_log(
 	simulation_id: str,
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> str:
 	if not csv_exists(simulation_id, "log.csv"):
 		if csv_exists(simulation_id, "admin_actions.csv") or csv_exists(simulation_id, "login_log.csv"):
@@ -70,7 +70,7 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	return parser.parse_args()

@@ -38,7 +38,7 @@ def _next_event_id(admin_action_rows: list[dict[str, str]]) -> str:
 def start_simulation(
 	simulation_id: str,
 	admin_user_id: str = "U_ADMIN",
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> StartSimulationResult:
 	sim_fieldnames, sim_rows = load_csv(simulation_id, "simulation.csv")
 	if len(sim_rows) != 1:
@@ -103,7 +103,7 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	parser.add_argument(

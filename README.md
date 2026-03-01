@@ -183,14 +183,14 @@ The dashboard displays:
 - Auto-refreshes every 60 seconds (or click Refresh manually)
 - NYU-themed styling
 
-Dashboard files live in `dashboard_web/`:
+Dashboard files live in `code/dashboard_web/`:
 
 | File | Purpose |
 | --- | --- |
-| `dashboard_web/app.py` | FastAPI application, routes |
-| `dashboard_web/dashboard_data.py` | CSV reader, server-side calculations |
-| `dashboard_web/templates/index.html` | Single-page HTML with Plotly.js |
-| `dashboard_web/static/styles.css` | NYU-themed CSS |
+| `code/dashboard_web/app.py` | FastAPI application, routes |
+| `code/dashboard_web/dashboard_data.py` | CSV reader, server-side calculations |
+| `code/dashboard_web/templates/index.html` | Single-page HTML with Plotly.js |
+| `code/dashboard_web/static/styles.css` | NYU-themed CSS |
 
 ## CLI Usage
 
@@ -297,12 +297,14 @@ airline_sim/
 │   ├── data/                # CSV I/O, schema validation, backups
 │   ├── modules/             # Lifecycle modules (setup, start, decisions, etc.)
 │   └── ui/                  # Streamlit views (admin, team, dashboard)
-├── dashboard_web/           # Standalone FastAPI web dashboard
-│   ├── app.py
-│   ├── dashboard_data.py
-│   ├── templates/
-│   └── static/
-├── simulations/             # Simulation data (CSV files)
+├── code/
+│   └── dashboard_web/       # Standalone FastAPI web dashboard
+│       ├── app.py
+│       ├── dashboard_data.py
+│       ├── templates/
+│       └── static/
+├── simulation/
+│   └── simulations/         # Simulation data (CSV files)
 │   └── sim_001/
 ├── tests/                   # Test suite
 │   ├── simulation_test_suite.py

@@ -76,7 +76,7 @@ def _append_login_event(
 	)
 
 
-def list_users(simulation_id: str, root_dir: Path | str = Path("simulations")) -> list[UserRecord]:
+def list_users(simulation_id: str, root_dir: Path | str = Path("simulation/simulations")) -> list[UserRecord]:
 	users_rows = read_csv_rows(simulation_id, "users.csv")
 	return [
 		UserRecord(
@@ -99,7 +99,7 @@ def create_user(
 	password: str,
 	role: str,
 	team_id: str = "",
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 	admin_user_id: str = "U_ADMIN",
 ) -> UserRecord:
 	normalized_role = role.upper()
@@ -152,7 +152,7 @@ def set_user_lock(
 	simulation_id: str,
 	username: str,
 	is_locked: bool,
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 	admin_user_id: str = "U_ADMIN",
 ) -> UserRecord:
 	simulation_dir = None  # kept for signature compat
@@ -187,7 +187,7 @@ def authenticate_user(
 	simulation_id: str,
 	username: str,
 	password: str,
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> UserRecord | None:
 	users = list_users(simulation_id=simulation_id, root_dir=root_dir)
 
@@ -259,7 +259,7 @@ def _build_cli() -> argparse.ArgumentParser:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 

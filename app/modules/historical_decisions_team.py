@@ -33,7 +33,7 @@ def _parse_details(details: str) -> dict[str, str]:
 
 def get_historical_decisions_team(
 	simulation_id: str,
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> list[TeamDecisionSummary]:
 	rows = read_csv_rows(simulation_id, "log.csv")
 
@@ -97,7 +97,7 @@ def get_historical_decisions_team(
 
 def display_historical_decisions_team(
 	simulation_id: str,
-	root_dir: Path | str = Path("simulations"),
+	root_dir: Path | str = Path("simulation/simulations"),
 ) -> str:
 	summaries = get_historical_decisions_team(simulation_id=simulation_id, root_dir=root_dir)
 	lines = [f"Simulation: {simulation_id}", "=== Historical Decisions (Team Summary) ==="]
@@ -131,7 +131,7 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--root",
 		type=Path,
-		default=Path("simulations"),
+		default=Path("simulation/simulations"),
 		help="Root simulations directory",
 	)
 	return parser.parse_args()
