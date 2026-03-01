@@ -80,13 +80,11 @@ def _render_market_results(rows: list[dict[str, str]]) -> list[str]:
 			" | ".join(
 				[
 					f"Round {row['round_number']}",
-					f"Total Cap={row['total_capacity']}",
-					f"Total Carried={row['total_carried']}",
-					f"Avg Prem={row['avg_price_premium']}",
-					f"Avg Econ={row['avg_price_economy']}",
-					f"Revenue={row['total_revenue']}",
-					f"Cost={row['total_cost']}",
-					f"Profit={row['total_profit']}",
+					f"Total Demand={row.get('total_demand', '—')}",
+					f"Total Passengers={row.get('total_passengers', '—')}",
+					f"Revenue={row.get('total_revenue', '—')}",
+					f"Cost={row.get('total_cost', '—')}",
+					f"Profit={row.get('total_profit', '—')}",
 				]
 			)
 		)
@@ -107,14 +105,13 @@ def _render_team_results(rows: list[dict[str, str]]) -> list[str]:
 				[
 					f"Round {row['round_number']}",
 					f"{team_label} ({row['team_id']})",
-					f"Cap={row['capacity']}",
-					f"Carried B={row['carried_business']}",
-					f"Carried L={row['carried_leisure']}",
-					f"Revenue={row['revenue']}",
-					f"Cost={row['cost']}",
-					f"Profit={row['profit']}",
-					f"MS Vol={row['market_share_volume']}",
-					f"MS Profit={row['market_share_profit']}",
+					f"Pax={row.get('passengers', '—')}",
+					f"Revenue={row.get('revenue', '—')}",
+					f"Cost={row.get('total_cost', '—')}",
+					f"Profit={row.get('profit', '—')}",
+					f"LF={row.get('load_factor', '—')}",
+					f"MS Vol={row.get('market_share_volume', '—')}",
+					f"MS Profit={row.get('market_share_profit', '—')}",
 				]
 			)
 		)

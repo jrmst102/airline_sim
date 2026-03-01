@@ -1,1 +1,1 @@
-simulation_id,round_number,team_id,submitted_at_utc,flights_per_day,price_premium,price_economy,brand_investment
+simulation_id,round_number,team_id,flights_per_day,pricing_posture,branding_level,product_strategy,submitted_at_utc

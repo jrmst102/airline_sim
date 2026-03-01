@@ -1,53 +1,79 @@
+"""
+Simulation Engine – Airlines Competitive Strategy Simulation
+=============================================================
+Computes round results from team decisions using the rules from:
+"Airlines Competitive Game – Turbulence at 30,000 Feet:
+ Competition on the JFK–Boston Corridor" (Spring 2026).
+
+Cost formulas, fare lookups, and penalty rules follow the Case Appendix.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
-from app.core.cost_model import compute_total_cost
-from app.core.demand_model import DemandInputs, allocate_market_demand
-from app.core.indices_model import TeamIndexInput, compute_market_share_indices
-from app.core.pricing_model import TeamPricingInput, compute_pricing_results
+from app.modules.setup_simulation import (
+	load_parameters,
+	get_parameter_float,
+	get_parameter_int,
+)
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Data structures
+# ═══════════════════════════════════════════════════════════════════════════
 
 @dataclass(frozen=True)
 class SimulationParameters:
-	days_per_round: int
-	seats_per_flight: int
-	base_demand_business: float
-	base_demand_leisure: float
-	base_fuel_cost_per_flight: float
-	base_fixed_cost_per_round: float
-	base_variable_cost_per_pax: float
-	brand_effectiveness: float
+	"""Parameters loaded from key-value parameters.csv (Case Appendix)."""
+	total_demand_passengers: int       # 120,000
+	business_demand: int               # 48,000
+	leisure_demand: int                # 72,000
+	seats_per_flight: int              # 200
+	fixed_cost_per_flight: int         # 18,000
+	days_per_month: int                # 30
+	discount_penalty_threshold: int    # 3
+	discount_penalty_rate: float       # 0.08
+	fares: dict[str, dict[str, int]]   # posture -> {business: fare, leisure: fare}
+	branding_costs: dict[str, int]     # level -> monthly cost
+	product_costs: dict[str, int]      # strategy -> monthly cost
 
 
 @dataclass(frozen=True)
 class TeamDecisionInput:
+	"""One team's decision for a round."""
 	team_id: str
-	flights_per_day: int
-	price_premium: float
-	price_economy: float
-	brand_investment: float
+	flights_per_day: int           # 0–5
+	pricing_posture: str           # "Premium" | "Match" | "Discount"
+	branding_level: str            # "Low" | "Medium" | "High"
+	product_strategy: str          # "Premium Cabin" | "Basic Economy" | "Digital/Loyalty" | "None"
+	variable_cost_per_passenger: float  # airline-specific (Case Appendix)
 
 
 @dataclass(frozen=True)
 class TeamRoundResult:
 	team_id: str
-	capacity: float
-	carried_business: float
-	carried_leisure: float
+	passengers: int
 	revenue: float
-	cost: float
+	variable_cost: float
+	fixed_cost: float
+	branding_cost: float
+	product_cost: float
+	total_cost: float
 	profit: float
 	market_share_volume: float
 	market_share_profit: float
+	load_factor: float
+	avg_revenue_per_flight: float
+	avg_cost_per_flight: float
+	avg_profit_per_flight: float
 
 
 @dataclass(frozen=True)
 class MarketRoundResult:
-	total_capacity: float
-	total_carried: float
-	avg_price_premium: float
-	avg_price_economy: float
+	total_demand: int
+	total_passengers: int
 	total_revenue: float
 	total_cost: float
 	total_profit: float
@@ -59,172 +85,237 @@ class RoundComputationResult:
 	market_result: MarketRoundResult
 
 
-def _validate_parameters(parameters: SimulationParameters) -> None:
-	if parameters.days_per_round < 1:
-		raise ValueError("days_per_round must be >= 1")
-	if parameters.seats_per_flight < 1:
-		raise ValueError("seats_per_flight must be >= 1")
-	if parameters.base_demand_business < 0:
-		raise ValueError("base_demand_business must be >= 0")
-	if parameters.base_demand_leisure < 0:
-		raise ValueError("base_demand_leisure must be >= 0")
-	if parameters.base_fuel_cost_per_flight < 0:
-		raise ValueError("base_fuel_cost_per_flight must be >= 0")
-	if parameters.base_fixed_cost_per_round < 0:
-		raise ValueError("base_fixed_cost_per_round must be >= 0")
-	if parameters.base_variable_cost_per_pax < 0:
-		raise ValueError("base_variable_cost_per_pax must be >= 0")
-	if parameters.brand_effectiveness < 0:
-		raise ValueError("brand_effectiveness must be >= 0")
+# ═══════════════════════════════════════════════════════════════════════════
+# Build parameters from key-value CSV
+# ═══════════════════════════════════════════════════════════════════════════
+
+def build_parameters_from_csv(params: dict[str, str]) -> SimulationParameters:
+	"""Construct SimulationParameters from a key-value dict (parameters.csv)."""
+	fares = {
+		"Premium": {
+			"business": get_parameter_int(params, "fare_business_premium"),
+			"leisure": get_parameter_int(params, "fare_leisure_premium"),
+		},
+		"Match": {
+			"business": get_parameter_int(params, "fare_business_match"),
+			"leisure": get_parameter_int(params, "fare_leisure_match"),
+		},
+		"Discount": {
+			"business": get_parameter_int(params, "fare_business_discount"),
+			"leisure": get_parameter_int(params, "fare_leisure_discount"),
+		},
+	}
+	branding_costs = {
+		"Low": get_parameter_int(params, "branding_cost_low"),
+		"Medium": get_parameter_int(params, "branding_cost_medium"),
+		"High": get_parameter_int(params, "branding_cost_high"),
+	}
+	product_costs = {
+		"Premium Cabin": get_parameter_int(params, "product_cost_premium_cabin"),
+		"Basic Economy": get_parameter_int(params, "product_cost_basic_economy"),
+		"Digital/Loyalty": get_parameter_int(params, "product_cost_digital_loyalty"),
+		"None": get_parameter_int(params, "product_cost_none"),
+	}
+	return SimulationParameters(
+		total_demand_passengers=get_parameter_int(params, "total_demand_passengers"),
+		business_demand=get_parameter_int(params, "business_demand"),
+		leisure_demand=get_parameter_int(params, "leisure_demand"),
+		seats_per_flight=get_parameter_int(params, "seats_per_flight"),
+		fixed_cost_per_flight=get_parameter_int(params, "fixed_cost_per_flight"),
+		days_per_month=get_parameter_int(params, "days_per_month"),
+		discount_penalty_threshold=get_parameter_int(params, "discount_penalty_threshold"),
+		discount_penalty_rate=get_parameter_float(params, "discount_penalty_rate"),
+		fares=fares,
+		branding_costs=branding_costs,
+		product_costs=product_costs,
+	)
 
 
-def _validate_decision(decision: TeamDecisionInput) -> None:
-	if not decision.team_id:
+# ═══════════════════════════════════════════════════════════════════════════
+# Round computation
+# ═══════════════════════════════════════════════════════════════════════════
+
+VALID_POSTURES = {"Premium", "Match", "Discount"}
+VALID_BRANDING = {"Low", "Medium", "High"}
+VALID_PRODUCTS = {"Premium Cabin", "Basic Economy", "Digital/Loyalty", "None"}
+
+
+def _validate_decision(d: TeamDecisionInput, p: SimulationParameters) -> None:
+	if not d.team_id:
 		raise ValueError("team_id is required")
-	if decision.flights_per_day < 0:
-		raise ValueError(f"flights_per_day must be >= 0 for team '{decision.team_id}'")
-	if decision.price_premium <= 0:
-		raise ValueError(f"price_premium must be > 0 for team '{decision.team_id}'")
-	if decision.price_economy <= 0:
-		raise ValueError(f"price_economy must be > 0 for team '{decision.team_id}'")
-	if decision.brand_investment < 0:
-		raise ValueError(f"brand_investment must be >= 0 for team '{decision.team_id}'")
+	if d.flights_per_day < 0 or d.flights_per_day > 5:
+		raise ValueError(f"flights_per_day must be 0–5 for team '{d.team_id}' (got {d.flights_per_day})")
+	if d.pricing_posture not in VALID_POSTURES:
+		raise ValueError(f"Invalid pricing_posture '{d.pricing_posture}' for team '{d.team_id}'")
+	if d.branding_level not in VALID_BRANDING:
+		raise ValueError(f"Invalid branding_level '{d.branding_level}' for team '{d.team_id}'")
+	if d.product_strategy not in VALID_PRODUCTS:
+		raise ValueError(f"Invalid product_strategy '{d.product_strategy}' for team '{d.team_id}'")
+	if d.variable_cost_per_passenger < 0:
+		raise ValueError(f"variable_cost_per_passenger must be >= 0 for team '{d.team_id}'")
 
 
 def compute_round_results(
 	decisions: list[TeamDecisionInput],
 	parameters: SimulationParameters,
-	active_team_ids: list[str] | None = None,
 ) -> RoundComputationResult:
-	_validate_parameters(parameters)
+	"""Compute results for one round given all team decisions.
 
+	Demand allocation uses a score-based model proportional to each
+	team's capacity weighted by inverse fare.  This is deterministic
+	from the case inputs.
+	"""
 	if not decisions:
 		raise ValueError("At least one team decision is required")
 
-	for decision in decisions:
-		_validate_decision(decision)
+	# Validate
+	team_ids_seen: set[str] = set()
+	for d in decisions:
+		_validate_decision(d, parameters)
+		if d.team_id in team_ids_seen:
+			raise ValueError(f"Duplicate decision for team '{d.team_id}'")
+		team_ids_seen.add(d.team_id)
 
-	decision_by_team = {decision.team_id: decision for decision in decisions}
-	if len(decision_by_team) != len(decisions):
-		raise ValueError("Duplicate team decisions are not allowed")
+	# ── Capacity (Case Appendix) ──────────────────────────────────
+	monthly_flights: dict[str, int] = {}
+	capacities: dict[str, int] = {}
+	for d in decisions:
+		mf = d.flights_per_day * parameters.days_per_month
+		monthly_flights[d.team_id] = mf
+		capacities[d.team_id] = mf * parameters.seats_per_flight
 
-	team_ids = active_team_ids[:] if active_team_ids is not None else [decision.team_id for decision in decisions]
-	if not team_ids:
-		raise ValueError("No active teams available for computation")
+	# ── Fare lookup ───────────────────────────────────────────────
+	biz_fares: dict[str, int] = {}
+	lei_fares: dict[str, int] = {}
+	for d in decisions:
+		biz_fares[d.team_id] = parameters.fares[d.pricing_posture]["business"]
+		lei_fares[d.team_id] = parameters.fares[d.pricing_posture]["leisure"]
 
-	missing = [team_id for team_id in team_ids if team_id not in decision_by_team]
-	if missing:
-		raise ValueError(f"Missing decisions for active team(s): {', '.join(missing)}")
+	# ── Demand allocation ─────────────────────────────────────────
+	# Score = capacity / fare  (higher capacity + lower fare → more demand)
+	biz_scores: dict[str, float] = {}
+	lei_scores: dict[str, float] = {}
+	for d in decisions:
+		cap = capacities[d.team_id]
+		if cap > 0:
+			biz_scores[d.team_id] = cap / biz_fares[d.team_id]
+			lei_scores[d.team_id] = cap / lei_fares[d.team_id]
+		else:
+			biz_scores[d.team_id] = 0.0
+			lei_scores[d.team_id] = 0.0
 
-	capacities: dict[str, float] = {}
+	total_biz_score = sum(biz_scores.values())
+	total_lei_score = sum(lei_scores.values())
 
-	for team_id in team_ids:
-		decision = decision_by_team[team_id]
-		capacity = decision.flights_per_day * parameters.days_per_round * parameters.seats_per_flight
-		capacities[team_id] = capacity
+	biz_pax: dict[str, int] = {}
+	lei_pax: dict[str, int] = {}
+	tot_pax: dict[str, int] = {}
 
-	demand_inputs = [
-		DemandInputs(
-			team_id=team_id,
-			capacity=capacities[team_id],
-			price_premium=decision_by_team[team_id].price_premium,
-			price_economy=decision_by_team[team_id].price_economy,
-			brand_investment=decision_by_team[team_id].brand_investment,
+	for d in decisions:
+		cap = capacities[d.team_id]
+		# Business passengers
+		if total_biz_score > 0 and cap > 0:
+			biz_demand = parameters.business_demand * (biz_scores[d.team_id] / total_biz_score)
+		else:
+			biz_demand = 0.0
+		biz_carried = min(int(biz_demand), cap)
+		biz_pax[d.team_id] = biz_carried
+
+		# Leisure passengers (remaining capacity)
+		remaining = cap - biz_carried
+		if total_lei_score > 0 and remaining > 0:
+			lei_demand = parameters.leisure_demand * (lei_scores[d.team_id] / total_lei_score)
+		else:
+			lei_demand = 0.0
+		lei_carried = min(int(lei_demand), remaining)
+		lei_pax[d.team_id] = lei_carried
+
+		tot_pax[d.team_id] = biz_carried + lei_carried
+
+	# ── Revenue ───────────────────────────────────────────────────
+	revenues: dict[str, float] = {}
+	for d in decisions:
+		rev = float(
+			biz_pax[d.team_id] * biz_fares[d.team_id]
+			+ lei_pax[d.team_id] * lei_fares[d.team_id]
 		)
-		for team_id in team_ids
-	]
-	demand_results = allocate_market_demand(
-		teams=demand_inputs,
-		base_demand_business=parameters.base_demand_business,
-		base_demand_leisure=parameters.base_demand_leisure,
-		brand_effectiveness=parameters.brand_effectiveness,
-	)
-	demand_by_team = {result.team_id: result for result in demand_results}
+		revenues[d.team_id] = rev
 
-	pricing_inputs = [
-		TeamPricingInput(
-			team_id=team_id,
-			price_premium=decision_by_team[team_id].price_premium,
-			price_economy=decision_by_team[team_id].price_economy,
-			carried_business=demand_by_team[team_id].carried_business,
-			carried_leisure=demand_by_team[team_id].carried_leisure,
-		)
-		for team_id in team_ids
-	]
-	pricing_results, pricing_summary = compute_pricing_results(pricing_inputs)
-	pricing_by_team = {result.team_id: result for result in pricing_results}
+	# ── Discount penalty (Case Appendix) ──────────────────────────
+	discount_count = sum(1 for d in decisions if d.pricing_posture == "Discount")
+	if discount_count >= parameters.discount_penalty_threshold:
+		for d in decisions:
+			if d.pricing_posture == "Discount":
+				revenues[d.team_id] *= (1.0 - parameters.discount_penalty_rate)
 
-	team_costs: dict[str, float] = {}
-	team_profits: dict[str, float] = {}
-	index_inputs: list[TeamIndexInput] = []
-	total_cost = 0.0
-	total_profit = 0.0
-	for team_id in team_ids:
-		decision = decision_by_team[team_id]
-		demand_result = demand_by_team[team_id]
-		pricing_result = pricing_by_team[team_id]
-		cost_breakdown = compute_total_cost(
-			flights_per_day=decision.flights_per_day,
-			days_per_round=parameters.days_per_round,
-			carried_passengers=demand_result.carried_total,
-			brand_investment=decision.brand_investment,
-			base_fuel_cost_per_flight=parameters.base_fuel_cost_per_flight,
-			base_fixed_cost_per_round=parameters.base_fixed_cost_per_round,
-			base_variable_cost_per_pax=parameters.base_variable_cost_per_pax,
-		)
-		cost = cost_breakdown.total_cost
-		revenue = pricing_result.revenue
-		profit = revenue - cost
+	# ── Costs (Case Appendix) ─────────────────────────────────────
+	var_costs: dict[str, float] = {}
+	fix_costs: dict[str, float] = {}
+	brand_costs: dict[str, float] = {}
+	prod_costs: dict[str, float] = {}
+	total_costs: dict[str, float] = {}
+	profits: dict[str, float] = {}
 
-		team_costs[team_id] = cost
-		team_profits[team_id] = profit
-		total_cost += cost
-		total_profit += profit
-		index_inputs.append(
-			TeamIndexInput(
-				team_id=team_id,
-				carried_total=demand_result.carried_total,
-				profit=profit,
-			)
-		)
+	for d in decisions:
+		vc = float(tot_pax[d.team_id]) * d.variable_cost_per_passenger
+		fc = float(monthly_flights[d.team_id]) * parameters.fixed_cost_per_flight
+		bc = float(parameters.branding_costs[d.branding_level])
+		pc = float(parameters.product_costs[d.product_strategy])
+		tc = vc + fc + bc + pc
+		pr = revenues[d.team_id] - tc
 
-	team_indices, indices_summary = compute_market_share_indices(index_inputs)
-	indices_by_team = {index.team_id: index for index in team_indices}
+		var_costs[d.team_id] = vc
+		fix_costs[d.team_id] = fc
+		brand_costs[d.team_id] = bc
+		prod_costs[d.team_id] = pc
+		total_costs[d.team_id] = tc
+		profits[d.team_id] = pr
 
+	# ── Market shares ─────────────────────────────────────────────
+	total_passengers = sum(tot_pax.values())
+	total_positive_profit = sum(max(p, 0.0) for p in profits.values())
+
+	# ── Assemble team results ─────────────────────────────────────
 	team_results: list[TeamRoundResult] = []
-	for team_id in team_ids:
-		demand_result = demand_by_team[team_id]
-		pricing_result = pricing_by_team[team_id]
-		index_result = indices_by_team[team_id]
-		profit = team_profits[team_id]
-		team_results.append(
-			TeamRoundResult(
-				team_id=team_id,
-				capacity=capacities[team_id],
-				carried_business=demand_result.carried_business,
-				carried_leisure=demand_result.carried_leisure,
-				revenue=pricing_result.revenue,
-				cost=team_costs[team_id],
-				profit=profit,
-				market_share_volume=index_result.market_share_volume,
-				market_share_profit=index_result.market_share_profit,
-			)
-		)
+	for d in decisions:
+		pax = tot_pax[d.team_id]
+		cap = capacities[d.team_id]
+		mf = monthly_flights[d.team_id]
+		rev = revenues[d.team_id]
+		tc = total_costs[d.team_id]
+		pr = profits[d.team_id]
 
-	total_capacity = sum(result.capacity for result in team_results)
-	total_carried = indices_summary.total_carried
-	total_revenue = pricing_summary.total_revenue
-	avg_price_premium = pricing_summary.avg_price_premium
-	avg_price_economy = pricing_summary.avg_price_economy
+		load_factor = pax / cap if cap > 0 else 0.0
+		avg_rev = rev / mf if mf > 0 else 0.0
+		avg_cost = tc / mf if mf > 0 else 0.0
+		avg_prof = pr / mf if mf > 0 else 0.0
+		ms_vol = pax / total_passengers if total_passengers > 0 else 0.0
+		ms_prof = max(pr, 0.0) / total_positive_profit if total_positive_profit > 0 else 0.0
+
+		team_results.append(TeamRoundResult(
+			team_id=d.team_id,
+			passengers=pax,
+			revenue=rev,
+			variable_cost=var_costs[d.team_id],
+			fixed_cost=fix_costs[d.team_id],
+			branding_cost=brand_costs[d.team_id],
+			product_cost=prod_costs[d.team_id],
+			total_cost=tc,
+			profit=pr,
+			market_share_volume=ms_vol,
+			market_share_profit=ms_prof,
+			load_factor=load_factor,
+			avg_revenue_per_flight=avg_rev,
+			avg_cost_per_flight=avg_cost,
+			avg_profit_per_flight=avg_prof,
+		))
 
 	market_result = MarketRoundResult(
-		total_capacity=total_capacity,
-		total_carried=total_carried,
-		avg_price_premium=avg_price_premium,
-		avg_price_economy=avg_price_economy,
-		total_revenue=total_revenue,
-		total_cost=total_cost,
-		total_profit=total_profit,
+		total_demand=parameters.total_demand_passengers,
+		total_passengers=total_passengers,
+		total_revenue=sum(revenues.values()),
+		total_cost=sum(total_costs.values()),
+		total_profit=sum(profits.values()),
 	)
 
 	return RoundComputationResult(team_results=team_results, market_result=market_result)

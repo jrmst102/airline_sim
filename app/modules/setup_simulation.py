@@ -1,3 +1,16 @@
+"""
+Setup Simulation – Airlines Competitive Strategy Simulation
+============================================================
+Seeds all CSV files with baseline values from the case:
+"Airlines Competitive Game – Turbulence at 30,000 Feet:
+ Competition on the JFK–Boston Corridor" (Spring 2026).
+
+All numeric constants are taken verbatim from the Case Appendix
+and are clearly annotated.  Run standalone:
+
+    python -m app.modules.setup_simulation sim_001 --overwrite
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -7,335 +20,647 @@ from pathlib import Path
 from typing import Any
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Case Appendix – Baseline Constants
+# ═══════════════════════════════════════════════════════════════════════════
+_NUM_TEAMS = 6  # Airlines A–F
+
+# ── Market demand (monthly passengers) ─────────────────────────────────
+TOTAL_DEMAND     = 120_000   # Case Appendix
+BUSINESS_DEMAND  = 48_000    # 40 % of total (Case Appendix)
+LEISURE_DEMAND   = 72_000    # 60 % of total (Case Appendix)
+
+# ── Capacity & flight costs ───────────────────────────────────────────
+SEATS_PER_FLIGHT       = 200     # Case Appendix
+FIXED_COST_PER_FLIGHT  = 18_000  # $ per flight (Case Appendix)
+DAYS_PER_MONTH         = 30      # Monthly rounds
+
+# ── Discount-penalty rule (Case Appendix) ──────────────────────────────
+DISCOUNT_PENALTY_THRESHOLD = 3   # min airlines choosing Discount
+DISCOUNT_PENALTY_RATE      = 0.08
+
+# ── Pricing matrix (fare by posture, Case Appendix) ───────────────────
+FARES: dict[str, dict[str, int]] = {
+    "Premium":  {"business": 450, "leisure": 220},
+    "Match":    {"business": 360, "leisure": 180},
+    "Discount": {"business": 290, "leisure": 140},
+}
+
+# ── Branding costs per month (Case Appendix) ──────────────────────────
+BRANDING_COSTS: dict[str, int] = {
+    "Low":    1_000_000,
+    "Medium": 3_000_000,
+    "High":   5_000_000,
+}
+
+# ── Product-strategy costs per month (Case Appendix) ──────────────────
+PRODUCT_COSTS: dict[str, int] = {
+    "Premium Cabin":   4_000_000,
+    "Basic Economy":   3_000_000,
+    "Digital/Loyalty":  2_000_000,
+    "None":             0,
+}
+
+# ── Per-team baseline data, keyed by letter A–F (Case Appendix) ───────
+TEAM_BASELINES: dict[str, dict[str, Any]] = {
+    "A": {
+        "baseline_passengers":      26_400,
+        "baseline_volume_share":    0.22,
+        "baseline_profit_millions": 6.5,
+        "baseline_profit_share":    0.26,
+        "variable_cost_per_pax":    155,
+    },
+    "B": {
+        "baseline_passengers":      22_800,
+        "baseline_volume_share":    0.19,
+        "baseline_profit_millions": 4.8,
+        "baseline_profit_share":    0.19,
+        "variable_cost_per_pax":    170,
+    },
+    "C": {
+        "baseline_passengers":      21_600,
+        "baseline_volume_share":    0.18,
+        "baseline_profit_millions": 4.2,
+        "baseline_profit_share":    0.17,
+        "variable_cost_per_pax":    160,
+    },
+    "D": {
+        "baseline_passengers":      19_200,
+        "baseline_volume_share":    0.16,
+        "baseline_profit_millions": 4.5,
+        "baseline_profit_share":    0.18,
+        "variable_cost_per_pax":    130,
+    },
+    "E": {
+        "baseline_passengers":      15_600,
+        "baseline_volume_share":    0.13,
+        "baseline_profit_millions": 2.0,
+        "baseline_profit_share":    0.08,
+        "variable_cost_per_pax":    110,
+    },
+    "F": {
+        "baseline_passengers":      14_400,
+        "baseline_volume_share":    0.12,
+        "baseline_profit_millions": 3.0,
+        "baseline_profit_share":    0.12,
+        "variable_cost_per_pax":    145,
+    },
+}
+TEAM_LETTERS = list(TEAM_BASELINES.keys())  # ["A", "B", … "F"]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CSV Schemas – column definitions for each file
+# ═══════════════════════════════════════════════════════════════════════════
 CSV_SCHEMAS: dict[str, list[str]] = {
-	"simulation.csv": [
-		"simulation_id",
-		"name",
-		"status",
-		"current_round",
-		"total_rounds",
-		"created_at_utc",
-		"updated_at_utc",
-	],
-	"parameters.csv": [
-		"simulation_id",
-		"version",
-		"days_per_round",
-		"base_demand_business",
-		"base_demand_leisure",
-		"base_fuel_cost_per_flight",
-		"base_fixed_cost_per_round",
-		"base_variable_cost_per_pax",
-		"brand_effectiveness",
-		"created_at_utc",
-	],
-	"teams.csv": [
-		"simulation_id",
-		"team_id",
-		"team_name",
-		"is_active",
-		"created_at_utc",
-	],
-	"users.csv": [
-		"simulation_id",
-		"user_id",
-		"username",
-		"role",
-		"team_id",
-		"password_hash",
-		"is_locked",
-		"created_at_utc",
-	],
-	"routes.csv": [
-		"simulation_id",
-		"route_id",
-		"origin",
-		"destination",
-		"distance_miles",
-		"is_active",
-		"created_at_utc",
-	],
-	"airplane_types.csv": [
-		"simulation_id",
-		"airplane_type_id",
-		"name",
-		"seats_per_flight",
-		"max_flights_per_day",
-		"created_at_utc",
-	],
-	"rounds.csv": [
-		"simulation_id",
-		"round_number",
-		"status",
-		"opened_at_utc",
-		"closed_at_utc",
-	],
-	"decisions.csv": [
-		"simulation_id",
-		"round_number",
-		"team_id",
-		"submitted_at_utc",
-		"flights_per_day",
-		"price_premium",
-		"price_economy",
-		"brand_investment",
-	],
-	"round_results_team.csv": [
-		"simulation_id",
-		"round_number",
-		"team_id",
-		"capacity",
-		"carried_business",
-		"carried_leisure",
-		"revenue",
-		"cost",
-		"profit",
-		"market_share_volume",
-		"market_share_profit",
-		"created_at_utc",
-	],
-	"round_results_market.csv": [
-		"simulation_id",
-		"round_number",
-		"total_capacity",
-		"total_carried",
-		"avg_price_premium",
-		"avg_price_economy",
-		"total_revenue",
-		"total_cost",
-		"total_profit",
-		"created_at_utc",
-	],
-	"login_log.csv": [
-		"event_id",
-		"simulation_id",
-		"user_id",
-		"username",
-		"event_type",
-		"event_at_utc",
-	],
-	"admin_actions.csv": [
-		"event_id",
-		"simulation_id",
-		"admin_user_id",
-		"action",
-		"details",
-		"event_at_utc",
-	],
-	"log.csv": [
-		"event_id",
-		"simulation_id",
-		"actor_user_id",
-		"action",
-		"details",
-		"event_at_utc",
-	],
+    "simulation.csv": [
+        "simulation_id",
+        "name",
+        "status",
+        "current_round",
+        "total_rounds",
+        "created_at_utc",
+        "updated_at_utc",
+    ],
+    "parameters.csv": [                 # key-value format
+        "key",
+        "value",
+        "notes",
+    ],
+    "teams.csv": [
+        "simulation_id",
+        "team_id",
+        "team_name",
+        "is_active",
+        "baseline_passengers",
+        "baseline_volume_share",
+        "baseline_profit_millions",
+        "baseline_profit_share",
+        "variable_cost_per_passenger",
+        "created_at_utc",
+    ],
+    "users.csv": [
+        "simulation_id",
+        "user_id",
+        "username",
+        "role",
+        "team_id",
+        "password_hash",
+        "is_locked",
+        "created_at_utc",
+    ],
+    "routes.csv": [
+        "simulation_id",
+        "route_id",
+        "origin",
+        "destination",
+        "distance_miles",
+        "is_active",
+        "created_at_utc",
+    ],
+    "airplane_types.csv": [
+        "simulation_id",
+        "airplane_type_id",
+        "name",
+        "seats_per_flight",
+        "max_flights_per_day",
+        "created_at_utc",
+    ],
+    "rounds.csv": [
+        "simulation_id",
+        "round_number",
+        "status",
+        "opened_at_utc",
+        "closed_at_utc",
+    ],
+    "decisions.csv": [
+        "simulation_id",
+        "round_number",
+        "team_id",
+        "flights_per_day",
+        "pricing_posture",
+        "branding_level",
+        "product_strategy",
+        "submitted_at_utc",
+    ],
+    "round_results_team.csv": [
+        "simulation_id",
+        "round_number",
+        "team_id",
+        "passengers",
+        "revenue",
+        "variable_cost",
+        "fixed_cost",
+        "branding_cost",
+        "product_cost",
+        "total_cost",
+        "profit",
+        "market_share_volume",
+        "market_share_profit",
+        "load_factor",
+        "avg_revenue_per_flight",
+        "avg_cost_per_flight",
+        "avg_profit_per_flight",
+        "csi",
+        "oei",
+        "created_at_utc",
+    ],
+    "round_results_market.csv": [
+        "simulation_id",
+        "round_number",
+        "total_demand",
+        "total_passengers",
+        "total_revenue",
+        "total_cost",
+        "total_profit",
+        "created_at_utc",
+    ],
+    "login_log.csv": [
+        "event_id",
+        "simulation_id",
+        "user_id",
+        "username",
+        "event_type",
+        "event_at_utc",
+    ],
+    "admin_actions.csv": [
+        "event_id",
+        "simulation_id",
+        "admin_user_id",
+        "action",
+        "details",
+        "event_at_utc",
+    ],
+    "log.csv": [
+        "event_id",
+        "simulation_id",
+        "actor_user_id",
+        "action",
+        "details",
+        "event_at_utc",
+    ],
 }
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Helpers
+# ═══════════════════════════════════════════════════════════════════════════
+
 def _utc_now() -> str:
-	return datetime.now(timezone.utc).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
-def _write_csv(path: Path, headers: list[str], rows: list[dict[str, Any]]) -> None:
-	with path.open("w", newline="", encoding="utf-8") as handle:
-		writer = csv.DictWriter(handle, fieldnames=headers)
-		writer.writeheader()
-		if rows:
-			writer.writerows(rows)
+def _atomic_write_csv(
+    path: Path, headers: list[str], rows: list[dict[str, Any]]
+) -> None:
+    """Write CSV atomically: write to .tmp then rename."""
+    tmp_path = path.with_suffix(".csv.tmp")
+    with tmp_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=headers)
+        writer.writeheader()
+        if rows:
+            writer.writerows(rows)
+    tmp_path.replace(path)  # atomic on POSIX
 
+
+# ---------------------------------------------------------------------------
+# Parameter-file helpers (key-value format)
+# ---------------------------------------------------------------------------
+
+def load_parameters(parameters_csv: Path) -> dict[str, str]:
+    """Parse a key-value parameters.csv into a lookup dict.
+
+    Expected CSV format:  key,value,notes
+    Returns ``{key: value, …}``.
+    """
+    if not parameters_csv.exists():
+        raise FileNotFoundError(f"Parameters file not found: {parameters_csv}")
+    result: dict[str, str] = {}
+    with parameters_csv.open("r", newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            k = row.get("key", "").strip()
+            v = row.get("value", "").strip()
+            if k:
+                result[k] = v
+    return result
+
+
+def get_parameter_float(
+    params: dict[str, str], key: str, default: float = 0.0
+) -> float:
+    """Get a float parameter value from a key-value dict."""
+    try:
+        return float(params.get(key, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def get_parameter_int(
+    params: dict[str, str], key: str, default: int = 0
+) -> int:
+    """Get an int parameter value from a key-value dict."""
+    try:
+        return int(float(params.get(key, str(default))))
+    except (TypeError, ValueError):
+        return default
+
+
+# ---------------------------------------------------------------------------
+# Build parameters.csv rows from Case Appendix constants
+# ---------------------------------------------------------------------------
+
+def _build_parameter_rows() -> list[dict[str, str]]:
+    """Return key-value rows for parameters.csv."""
+    entries: list[tuple[str, str, str]] = [
+        # ── Market demand (Case Appendix) ──
+        ("total_demand_passengers", str(TOTAL_DEMAND),
+         "Total monthly demand in passengers"),
+        ("business_demand",         str(BUSINESS_DEMAND),
+         "40% of total – business segment"),
+        ("leisure_demand",          str(LEISURE_DEMAND),
+         "60% of total – leisure segment"),
+        # ── Capacity & flight costs (Case Appendix) ──
+        ("seats_per_flight",        str(SEATS_PER_FLIGHT),
+         "Seat capacity per flight"),
+        ("fixed_cost_per_flight",   str(FIXED_COST_PER_FLIGHT),
+         "Fixed cost per flight ($)"),
+        ("days_per_month",          str(DAYS_PER_MONTH),
+         "Days in one monthly round"),
+        # ── Discount penalty rule (Case Appendix) ──
+        ("discount_penalty_threshold", str(DISCOUNT_PENALTY_THRESHOLD),
+         "Min airlines choosing Discount to trigger penalty"),
+        ("discount_penalty_rate",      str(DISCOUNT_PENALTY_RATE),
+         "Revenue penalty rate when threshold met"),
+        # ── Pricing matrix – business fares (Case Appendix) ──
+        ("fare_business_premium",  str(FARES["Premium"]["business"]),
+         "Business fare – Premium posture"),
+        ("fare_business_match",    str(FARES["Match"]["business"]),
+         "Business fare – Match posture"),
+        ("fare_business_discount", str(FARES["Discount"]["business"]),
+         "Business fare – Discount posture"),
+        # ── Pricing matrix – leisure fares (Case Appendix) ──
+        ("fare_leisure_premium",   str(FARES["Premium"]["leisure"]),
+         "Leisure fare – Premium posture"),
+        ("fare_leisure_match",     str(FARES["Match"]["leisure"]),
+         "Leisure fare – Match posture"),
+        ("fare_leisure_discount",  str(FARES["Discount"]["leisure"]),
+         "Leisure fare – Discount posture"),
+        # ── Branding costs (Case Appendix) ──
+        ("branding_cost_low",    str(BRANDING_COSTS["Low"]),
+         "Monthly branding cost – Low"),
+        ("branding_cost_medium", str(BRANDING_COSTS["Medium"]),
+         "Monthly branding cost – Medium"),
+        ("branding_cost_high",   str(BRANDING_COSTS["High"]),
+         "Monthly branding cost – High"),
+        # ── Product strategy costs (Case Appendix) ──
+        ("product_cost_premium_cabin",   str(PRODUCT_COSTS["Premium Cabin"]),
+         "Monthly cost – Premium Cabin"),
+        ("product_cost_basic_economy",   str(PRODUCT_COSTS["Basic Economy"]),
+         "Monthly cost – Basic Economy"),
+        ("product_cost_digital_loyalty", str(PRODUCT_COSTS["Digital/Loyalty"]),
+         "Monthly cost – Digital/Loyalty"),
+        ("product_cost_none",            str(PRODUCT_COSTS["None"]),
+         "Monthly cost – None"),
+    ]
+    return [{"key": k, "value": v, "notes": n} for k, v, n in entries]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Main setup function
+# ═══════════════════════════════════════════════════════════════════════════
 
 def setup_simulation(
-	simulation_id: str,
-	simulation_name: str,
-	total_rounds: int,
-	team_names: list[str],
-	root_dir: Path | str = Path("simulations"),
-	overwrite: bool = False,
+    simulation_id: str,
+    simulation_name: str,
+    total_rounds: int = 3,
+    team_names: list[str] | None = None,
+    root_dir: Path | str = Path("simulations"),
+    overwrite: bool = False,
 ) -> Path:
-	if total_rounds < 1:
-		raise ValueError("total_rounds must be >= 1")
-	if len(team_names) < 2:
-		raise ValueError("At least 2 teams are required")
+    """Create / overwrite a simulation folder and seed all CSVs.
 
-	root = Path(root_dir)
-	simulation_dir = root / simulation_id
+    Parameters
+    ----------
+    simulation_id : str
+        Unique identifier (e.g. ``"sim_001"``).
+    simulation_name : str
+        Human-readable display name.
+    total_rounds : int
+        Number of monthly rounds (default 3 per case).
+    team_names : list[str] | None
+        Display names for the 6 airlines.  Must contain exactly 6
+        entries.  Defaults to ``["Airline A", …, "Airline F"]``.
+    root_dir : Path | str
+        Parent directory that holds simulation folders.
+    overwrite : bool
+        If *True*, recreates the folder and all files.
 
-	if simulation_dir.exists() and not overwrite:
-		raise FileExistsError(
-			f"Simulation '{simulation_id}' already exists at {simulation_dir}"
-		)
+    Returns
+    -------
+    Path
+        Path to the created simulation directory.
+    """
+    # ── Validation ─────────────────────────────────────────────────
+    if total_rounds < 1:
+        raise ValueError("total_rounds must be >= 1")
 
-	simulation_dir.mkdir(parents=True, exist_ok=True)
-	now = _utc_now()
+    if team_names is None:
+        team_names = [f"Airline {L}" for L in TEAM_LETTERS]
 
-	team_rows = [
-		{
-			"simulation_id": simulation_id,
-			"team_id": f"T{i + 1}",
-			"team_name": team_name,
-			"is_active": "1",
-			"created_at_utc": now,
-		}
-		for i, team_name in enumerate(team_names)
-	]
+    if len(team_names) != _NUM_TEAMS:
+        raise ValueError(
+            f"Exactly {_NUM_TEAMS} team names are required (got {len(team_names)}). "
+            f"The case defines {_NUM_TEAMS} airlines (A–F)."
+        )
 
-	admin_user_rows = [
-		{
-			"simulation_id": simulation_id,
-			"user_id": "U_ADMIN",
-			"username": "admin",
-			"role": "ADMIN",
-			"team_id": "",
-			"password_hash": "",
-			"is_locked": "0",
-			"created_at_utc": now,
-		}
-	]
+    root = Path(root_dir)
+    sim_dir = root / simulation_id
 
-	round_rows = [
-		{
-			"simulation_id": simulation_id,
-			"round_number": str(round_num),
-			"status": "PLANNED",
-			"opened_at_utc": "",
-			"closed_at_utc": "",
-		}
-		for round_num in range(1, total_rounds + 1)
-	]
+    if sim_dir.exists() and not overwrite:
+        raise FileExistsError(
+            f"Simulation '{simulation_id}' already exists at {sim_dir}"
+        )
 
-	seed_data: dict[str, list[dict[str, Any]]] = {
-		"simulation.csv": [
-			{
-				"simulation_id": simulation_id,
-				"name": simulation_name,
-				"status": "CREATED",
-				"current_round": "0",
-				"total_rounds": str(total_rounds),
-				"created_at_utc": now,
-				"updated_at_utc": now,
-			}
-		],
-		"parameters.csv": [
-			{
-				"simulation_id": simulation_id,
-				"version": "1",
-				"days_per_round": "30",
-				"base_demand_business": "1200",
-				"base_demand_leisure": "3600",
-				"base_fuel_cost_per_flight": "2500",
-				"base_fixed_cost_per_round": "50000",
-				"base_variable_cost_per_pax": "40",
-				"brand_effectiveness": "0.02",
-				"created_at_utc": now,
-			}
-		],
-		"teams.csv": team_rows,
-		"users.csv": admin_user_rows,
-		"routes.csv": [
-			{
-				"simulation_id": simulation_id,
-				"route_id": "R1",
-				"origin": "JFK",
-				"destination": "BOS",
-				"distance_miles": "187",
-				"is_active": "1",
-				"created_at_utc": now,
-			}
-		],
-		"airplane_types.csv": [
-			{
-				"simulation_id": simulation_id,
-				"airplane_type_id": "A1",
-				"name": "A320",
-				"seats_per_flight": "180",
-				"max_flights_per_day": "20",
-				"created_at_utc": now,
-			}
-		],
-		"rounds.csv": round_rows,
-		"decisions.csv": [],
-		"round_results_team.csv": [],
-		"round_results_market.csv": [],
-		"login_log.csv": [],
-		"admin_actions.csv": [
-			{
-				"event_id": "E1",
-				"simulation_id": simulation_id,
-				"admin_user_id": "U_ADMIN",
-				"action": "SETUP_SIMULATION",
-				"details": f"Created simulation with {len(team_names)} teams and {total_rounds} rounds",
-				"event_at_utc": now,
-			}
-		],
-		"log.csv": [
-			{
-				"event_id": "E1",
-				"simulation_id": simulation_id,
-				"actor_user_id": "U_ADMIN",
-				"action": "SETUP_SIMULATION",
-				"details": f"Created simulation with {len(team_names)} teams and {total_rounds} rounds",
-				"event_at_utc": now,
-			}
-		],
-	}
+    sim_dir.mkdir(parents=True, exist_ok=True)
+    now = _utc_now()
 
-	for csv_name, headers in CSV_SCHEMAS.items():
-		_write_csv(
-			simulation_dir / csv_name,
-			headers=headers,
-			rows=seed_data.get(csv_name, []),
-		)
+    # ── 1) simulation.csv ──────────────────────────────────────────
+    simulation_rows = [
+        {
+            "simulation_id": simulation_id,
+            "name": simulation_name,
+            "status": "CREATED",
+            "current_round": "0",
+            "total_rounds": str(total_rounds),
+            "created_at_utc": now,
+            "updated_at_utc": now,
+        }
+    ]
 
-	return simulation_dir
+    # ── 2) parameters.csv  (key-value, Case Appendix) ─────────────
+    parameter_rows = _build_parameter_rows()
 
+    # ── 3) teams.csv  (6 airlines with baselines, Case Appendix) ──
+    team_rows: list[dict[str, Any]] = []
+    for i, letter in enumerate(TEAM_LETTERS):
+        bl = TEAM_BASELINES[letter]
+        team_rows.append({
+            "simulation_id":            simulation_id,
+            "team_id":                  letter,
+            "team_name":                team_names[i],
+            "is_active":                "1",
+            "baseline_passengers":      str(bl["baseline_passengers"]),
+            "baseline_volume_share":    str(bl["baseline_volume_share"]),
+            "baseline_profit_millions": str(bl["baseline_profit_millions"]),
+            "baseline_profit_share":    str(bl["baseline_profit_share"]),
+            "variable_cost_per_passenger": str(bl["variable_cost_per_pax"]),
+            "created_at_utc":           now,
+        })
+
+    # ── users.csv  (admin account) ─────────────────────────────────
+    user_rows = [
+        {
+            "simulation_id": simulation_id,
+            "user_id":       "U_ADMIN",
+            "username":      "admin",
+            "role":          "ADMIN",
+            "team_id":       "",
+            "password_hash": "",
+            "is_locked":     "0",
+            "created_at_utc": now,
+        }
+    ]
+
+    # ── routes.csv (JFK–BOS corridor, case narrative) ──────────────
+    route_rows = [
+        {
+            "simulation_id": simulation_id,
+            "route_id":      "R1",
+            "origin":        "JFK",
+            "destination":   "BOS",
+            "distance_miles": "187",
+            "is_active":     "1",
+            "created_at_utc": now,
+        }
+    ]
+
+    # ── airplane_types.csv  (single type per case) ─────────────────
+    airplane_rows = [
+        {
+            "simulation_id":   simulation_id,
+            "airplane_type_id": "A1",
+            "name":            "Standard",
+            "seats_per_flight": str(SEATS_PER_FLIGHT),   # Case Appendix: 200
+            "max_flights_per_day": "5",                  # Case Appendix: 0–5
+            "created_at_utc":  now,
+        }
+    ]
+
+    # ── 4) rounds.csv  (all rounds as PLANNED) ────────────────────
+    round_rows = [
+        {
+            "simulation_id": simulation_id,
+            "round_number":  str(rn),
+            "status":        "PLANNED",
+            "opened_at_utc": "",
+            "closed_at_utc": "",
+        }
+        for rn in range(1, total_rounds + 1)
+    ]
+
+    # ── 5) decisions.csv  (headers only) ───────────────────────────
+    decision_rows: list[dict[str, Any]] = []
+
+    # ── 6) round_results_team.csv  (Round 0 baseline snapshot) ─────
+    #   Passengers and profit match Case Appendix exactly.
+    #   Fields not derivable from baseline are left blank.
+    baseline_team_results: list[dict[str, Any]] = []
+    for letter in TEAM_LETTERS:
+        bl = TEAM_BASELINES[letter]
+        profit_dollars = bl["baseline_profit_millions"] * 1_000_000
+        baseline_team_results.append({
+            "simulation_id":        simulation_id,
+            "round_number":         "0",
+            "team_id":              letter,
+            "passengers":           str(bl["baseline_passengers"]),
+            "revenue":              "",       # not provided in case baseline
+            "variable_cost":        "",
+            "fixed_cost":           "",
+            "branding_cost":        "",
+            "product_cost":         "",
+            "total_cost":           "",
+            "profit":               str(int(profit_dollars)),
+            "market_share_volume":  str(bl["baseline_volume_share"]),
+            "market_share_profit":  str(bl["baseline_profit_share"]),
+            "load_factor":          "",
+            "avg_revenue_per_flight": "",
+            "avg_cost_per_flight":  "",
+            "avg_profit_per_flight": "",
+            "csi":                  "",       # not specified in case
+            "oei":                  "",       # not specified in case
+            "created_at_utc":       now,
+        })
+
+    # ── 7) round_results_market.csv  (Round 0 baseline) ───────────
+    baseline_market_results = [
+        {
+            "simulation_id":   simulation_id,
+            "round_number":    "0",
+            "total_demand":    str(TOTAL_DEMAND),
+            "total_passengers": str(TOTAL_DEMAND),   # baseline: all demand served
+            "total_revenue":   "",                   # not provided in case baseline
+            "total_cost":      "",
+            "total_profit":    str(25_000_000),       # Case Appendix: $25 M
+            "created_at_utc":  now,
+        }
+    ]
+
+    # ── admin_actions.csv / log.csv ────────────────────────────────
+    detail_msg = (
+        f"Created simulation '{simulation_name}' "
+        f"with {_NUM_TEAMS} airlines and {total_rounds} rounds"
+    )
+    admin_rows = [
+        {
+            "event_id":       "E1",
+            "simulation_id":  simulation_id,
+            "admin_user_id":  "U_ADMIN",
+            "action":         "SETUP_SIMULATION",
+            "details":        detail_msg,
+            "event_at_utc":   now,
+        }
+    ]
+    log_rows = [
+        {
+            "event_id":       "E1",
+            "simulation_id":  simulation_id,
+            "actor_user_id":  "U_ADMIN",
+            "action":         "SETUP_SIMULATION",
+            "details":        detail_msg,
+            "event_at_utc":   now,
+        }
+    ]
+
+    # ── Assemble seed data ─────────────────────────────────────────
+    seed_data: dict[str, list[dict[str, Any]]] = {
+        "simulation.csv":          simulation_rows,
+        "parameters.csv":          parameter_rows,
+        "teams.csv":               team_rows,
+        "users.csv":               user_rows,
+        "routes.csv":              route_rows,
+        "airplane_types.csv":      airplane_rows,
+        "rounds.csv":              round_rows,
+        "decisions.csv":           decision_rows,
+        "round_results_team.csv":  baseline_team_results,
+        "round_results_market.csv": baseline_market_results,
+        "login_log.csv":           [],
+        "admin_actions.csv":       admin_rows,
+        "log.csv":                 log_rows,
+    }
+
+    # ── Write all CSVs (atomic: .tmp → rename) ────────────────────
+    for csv_name, headers in CSV_SCHEMAS.items():
+        _atomic_write_csv(
+            sim_dir / csv_name,
+            headers=headers,
+            rows=seed_data.get(csv_name, []),
+        )
+
+    return sim_dir
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CLI
+# ═══════════════════════════════════════════════════════════════════════════
 
 def _parse_cli_args() -> argparse.Namespace:
-	parser = argparse.ArgumentParser(description="Initialize a new airline simulation")
-	parser.add_argument("simulation_id", help="Unique simulation identifier")
-	parser.add_argument(
-		"--name",
-		default="Airline Simulation",
-		help="Simulation display name",
-	)
-	parser.add_argument(
-		"--rounds",
-		type=int,
-		default=8,
-		help="Total number of rounds",
-	)
-	parser.add_argument(
-		"--teams",
-		nargs="+",
-		default=["Team Alpha", "Team Bravo"],
-		help="List of team names",
-	)
-	parser.add_argument(
-		"--root",
-		type=Path,
-		default=Path("simulations"),
-		help="Root simulations directory",
-	)
-	parser.add_argument(
-		"--overwrite",
-		action="store_true",
-		help="Overwrite existing simulation folder",
-	)
-	return parser.parse_args()
+    parser = argparse.ArgumentParser(
+        description="Initialize airline simulation with Case Appendix data"
+    )
+    parser.add_argument("simulation_id", help="Unique simulation identifier")
+    parser.add_argument(
+        "--name",
+        default="Airline Simulation",
+        help="Simulation display name",
+    )
+    parser.add_argument(
+        "--rounds",
+        type=int,
+        default=3,
+        help="Total number of monthly rounds (default: 3)",
+    )
+    parser.add_argument(
+        "--teams",
+        nargs="+",
+        default=[f"Airline {L}" for L in "ABCDEF"],
+        help="List of 6 team display names",
+    )
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=Path("simulations"),
+        help="Root simulations directory",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite existing simulation folder",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-	args = _parse_cli_args()
-	simulation_path = setup_simulation(
-		simulation_id=args.simulation_id,
-		simulation_name=args.name,
-		total_rounds=args.rounds,
-		team_names=args.teams,
-		root_dir=args.root,
-		overwrite=args.overwrite,
-	)
-	print(f"Simulation initialized at: {simulation_path}")
+    args = _parse_cli_args()
+    simulation_path = setup_simulation(
+        simulation_id=args.simulation_id,
+        simulation_name=args.name,
+        total_rounds=args.rounds,
+        team_names=args.teams,
+        root_dir=args.root,
+        overwrite=args.overwrite,
+    )
+    print(f"Simulation initialized at: {simulation_path}")
 
 
 if __name__ == "__main__":
-	main()
+    main()

@@ -1,2 +1,22 @@
-simulation_id,version,days_per_round,base_demand_business,base_demand_leisure,base_fuel_cost_per_flight,base_fixed_cost_per_round,base_variable_cost_per_pax,brand_effectiveness,created_at_utc
-sim_001,1,30,1200,3600,2500,50000,40,0.02,2026-03-01T01:38:57.747088+00:00
+key,value,notes
+total_demand_passengers,120000,Total monthly demand in passengers
+business_demand,48000,40% of total – business segment
+leisure_demand,72000,60% of total – leisure segment
+seats_per_flight,200,Seat capacity per flight
+fixed_cost_per_flight,18000,Fixed cost per flight ($)
+days_per_month,30,Days in one monthly round
+discount_penalty_threshold,3,Min airlines choosing Discount to trigger penalty
+discount_penalty_rate,0.08,Revenue penalty rate when threshold met
+fare_business_premium,450,Business fare – Premium posture
+fare_business_match,360,Business fare – Match posture
+fare_business_discount,290,Business fare – Discount posture
+fare_leisure_premium,220,Leisure fare – Premium posture
+fare_leisure_match,180,Leisure fare – Match posture
+fare_leisure_discount,140,Leisure fare – Discount posture
+branding_cost_low,1000000,Monthly branding cost – Low
+branding_cost_medium,3000000,Monthly branding cost – Medium
+branding_cost_high,5000000,Monthly branding cost – High
+product_cost_premium_cabin,4000000,Monthly cost – Premium Cabin
+product_cost_basic_economy,3000000,Monthly cost – Basic Economy
+product_cost_digital_loyalty,2000000,Monthly cost – Digital/Loyalty
+product_cost_none,0,Monthly cost – None

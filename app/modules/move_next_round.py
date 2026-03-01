@@ -9,12 +9,13 @@ from typing import Any
 
 from app.core.round_manager import close_open_round_and_advance, resolve_open_round
 from app.core.simulation_engine import (
-	SimulationParameters,
 	TeamDecisionInput,
+	build_parameters_from_csv,
 	compute_round_results,
 )
 from app.core.state_machine import can_move_next_round, validate_simulation_state
 from app.data.log_manager import append_log_event
+from app.modules.setup_simulation import load_parameters
 
 
 @dataclass(frozen=True)
@@ -83,8 +84,8 @@ def _next_event_id(admin_action_rows: list[dict[str, str]]) -> str:
 	return f"E{max_suffix + 1}"
 
 
-def _active_team_ids(teams_rows: list[dict[str, str]]) -> list[str]:
-	return [row["team_id"] for row in teams_rows if row.get("is_active", "0") == "1"]
+def _active_team_rows(teams_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+	return [row for row in teams_rows if row.get("is_active", "0") == "1"]
 
 
 def move_next_round(
@@ -97,7 +98,6 @@ def move_next_round(
 	parameters_csv = simulation_dir / "parameters.csv"
 	teams_csv = simulation_dir / "teams.csv"
 	rounds_csv = simulation_dir / "rounds.csv"
-	airplane_types_csv = simulation_dir / "airplane_types.csv"
 	decisions_csv = simulation_dir / "decisions.csv"
 	round_results_team_csv = simulation_dir / "round_results_team.csv"
 	round_results_market_csv = simulation_dir / "round_results_market.csv"
@@ -116,26 +116,27 @@ def move_next_round(
 	if current_round < 1:
 		raise ValueError("Simulation current_round must be >= 1 before moving to next round")
 
-	_, parameter_rows = _load_csv(parameters_csv)
-	if not parameter_rows:
-		raise ValueError("No parameters configured")
-	latest_parameters = parameter_rows[-1]
+	# ── Load key-value parameters ─────────────────────────────────
+	params_dict = load_parameters(parameters_csv)
+	engine_parameters = build_parameters_from_csv(params_dict)
 
+	# ── Teams (need variable_cost_per_passenger) ──────────────────
 	_, team_rows = _load_csv(teams_csv)
-	active_team_ids = _active_team_ids(team_rows)
-	if not active_team_ids:
+	active_teams = _active_team_rows(team_rows)
+	if not active_teams:
 		raise ValueError("No active teams found")
+	active_team_ids = [row["team_id"] for row in active_teams]
+
+	# Map team_id → variable_cost_per_passenger from teams.csv
+	var_cost_map: dict[str, float] = {}
+	for row in active_teams:
+		var_cost_map[row["team_id"]] = _as_float(
+			row.get("variable_cost_per_passenger", "0")
+		)
 
 	round_fieldnames, round_rows = _load_csv(rounds_csv)
 	open_resolution = resolve_open_round(round_rows, expected_round=current_round)
 	open_round_number = open_resolution.open_round_number
-
-	_, airplane_rows = _load_csv(airplane_types_csv)
-	if not airplane_rows:
-		raise ValueError("No airplane types configured")
-	seats_per_flight = max(_as_int(row.get("seats_per_flight", "0")) for row in airplane_rows)
-	if seats_per_flight < 1:
-		raise ValueError("Invalid seats_per_flight configuration")
 
 	_, decision_rows_all = _load_csv(decisions_csv)
 	round_decisions = [
@@ -145,65 +146,60 @@ def move_next_round(
 		and _as_int(row.get("round_number", "0")) == open_round_number
 	]
 
-	engine_parameters = SimulationParameters(
-		days_per_round=_as_int(latest_parameters.get("days_per_round", "0")),
-		seats_per_flight=seats_per_flight,
-		base_demand_business=_as_float(latest_parameters.get("base_demand_business", "0")),
-		base_demand_leisure=_as_float(latest_parameters.get("base_demand_leisure", "0")),
-		base_fuel_cost_per_flight=_as_float(latest_parameters.get("base_fuel_cost_per_flight", "0")),
-		base_fixed_cost_per_round=_as_float(latest_parameters.get("base_fixed_cost_per_round", "0")),
-		base_variable_cost_per_pax=_as_float(latest_parameters.get("base_variable_cost_per_pax", "0")),
-		brand_effectiveness=_as_float(latest_parameters.get("brand_effectiveness", "0")),
-	)
 	engine_decisions = [
 		TeamDecisionInput(
 			team_id=row.get("team_id", ""),
 			flights_per_day=_as_int(row.get("flights_per_day", "0")),
-			price_premium=_as_float(row.get("price_premium", "0")),
-			price_economy=_as_float(row.get("price_economy", "0")),
-			brand_investment=_as_float(row.get("brand_investment", "0")),
+			pricing_posture=row.get("pricing_posture", "Match"),
+			branding_level=row.get("branding_level", "Low"),
+			product_strategy=row.get("product_strategy", "None"),
+			variable_cost_per_passenger=var_cost_map.get(
+				row.get("team_id", ""), 0.0
+			),
 		)
 		for row in round_decisions
 	]
 	engine_result = compute_round_results(
 		decisions=engine_decisions,
 		parameters=engine_parameters,
-		active_team_ids=active_team_ids,
 	)
 	computed = engine_result.team_results
 
 	now = _utc_now()
 
+	# ── Write team results ────────────────────────────────────────
 	team_result_fieldnames, team_result_rows = _load_csv(round_results_team_csv)
 	team_result_rows = [
 		row for row in team_result_rows if _as_int(row.get("round_number", "0")) != open_round_number
 	]
-	for row in computed:
+	for tr in computed:
 		team_result_rows.append(
 			{
 				"simulation_id": simulation_id,
 				"round_number": str(open_round_number),
-				"team_id": row.team_id,
-				"capacity": _fmt_number(row.capacity, 2),
-				"carried_business": _fmt_number(row.carried_business, 2),
-				"carried_leisure": _fmt_number(row.carried_leisure, 2),
-				"revenue": _fmt_number(row.revenue, 2),
-				"cost": _fmt_number(row.cost, 2),
-				"profit": _fmt_number(row.profit, 2),
-				"market_share_volume": _fmt_number(row.market_share_volume, 6),
-				"market_share_profit": _fmt_number(row.market_share_profit, 6),
+				"team_id": tr.team_id,
+				"passengers": str(tr.passengers),
+				"revenue": _fmt_number(tr.revenue, 2),
+				"variable_cost": _fmt_number(tr.variable_cost, 2),
+				"fixed_cost": _fmt_number(tr.fixed_cost, 2),
+				"branding_cost": _fmt_number(tr.branding_cost, 2),
+				"product_cost": _fmt_number(tr.product_cost, 2),
+				"total_cost": _fmt_number(tr.total_cost, 2),
+				"profit": _fmt_number(tr.profit, 2),
+				"market_share_volume": _fmt_number(tr.market_share_volume, 6),
+				"market_share_profit": _fmt_number(tr.market_share_profit, 6),
+				"load_factor": _fmt_number(tr.load_factor, 4),
+				"avg_revenue_per_flight": _fmt_number(tr.avg_revenue_per_flight, 2),
+				"avg_cost_per_flight": _fmt_number(tr.avg_cost_per_flight, 2),
+				"avg_profit_per_flight": _fmt_number(tr.avg_profit_per_flight, 2),
+				"csi": "",
+				"oei": "",
 				"created_at_utc": now,
 			}
 		)
 
-	total_capacity = engine_result.market_result.total_capacity
-	total_carried = engine_result.market_result.total_carried
-	total_revenue = engine_result.market_result.total_revenue
-	total_cost = engine_result.market_result.total_cost
-	total_profit = engine_result.market_result.total_profit
-	avg_price_premium = engine_result.market_result.avg_price_premium
-	avg_price_economy = engine_result.market_result.avg_price_economy
-
+	# ── Write market results ──────────────────────────────────────
+	mr = engine_result.market_result
 	market_result_fieldnames, market_result_rows = _load_csv(round_results_market_csv)
 	market_result_rows = [
 		row for row in market_result_rows if _as_int(row.get("round_number", "0")) != open_round_number
@@ -212,13 +208,11 @@ def move_next_round(
 		{
 			"simulation_id": simulation_id,
 			"round_number": str(open_round_number),
-			"total_capacity": _fmt_number(total_capacity, 2),
-			"total_carried": _fmt_number(total_carried, 2),
-			"avg_price_premium": _fmt_number(avg_price_premium, 2),
-			"avg_price_economy": _fmt_number(avg_price_economy, 2),
-			"total_revenue": _fmt_number(total_revenue, 2),
-			"total_cost": _fmt_number(total_cost, 2),
-			"total_profit": _fmt_number(total_profit, 2),
+			"total_demand": str(mr.total_demand),
+			"total_passengers": str(mr.total_passengers),
+			"total_revenue": _fmt_number(mr.total_revenue, 2),
+			"total_cost": _fmt_number(mr.total_cost, 2),
+			"total_profit": _fmt_number(mr.total_profit, 2),
 			"created_at_utc": now,
 		}
 	)

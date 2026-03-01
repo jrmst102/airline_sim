@@ -1,3 +1,15 @@
+"""
+Enter Decisions – Airlines Competitive Strategy Simulation
+===========================================================
+Record or update a team's monthly decisions for an OPEN round.
+
+Decision variables (Case Appendix):
+  1. flights_per_day : int 0–5
+  2. pricing_posture : Premium | Match | Discount
+  3. branding_level  : Low | Medium | High
+  4. product_strategy: Premium Cabin | Basic Economy | Digital/Loyalty | None
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -11,15 +23,21 @@ from app.core.state_machine import can_enter_decisions, validate_round_state, va
 from app.data.log_manager import append_log_event
 
 
+# ── Valid decision choices (Case Appendix) ─────────────────────────────
+VALID_POSTURES = ("Premium", "Match", "Discount")
+VALID_BRANDING = ("Low", "Medium", "High")
+VALID_PRODUCTS = ("Premium Cabin", "Basic Economy", "Digital/Loyalty", "None")
+
+
 @dataclass(frozen=True)
 class EnterDecisionResult:
 	simulation_id: str
 	round_number: int
 	team_id: str
 	flights_per_day: int
-	price_premium: float
-	price_economy: float
-	brand_investment: float
+	pricing_posture: str
+	branding_level: str
+	product_strategy: str
 	submitted_at_utc: str
 	was_update: bool
 
@@ -60,20 +78,24 @@ def _as_int(value: str, default: int = 0) -> int:
 
 def _validate_inputs(
 	flights_per_day: int,
-	price_premium: float,
-	price_economy: float,
-	brand_investment: float,
+	pricing_posture: str,
+	branding_level: str,
+	product_strategy: str,
 ) -> None:
-	if flights_per_day < 1:
-		raise ValueError("flights_per_day must be >= 1")
-	if price_premium <= 0:
-		raise ValueError("price_premium must be > 0")
-	if price_economy <= 0:
-		raise ValueError("price_economy must be > 0")
-	if price_premium < price_economy:
-		raise ValueError("price_premium must be >= price_economy")
-	if brand_investment < 0:
-		raise ValueError("brand_investment must be >= 0")
+	if flights_per_day < 0 or flights_per_day > 5:
+		raise ValueError(f"flights_per_day must be 0–5 (got {flights_per_day})")
+	if pricing_posture not in VALID_POSTURES:
+		raise ValueError(
+			f"pricing_posture must be one of {VALID_POSTURES} (got '{pricing_posture}')"
+		)
+	if branding_level not in VALID_BRANDING:
+		raise ValueError(
+			f"branding_level must be one of {VALID_BRANDING} (got '{branding_level}')"
+		)
+	if product_strategy not in VALID_PRODUCTS:
+		raise ValueError(
+			f"product_strategy must be one of {VALID_PRODUCTS} (got '{product_strategy}')"
+		)
 
 
 def _ensure_simulation_started(simulation_csv: Path) -> None:
@@ -143,17 +165,18 @@ def enter_decision(
 	simulation_id: str,
 	team_id: str,
 	flights_per_day: int,
-	price_premium: float,
-	price_economy: float,
-	brand_investment: float,
+	pricing_posture: str,
+	branding_level: str,
+	product_strategy: str,
 	round_number: int | None = None,
 	root_dir: Path | str = Path("simulations"),
 ) -> EnterDecisionResult:
+	"""Record or update one team's decision for the current OPEN round."""
 	_validate_inputs(
 		flights_per_day=flights_per_day,
-		price_premium=price_premium,
-		price_economy=price_economy,
-		brand_investment=brand_investment,
+		pricing_posture=pricing_posture,
+		branding_level=branding_level,
+		product_strategy=product_strategy,
 	)
 
 	simulation_dir = _simulation_path(root_dir, simulation_id)
@@ -181,11 +204,11 @@ def enter_decision(
 		"simulation_id": simulation_id,
 		"round_number": str(effective_round),
 		"team_id": team_id,
-		"submitted_at_utc": submitted_at_utc,
 		"flights_per_day": str(flights_per_day),
-		"price_premium": str(price_premium),
-		"price_economy": str(price_economy),
-		"brand_investment": str(brand_investment),
+		"pricing_posture": pricing_posture,
+		"branding_level": branding_level,
+		"product_strategy": product_strategy,
+		"submitted_at_utc": submitted_at_utc,
 	}
 
 	target_index = -1
@@ -212,7 +235,8 @@ def enter_decision(
 		action="UPDATE_DECISION" if was_update else "ENTER_DECISION",
 		details=(
 			f"round={effective_round}; team_id={team_id}; flights_per_day={flights_per_day}; "
-			f"price_premium={price_premium}; price_economy={price_economy}; brand_investment={brand_investment}"
+			f"pricing_posture={pricing_posture}; branding_level={branding_level}; "
+			f"product_strategy={product_strategy}"
 		),
 		event_at_utc=submitted_at_utc,
 	)
@@ -222,9 +246,9 @@ def enter_decision(
 		round_number=effective_round,
 		team_id=team_id,
 		flights_per_day=flights_per_day,
-		price_premium=price_premium,
-		price_economy=price_economy,
-		brand_investment=brand_investment,
+		pricing_posture=pricing_posture,
+		branding_level=branding_level,
+		product_strategy=product_strategy,
 		submitted_at_utc=submitted_at_utc,
 		was_update=was_update,
 	)
@@ -233,11 +257,23 @@ def enter_decision(
 def _parse_cli_args() -> argparse.Namespace:
 	parser = argparse.ArgumentParser(description="Enter or update team decisions for the OPEN round")
 	parser.add_argument("simulation_id", help="Simulation identifier")
-	parser.add_argument("--team-id", required=True, help="Team identifier")
-	parser.add_argument("--flights-per-day", required=True, type=int)
-	parser.add_argument("--price-premium", required=True, type=float)
-	parser.add_argument("--price-economy", required=True, type=float)
-	parser.add_argument("--brand-investment", required=True, type=float)
+	parser.add_argument("--team-id", required=True, help="Team identifier (A–F)")
+	parser.add_argument("--flights-per-day", required=True, type=int, help="0–5")
+	parser.add_argument(
+		"--pricing-posture", required=True,
+		choices=list(VALID_POSTURES),
+		help="Premium | Match | Discount",
+	)
+	parser.add_argument(
+		"--branding-level", required=True,
+		choices=list(VALID_BRANDING),
+		help="Low | Medium | High",
+	)
+	parser.add_argument(
+		"--product-strategy", required=True,
+		choices=list(VALID_PRODUCTS),
+		help="Premium Cabin | Basic Economy | Digital/Loyalty | None",
+	)
 	parser.add_argument(
 		"--round",
 		type=int,
@@ -260,9 +296,9 @@ def main() -> None:
 		simulation_id=args.simulation_id,
 		team_id=args.team_id,
 		flights_per_day=args.flights_per_day,
-		price_premium=args.price_premium,
-		price_economy=args.price_economy,
-		brand_investment=args.brand_investment,
+		pricing_posture=args.pricing_posture,
+		branding_level=args.branding_level,
+		product_strategy=args.product_strategy,
 		round_number=args.round_number,
 		root_dir=args.root,
 	)

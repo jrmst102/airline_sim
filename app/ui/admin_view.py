@@ -260,71 +260,127 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
     teams_df = _read_csv_safe(sim_path / "teams.csv")
     results_df = _read_csv_safe(sim_path / "round_results_team.csv")
 
+    # Column mapping: round_results_team → display name
     desired = {
-        "team_name": "Team Name",
-        "team_id": "Team ID",
+        "team_name": "Team",
+        "team_id": "ID",
         "round_number": "Round",
+        "passengers": "Passengers",
         "revenue": "Revenue",
-        "cost": "Cost",
+        "total_cost": "Cost",
         "profit": "Profit",
-        "market_share_volume": "Market Share",
+        "market_share_volume": "Mkt Share (Vol)",
+        "market_share_profit": "Mkt Share (Profit)",
     }
 
+    # ── Try to show results for the current round ──────────────
     if results_df is not None and not results_df.empty:
         rn_col = next(
             (c for c in results_df.columns if c.strip().lower() == "round_number"), None
         )
-        if rn_col and latest_round > 0:
+        show_df = results_df
+        if rn_col:
             filtered = results_df[
                 pd.to_numeric(results_df[rn_col], errors="coerce") == latest_round
             ]
             if not filtered.empty:
-                results_df = filtered
+                show_df = filtered
+            elif latest_round > 0:
+                # No results for this round yet → fall through to baseline
+                show_df = None
 
-        if (
-            teams_df is not None
-            and "team_name" not in results_df.columns
-            and "team_id" in results_df.columns
-            and "team_id" in teams_df.columns
-        ):
-            results_df = results_df.merge(
-                teams_df[["team_id", "team_name"]].drop_duplicates(),
-                on="team_id", how="left",
-            )
-
-        out: dict[str, str] = {}
-        for src, dst in desired.items():
-            m = next((c for c in results_df.columns if c.strip().lower() == src), None)
-            if m is not None:
-                out[m] = dst
-        table = results_df[list(out.keys())].rename(columns=out) if out else results_df.copy()
-
-        if "Profit" in table.columns:
-            table = table.sort_values("Profit", ascending=False)
-        elif "Team Name" in table.columns:
-            table = table.sort_values("Team Name")
-
-        for col in ("Revenue", "Cost", "Profit"):
-            if col in table.columns:
-                table[col] = pd.to_numeric(table[col], errors="coerce").apply(
-                    lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014"
+        if show_df is not None and not show_df.empty:
+            # Merge team_name from teams.csv if not present
+            if (
+                teams_df is not None
+                and "team_name" not in show_df.columns
+                and "team_id" in show_df.columns
+                and "team_id" in teams_df.columns
+            ):
+                show_df = show_df.merge(
+                    teams_df[["team_id", "team_name"]].drop_duplicates(),
+                    on="team_id", how="left",
                 )
-        if "Market Share" in table.columns:
-            table["Market Share"] = pd.to_numeric(
-                table["Market Share"], errors="coerce"
-            ).apply(lambda v: f"{v:.1%}" if pd.notna(v) else "\u2014")
-        return table.reset_index(drop=True)
 
+            out: dict[str, str] = {}
+            for src, dst in desired.items():
+                m = next((c for c in show_df.columns if c.strip().lower() == src), None)
+                if m is not None:
+                    out[m] = dst
+            table = show_df[list(out.keys())].rename(columns=out) if out else show_df.copy()
+
+            # Sort by profit descending (before formatting)
+            if "Profit" in table.columns:
+                table["_sort"] = pd.to_numeric(table["Profit"], errors="coerce")
+                table = table.sort_values("_sort", ascending=False).drop(columns=["_sort"])
+            elif "Team" in table.columns:
+                table = table.sort_values("Team")
+
+            # Format numeric columns
+            if "Passengers" in table.columns:
+                table["Passengers"] = pd.to_numeric(
+                    table["Passengers"], errors="coerce"
+                ).apply(lambda v: f"{v:,.0f}" if pd.notna(v) else "\u2014")
+            for col in ("Revenue", "Cost", "Profit"):
+                if col in table.columns:
+                    table[col] = pd.to_numeric(table[col], errors="coerce").apply(
+                        lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014"
+                    )
+            for col in ("Mkt Share (Vol)", "Mkt Share (Profit)"):
+                if col in table.columns:
+                    table[col] = pd.to_numeric(table[col], errors="coerce").apply(
+                        lambda v: f"{v:.0%}" if pd.notna(v) else "\u2014"
+                    )
+            return table.reset_index(drop=True)
+
+    # ── Fallback: show baseline from teams.csv ─────────────────
     if teams_df is not None and not teams_df.empty:
-        pick: dict[str, str] = {}
-        for src, dst in desired.items():
+        cols: dict[str, Any] = {}
+
+        # Team info
+        for src, dst in [("team_name", "Team"), ("team_id", "ID")]:
             m = next((c for c in teams_df.columns if c.strip().lower() == src), None)
-            if m is not None:
-                pick[m] = dst
-        table = teams_df[list(pick.keys())].rename(columns=pick) if pick else teams_df.copy()
-        for col in ("Round", "Revenue", "Cost", "Profit", "Market Share"):
-            if col not in table.columns:
-                table[col] = latest_round if col == "Round" and latest_round > 0 else "\u2014"
+            if m:
+                cols[dst] = teams_df[m]
+
+        cols["Round"] = latest_round if latest_round > 0 else "\u2014"
+
+        # Baseline passengers
+        m = next((c for c in teams_df.columns if c.strip().lower() == "baseline_passengers"), None)
+        if m:
+            cols["Passengers"] = pd.to_numeric(teams_df[m], errors="coerce").apply(
+                lambda v: f"{v:,.0f}" if pd.notna(v) else "\u2014"
+            )
+        else:
+            cols["Passengers"] = "\u2014"
+
+        # Revenue / Cost not available in baseline
+        cols["Revenue"] = "\u2014"
+        cols["Cost"] = "\u2014"
+
+        # Baseline profit (stored in $M)
+        m = next((c for c in teams_df.columns if c.strip().lower() == "baseline_profit_millions"), None)
+        if m:
+            cols["Profit"] = pd.to_numeric(teams_df[m], errors="coerce").apply(
+                lambda v: f"${v:.1f}M" if pd.notna(v) else "\u2014"
+            )
+        else:
+            cols["Profit"] = "\u2014"
+
+        # Baseline market shares
+        for src, dst in [
+            ("baseline_volume_share", "Mkt Share (Vol)"),
+            ("baseline_profit_share", "Mkt Share (Profit)"),
+        ]:
+            m = next((c for c in teams_df.columns if c.strip().lower() == src), None)
+            if m:
+                cols[dst] = pd.to_numeric(teams_df[m], errors="coerce").apply(
+                    lambda v: f"{v:.0%}" if pd.notna(v) else "\u2014"
+                )
+            else:
+                cols[dst] = "\u2014"
+
+        table = pd.DataFrame(cols)
         return table.reset_index(drop=True)
 
     return pd.DataFrame()
@@ -527,8 +583,11 @@ def main() -> None:
         with st.expander("Setup Simulation", expanded=False):
             with st.form("setup_form"):
                 sim_name = st.text_input("Simulation Name", value="Airline Simulation")
-                n_rounds = st.number_input("Total Rounds", min_value=1, value=8, step=1)
-                raw_teams = st.text_input("Team Names (comma-separated)", value="Team Alpha, Team Bravo")
+                n_rounds = st.number_input("Total Rounds", min_value=1, value=3, step=1)
+                raw_teams = st.text_input(
+                    "Team Names (comma-separated)",
+                    value="Airline A, Airline B, Airline C, Airline D, Airline E, Airline F",
+                )
                 overwrite = st.checkbox("Overwrite if exists", value=False)
                 submitted = st.form_submit_button("Run Setup")
                 if submitted:
