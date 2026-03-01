@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -282,6 +283,121 @@ def _get_all_decisions_for_round(
 
 
 # ---------------------------------------------------------------------------
+# Editable decisions builder + upsert helpers
+# ---------------------------------------------------------------------------
+DECISIONS_COLUMNS = [
+    "simulation_id", "round_number", "team_id", "flights_per_day",
+    "price_business", "price_leisure", "branding_level", "product_strategy",
+    "submitted_at_utc",
+]
+
+
+def _build_editable_decisions(sim_path: Path, round_number: int) -> pd.DataFrame:
+    """Build a DataFrame of current decisions for all 6 teams for st.data_editor."""
+    existing = _get_all_decisions_for_round(sim_path, round_number)
+    rows: list[dict[str, Any]] = []
+    for team_id in TEAM_OPTIONS:
+        if existing is not None and "team_id" in existing.columns:
+            match = existing[existing["team_id"] == team_id]
+            if not match.empty:
+                r = match.iloc[-1]
+                rows.append({
+                    "team_id": team_id,
+                    "flights_per_day": int(float(r.get("flights_per_day", 3))),
+                    "price_business": float(r.get("price_business", DEFAULT_PRICE_BUSINESS)),
+                    "price_leisure": float(r.get("price_leisure", DEFAULT_PRICE_LEISURE)),
+                    "branding_level": str(r.get("branding_level", "Medium")),
+                    "product_strategy": str(r.get("product_strategy", "None")),
+                })
+                continue
+        rows.append({
+            "team_id": team_id,
+            "flights_per_day": 3,
+            "price_business": DEFAULT_PRICE_BUSINESS,
+            "price_leisure": DEFAULT_PRICE_LEISURE,
+            "branding_level": "Medium",
+            "product_strategy": "None",
+        })
+    return pd.DataFrame(rows)
+
+
+def _validate_decisions_df(df: pd.DataFrame) -> str | None:
+    """Return an error message if *df* is invalid, else ``None``."""
+    if "team_id" not in df.columns:
+        return "Missing team_id column."
+    if df["team_id"].isnull().any():
+        return "team_id contains null values."
+    if df["team_id"].duplicated().any():
+        return "Duplicate team_id values found."
+    if len(df) != len(TEAM_OPTIONS):
+        return f"Expected {len(TEAM_OPTIONS)} rows (one per team), got {len(df)}."
+    for _, row in df.iterrows():
+        tid = row["team_id"]
+        fpd = row.get("flights_per_day")
+        if pd.isna(fpd) or int(fpd) < 0 or int(fpd) > 5:
+            return f"Team {tid}: flights_per_day must be 0\u20135."
+        pb = row.get("price_business")
+        if pd.isna(pb) or float(pb) < 50 or float(pb) > 1000:
+            return f"Team {tid}: price_business must be $50\u2013$1000."
+        pl = row.get("price_leisure")
+        if pd.isna(pl) or float(pl) < 50 or float(pl) > 1000:
+            return f"Team {tid}: price_leisure must be $50\u2013$1000."
+        if row.get("branding_level") not in BRANDING_OPTIONS:
+            return f"Team {tid}: invalid branding_level '{row.get('branding_level')}'."
+        if row.get("product_strategy") not in PRODUCT_OPTIONS:
+            return f"Team {tid}: invalid product_strategy '{row.get('product_strategy')}'."
+    return None
+
+
+def _atomic_write_csv(path: Path, df: pd.DataFrame) -> None:
+    """Write *df* to CSV via a temporary file, then atomic rename."""
+    tmp = path.with_suffix(".tmp")
+    df.to_csv(tmp, index=False)
+    tmp.replace(path)
+
+
+def _upsert_decisions(
+    sim_path: Path,
+    df_new: pd.DataFrame,
+    round_number: int,
+) -> None:
+    """Upsert decisions keyed on (round_number, team_id). Preserves other rounds."""
+    now = datetime.now(timezone.utc).isoformat()
+    decisions_path = sim_path / "decisions.csv"
+
+    # Build new rows with metadata columns
+    df_new = df_new.copy()
+    df_new["simulation_id"] = SIM_ID
+    df_new["round_number"] = str(round_number)
+    df_new["submitted_at_utc"] = now
+
+    # Ensure correct string representations for CSV
+    df_new["flights_per_day"] = df_new["flights_per_day"].astype(int).astype(str)
+    df_new["price_business"] = df_new["price_business"].astype(float).astype(str)
+    df_new["price_leisure"] = df_new["price_leisure"].astype(float).astype(str)
+
+    # Reorder columns to match schema
+    df_new = df_new[DECISIONS_COLUMNS]
+
+    # Load existing decisions (all rounds)
+    df_existing = _read_csv_safe(decisions_path)
+    if df_existing is None or df_existing.empty:
+        df_existing = pd.DataFrame(columns=DECISIONS_COLUMNS)
+
+    # Remove ONLY rows where round_number matches AND team_id is in df_new
+    team_ids_new = set(df_new["team_id"].unique())
+    mask = (
+        (pd.to_numeric(df_existing["round_number"], errors="coerce") == round_number)
+        & (df_existing["team_id"].isin(team_ids_new))
+    )
+    df_existing = df_existing[~mask]
+
+    # Append new rows and write atomically
+    df_final = pd.concat([df_existing, df_new], ignore_index=True)
+    _atomic_write_csv(decisions_path, df_final)
+
+
+# ---------------------------------------------------------------------------
 # Team stats table (matching admin/dashboard style)
 # ---------------------------------------------------------------------------
 def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
@@ -457,7 +573,7 @@ def main() -> None:
 
     st.markdown("---")
 
-    # ── Team selector ──────────────────────────────────────────────
+    # ── Team selector (for Team Stats view) ────────────────────────
     selected_team = st.selectbox(
         "Select Your Team",
         options=TEAM_OPTIONS,
@@ -468,8 +584,8 @@ def main() -> None:
 
     st.markdown("---")
 
-    # ── Enter / Update Decision ────────────────────────────────────
-    st.subheader(f"Enter Decision \u2014 {TEAM_LABELS[selected_team]}")
+    # ── Enter / Update Decisions (all teams) ───────────────────────
+    st.subheader(f"Enter Decisions \u2014 Round {current_round}")
 
     can_enter = status == "STARTED" and round_status == "OPEN"
 
@@ -479,189 +595,95 @@ def main() -> None:
             "and a round is **OPEN**."
         )
 
-    # Load existing decision to pre-populate form
-    existing = _get_existing_decision(sim_path, selected_team, current_round) if can_enter else None
-    defaults = existing or {
-        "flights_per_day": 3,
-        "price_business": DEFAULT_PRICE_BUSINESS,
-        "price_leisure": DEFAULT_PRICE_LEISURE,
-        "branding_level": "Medium",
-        "product_strategy": "None",
-    }
+    # Build editable table with all teams' current decisions
+    edit_df = _build_editable_decisions(sim_path, current_round)
 
-    if existing:
-        st.info(
-            f"Decision already submitted for Round {current_round}. "
-            "You can update it below."
+    edited_df = st.data_editor(
+        edit_df,
+        column_config={
+            "team_id": st.column_config.TextColumn("Team", disabled=True),
+            "flights_per_day": st.column_config.NumberColumn(
+                "Flights/Day", min_value=0, max_value=5, step=1,
+            ),
+            "price_business": st.column_config.NumberColumn(
+                "Biz Price ($)", min_value=50, max_value=1000, step=10, format="$%.0f",
+            ),
+            "price_leisure": st.column_config.NumberColumn(
+                "Lei Price ($)", min_value=50, max_value=1000, step=10, format="$%.0f",
+            ),
+            "branding_level": st.column_config.SelectboxColumn(
+                "Branding", options=BRANDING_OPTIONS,
+            ),
+            "product_strategy": st.column_config.SelectboxColumn(
+                "Product", options=PRODUCT_OPTIONS,
+            ),
+        },
+        use_container_width=True,
+        hide_index=True,
+        num_rows="fixed",
+        disabled=not can_enter,
+        key="decisions_editor",
+    )
+
+    save_col, move_col = st.columns(2)
+    with save_col:
+        save_clicked = st.button(
+            "\U0001F4BE Save Decisions",
+            use_container_width=True,
+            disabled=not can_enter,
+        )
+    with move_col:
+        move_clicked = st.button(
+            "\u23E9 Move to Next Round",
+            use_container_width=True,
+            disabled=not can_enter,
         )
 
-    with st.form("decision_form"):
-        flights_per_day = st.number_input(
-            "Flights per Day (0\u20135)",
-            min_value=0, max_value=5,
-            value=defaults["flights_per_day"],
-            step=1,
-        )
-        price_col1, price_col2 = st.columns(2)
-        with price_col1:
-            price_business = st.number_input(
-                "Business Seat Price ($)",
-                min_value=50.0, max_value=1000.0,
-                value=float(defaults["price_business"]),
-                step=10.0,
-                format="%.0f",
-                help="Reference: Premium $450 · Match $360 · Discount $290",
-            )
-        with price_col2:
-            price_leisure = st.number_input(
-                "Leisure Seat Price ($)",
-                min_value=50.0, max_value=1000.0,
-                value=float(defaults["price_leisure"]),
-                step=10.0,
-                format="%.0f",
-                help="Reference: Premium $220 · Match $180 · Discount $140",
-            )
-        branding_level = st.selectbox(
-            "Branding Level",
-            options=BRANDING_OPTIONS,
-            index=BRANDING_OPTIONS.index(defaults["branding_level"]),
-        )
-        product_strategy = st.selectbox(
-            "Product Strategy",
-            options=PRODUCT_OPTIONS,
-            index=PRODUCT_OPTIONS.index(defaults["product_strategy"]),
-        )
-
-        save_col, move_col = st.columns(2)
-        with save_col:
-            save_clicked = st.form_submit_button(
-                "\U0001F4BE Save Decision",
-                use_container_width=True,
-                disabled=not can_enter,
-            )
-        with move_col:
-            move_clicked = st.form_submit_button(
-                "\u23E9 Move to Next Round",
-                use_container_width=True,
-                disabled=not can_enter,
-            )
-
-    # ── Handle Save Decision ──────────────────────────────────────
+    # ── Handle Save Decisions ─────────────────────────────────────
     if save_clicked and can_enter:
-        try:
-            from app.modules.enter_decisions import enter_decision
-
-            result = enter_decision(
-                simulation_id=SIM_ID,
-                team_id=selected_team,
-                flights_per_day=int(flights_per_day),
-                price_business=float(price_business),
-                price_leisure=float(price_leisure),
-                branding_level=branding_level,
-                product_strategy=product_strategy,
-                round_number=current_round,
-                root_dir=ROOT_DIR,
-            )
-            action = "updated" if result.was_update else "saved"
-            st.success(
-                f"Decision **{action}** for {TEAM_LABELS[selected_team]}, "
-                f"Round {result.round_number}."
-            )
-        except Exception as exc:
-            st.error(f"Save failed: {exc}")
+        error = _validate_decisions_df(edited_df)
+        if error:
+            st.error(f"Validation failed: {error}")
+        else:
+            try:
+                _upsert_decisions(sim_path, edited_df, current_round)
+                st.success(f"Decisions saved for all teams \u2014 Round {current_round}.")
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Save failed: {exc}")
 
     # ── Handle Move to Next Round ─────────────────────────────────
     if move_clicked and can_enter:
-        # First, save the current decision so data isn't lost
-        try:
-            from app.modules.enter_decisions import enter_decision
-
-            enter_decision(
-                simulation_id=SIM_ID,
-                team_id=selected_team,
-                flights_per_day=int(flights_per_day),
-                price_business=float(price_business),
-                price_leisure=float(price_leisure),
-                branding_level=branding_level,
-                product_strategy=product_strategy,
-                round_number=current_round,
-                root_dir=ROOT_DIR,
-            )
-        except Exception as exc:
-            st.error(f"Failed to save decision before advancing: {exc}")
-
-        # Then advance the round
-        try:
-            from app.modules.move_next_round import move_next_round
-
-            mnr_result = move_next_round(
-                simulation_id=SIM_ID,
-                admin_user_id=ADMIN_USER_ID,
-                root_dir=ROOT_DIR,
-            )
-            if mnr_result.opened_round is not None:
-                st.success(
-                    f"Round {mnr_result.closed_round} closed. "
-                    f"Round {mnr_result.opened_round} is now open."
-                )
-            else:
-                st.success(
-                    f"Round {mnr_result.closed_round} closed. "
-                    f"Simulation is now **{mnr_result.simulation_status}**."
-                )
-            st.rerun()
-        except Exception as exc:
-            st.error(f"Move to next round failed: {exc}")
-
-    st.markdown("---")
-
-    # ── Decisions submitted this round ─────────────────────────────
-    if current_round > 0:
-        st.subheader(f"Decisions Submitted \u2014 Round {current_round}")
-        round_decisions = _get_all_decisions_for_round(sim_path, current_round)
-        if round_decisions is not None:
-            teams_df = _read_csv_safe(sim_path / "teams.csv")
-            display_df = round_decisions.copy()
-
-            # Merge team names
-            if teams_df is not None and "team_id" in display_df.columns and "team_id" in teams_df.columns:
-                if "team_name" in teams_df.columns:
-                    display_df = display_df.merge(
-                        teams_df[["team_id", "team_name"]].drop_duplicates(),
-                        on="team_id", how="left",
-                    )
-
-            show_cols = []
-            for c in ["team_name", "team_id", "flights_per_day", "price_business",
-                       "price_leisure", "branding_level", "product_strategy", "submitted_at_utc"]:
-                m = next((col for col in display_df.columns if col.strip().lower() == c), None)
-                if m is not None:
-                    show_cols.append(m)
-
-            if show_cols:
-                rename_map = {
-                    "team_name": "Team",
-                    "team_id": "ID",
-                    "flights_per_day": "Flights/Day",
-                    "price_business": "Biz Price",
-                    "price_leisure": "Lei Price",
-                    "branding_level": "Branding",
-                    "product_strategy": "Product",
-                    "submitted_at_utc": "Submitted",
-                }
-                tbl = display_df[show_cols].rename(columns=rename_map)
-                st.dataframe(tbl, use_container_width=True, hide_index=True)
-            else:
-                st.dataframe(display_df, use_container_width=True, hide_index=True)
-
-            submitted_teams = set(round_decisions["team_id"].unique()) if "team_id" in round_decisions.columns else set()
-            missing = [t for t in TEAM_OPTIONS if t not in submitted_teams]
-            if missing:
-                st.warning(f"Awaiting decisions from: {', '.join(TEAM_LABELS[t] for t in missing)}")
-            else:
-                st.success("All teams have submitted decisions.")
+        error = _validate_decisions_df(edited_df)
+        if error:
+            st.error(f"Cannot advance \u2014 validation failed: {error}")
         else:
-            st.info("No decisions submitted yet for this round.")
+            try:
+                _upsert_decisions(sim_path, edited_df, current_round)
+            except Exception as exc:
+                st.error(f"Failed to save decisions before advancing: {exc}")
+
+            try:
+                from app.modules.move_next_round import move_next_round
+
+                mnr_result = move_next_round(
+                    simulation_id=SIM_ID,
+                    admin_user_id=ADMIN_USER_ID,
+                    root_dir=ROOT_DIR,
+                )
+                if mnr_result.opened_round is not None:
+                    st.success(
+                        f"Round {mnr_result.closed_round} closed. "
+                        f"Round {mnr_result.opened_round} is now open."
+                    )
+                else:
+                    st.success(
+                        f"Round {mnr_result.closed_round} closed. "
+                        f"Simulation is now **{mnr_result.simulation_status}**."
+                    )
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Move to next round failed: {exc}")
 
     st.markdown("---")
 

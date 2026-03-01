@@ -1,2 +1,4 @@
 event_id,simulation_id,admin_user_id,action,details,event_at_utc
-E1,sim_001,U_ADMIN,SETUP_SIMULATION,Created simulation 'Airline Simulation' with 6 airlines and 3 rounds,2026-03-01T03:41:00.613014+00:00
+E1,sim_001,U_ADMIN,SETUP_SIMULATION,Created simulation 'Airline Simulation' with 6 airlines and 3 rounds,2026-03-01T04:13:01.236058+00:00
+E2,sim_001,U_ADMIN,START_SIMULATION,Started simulation and opened round 1,2026-03-01T04:13:03.322759+00:00
+E3,sim_001,U_ADMIN,MOVE_NEXT_ROUND,closed_round=1; opened_round=2; status=STARTED; processed_teams=6,2026-03-01T04:15:34.630973+00:00
