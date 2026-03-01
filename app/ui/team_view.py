@@ -38,7 +38,7 @@ TEAM_OPTIONS = ["A", "B", "C", "D", "E", "F"]
 TEAM_LABELS = {t: f"Airline {t}" for t in TEAM_OPTIONS}
 
 BRANDING_OPTIONS = ["Low", "Medium", "High"]
-PRODUCT_OPTIONS = ["Premium Cabin", "Basic Economy", "Digital/Loyalty", "None"]
+PRODUCT_OPTIONS = ["High", "Medium", "Low"]
 
 # Default prices – "Match" level from case appendix
 DEFAULT_PRICE_BUSINESS = 360.0

@@ -189,11 +189,11 @@ def pick_low_brand(constraints: Constraints) -> str:
 
 
 def pick_premium_product(constraints: Constraints) -> str:
-    return constraints.product_strategies[0]  # "Premium Cabin"
+    return constraints.product_strategies[0]  # "High"
 
 
 def pick_economy_product(constraints: Constraints) -> str:
-    return constraints.product_strategies[1]  # "Basic Economy"
+    return constraints.product_strategies[1]  # "Medium"
 
 
 def pick_flights_changed(

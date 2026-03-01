@@ -16,8 +16,7 @@ fare_leisure_discount,140,Leisure fare – Discount posture
 branding_cost_low,1000000,Monthly branding cost – Low
 branding_cost_medium,3000000,Monthly branding cost – Medium
 branding_cost_high,5000000,Monthly branding cost – High
-product_cost_premium_cabin,4000000,Monthly cost – Premium Cabin
-product_cost_basic_economy,3000000,Monthly cost – Basic Economy
-product_cost_digital_loyalty,2000000,Monthly cost – Digital/Loyalty
-product_cost_none,0,Monthly cost – None
+product_cost_high,4000000,Monthly cost – High
+product_cost_medium,3000000,Monthly cost – Medium
+product_cost_low,2000000,Monthly cost – Low
 fare_multiplier,3.0,Avg monthly trips per passenger (JFK–BOS shuttle corridor)

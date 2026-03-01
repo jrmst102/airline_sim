@@ -45,7 +45,7 @@ def render(sim_id: str, team_id: str = "T1") -> None:
 				help="Reference: Premium $220 · Match $180 · Discount $140",
 			)
 			branding_level = st.selectbox("Branding Level", options=["Low", "Medium", "High"], index=1)
-			product_strategy = st.selectbox("Product Strategy", options=["Premium Cabin", "Basic Economy", "Digital/Loyalty", "None"], index=3)
+			product_strategy = st.selectbox("Product Strategy", options=["High", "Medium", "Low"], index=2)
 			submit = st.form_submit_button("Submit Decision")
 
 		if submit:

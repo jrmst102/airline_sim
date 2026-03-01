@@ -45,10 +45,9 @@ ALLOWED_KEYS: set[str] = {
 	"branding_cost_low",
 	"branding_cost_medium",
 	"branding_cost_high",
-	"product_cost_premium_cabin",
-	"product_cost_basic_economy",
-	"product_cost_digital_loyalty",
-	"product_cost_none",
+	"product_cost_high",
+	"product_cost_medium",
+	"product_cost_low",
 	"discount_penalty_threshold",
 	"discount_penalty_rate",
 }

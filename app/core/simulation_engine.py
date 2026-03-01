@@ -48,7 +48,7 @@ class TeamDecisionInput:
 	price_business: float              # team-set business seat price ($)
 	price_leisure: float               # team-set leisure seat price ($)
 	branding_level: str                # "Low" | "Medium" | "High"
-	product_strategy: str              # "Premium Cabin" | "Basic Economy" | "Digital/Loyalty" | "None"
+	product_strategy: str              # "High" | "Medium" | "Low"
 	variable_cost_per_passenger: float  # airline-specific (Case Appendix)
 
 
@@ -100,10 +100,9 @@ def build_parameters_from_csv(params: dict[str, str]) -> SimulationParameters:
 		"High": get_parameter_int(params, "branding_cost_high"),
 	}
 	product_costs = {
-		"Premium Cabin": get_parameter_int(params, "product_cost_premium_cabin"),
-		"Basic Economy": get_parameter_int(params, "product_cost_basic_economy"),
-		"Digital/Loyalty": get_parameter_int(params, "product_cost_digital_loyalty"),
-		"None": get_parameter_int(params, "product_cost_none"),
+		"High": get_parameter_int(params, "product_cost_high"),
+		"Medium": get_parameter_int(params, "product_cost_medium"),
+		"Low": get_parameter_int(params, "product_cost_low"),
 	}
 	return SimulationParameters(
 		total_demand_passengers=get_parameter_int(params, "total_demand_passengers"),
@@ -125,7 +124,7 @@ def build_parameters_from_csv(params: dict[str, str]) -> SimulationParameters:
 # ═══════════════════════════════════════════════════════════════════════════
 
 VALID_BRANDING = {"Low", "Medium", "High"}
-VALID_PRODUCTS = {"Premium Cabin", "Basic Economy", "Digital/Loyalty", "None"}
+VALID_PRODUCTS = {"High", "Medium", "Low"}
 
 
 def _validate_decision(d: TeamDecisionInput, p: SimulationParameters) -> None:

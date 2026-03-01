@@ -59,10 +59,9 @@ BRANDING_COSTS: dict[str, int] = {
 
 # ── Product-strategy costs per month (Case Appendix) ──────────────────
 PRODUCT_COSTS: dict[str, int] = {
-    "Premium Cabin":   4_000_000,
-    "Basic Economy":   3_000_000,
-    "Digital/Loyalty":  2_000_000,
-    "None":             0,
+    "High":   4_000_000,
+    "Medium": 3_000_000,
+    "Low":    2_000_000,
 }
 
 # ── Per-team baseline data, keyed by letter A–F (Case Appendix) ───────
@@ -73,7 +72,7 @@ PRODUCT_COSTS: dict[str, int] = {
 # Valid enum values (for baseline consistency enforcement)
 VALID_PRICING_POSTURES  = ("Premium", "Match", "Discount")
 VALID_BRANDING_LEVELS   = ("Low", "Medium", "High")
-VALID_PRODUCT_STRATEGIES = ("Premium Cabin", "Basic Economy", "Digital/Loyalty", "None")
+VALID_PRODUCT_STRATEGIES = ("High", "Medium", "Low")
 
 TEAM_BASELINES: dict[str, dict[str, Any]] = {
     "A": {  # Premium Leader
@@ -85,7 +84,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_flights_per_day": 5,
         "baseline_pricing_posture": "Premium",
         "baseline_branding":        "High",
-        "baseline_product":         "Premium Cabin",
+        "baseline_product":         "High",
         "baseline_csi":             88,
         "baseline_oei":             78,
     },
@@ -98,7 +97,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_flights_per_day": 4,
         "baseline_pricing_posture": "Match",
         "baseline_branding":        "Medium",
-        "baseline_product":         "Digital/Loyalty",
+        "baseline_product":         "Low",
         "baseline_csi":             82,
         "baseline_oei":             72,
     },
@@ -111,7 +110,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_flights_per_day": 4,
         "baseline_pricing_posture": "Match",
         "baseline_branding":        "Medium",
-        "baseline_product":         "Basic Economy",
+        "baseline_product":         "Medium",
         "baseline_csi":             76,
         "baseline_oei":             74,
     },
@@ -124,7 +123,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_flights_per_day": 4,
         "baseline_pricing_posture": "Discount",
         "baseline_branding":        "Low",
-        "baseline_product":         "Digital/Loyalty",
+        "baseline_product":         "Low",
         "baseline_csi":             68,
         "baseline_oei":             86,
     },
@@ -137,7 +136,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_flights_per_day": 3,
         "baseline_pricing_posture": "Discount",
         "baseline_branding":        "Low",
-        "baseline_product":         "Basic Economy",
+        "baseline_product":         "Medium",
         "baseline_csi":             62,
         "baseline_oei":             90,
     },
@@ -150,7 +149,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_flights_per_day": 3,
         "baseline_pricing_posture": "Premium",
         "baseline_branding":        "Medium",
-        "baseline_product":         "Digital/Loyalty",
+        "baseline_product":         "Low",
         "baseline_csi":             80,
         "baseline_oei":             76,
     },
@@ -425,14 +424,12 @@ def _build_parameter_rows() -> list[dict[str, str]]:
         ("branding_cost_high",   str(BRANDING_COSTS["High"]),
          "Monthly branding cost – High"),
         # ── Product strategy costs (Case Appendix) ──
-        ("product_cost_premium_cabin",   str(PRODUCT_COSTS["Premium Cabin"]),
-         "Monthly cost – Premium Cabin"),
-        ("product_cost_basic_economy",   str(PRODUCT_COSTS["Basic Economy"]),
-         "Monthly cost – Basic Economy"),
-        ("product_cost_digital_loyalty", str(PRODUCT_COSTS["Digital/Loyalty"]),
-         "Monthly cost – Digital/Loyalty"),
-        ("product_cost_none",            str(PRODUCT_COSTS["None"]),
-         "Monthly cost – None"),
+        ("product_cost_high",   str(PRODUCT_COSTS["High"]),
+         "Monthly cost – High"),
+        ("product_cost_medium", str(PRODUCT_COSTS["Medium"]),
+         "Monthly cost – Medium"),
+        ("product_cost_low",    str(PRODUCT_COSTS["Low"]),
+         "Monthly cost – Low"),
         # ── Fare multiplier (Case Appendix) ──
         ("fare_multiplier",              str(FARE_MULTIPLIER),
          "Avg monthly trips per passenger (JFK–BOS shuttle corridor)"),

@@ -142,10 +142,9 @@ def compute_independent(
         "High":   _int(params["branding_cost_high"]),
     }
     product_costs = {
-        "Premium Cabin":   _int(params["product_cost_premium_cabin"]),
-        "Basic Economy":   _int(params["product_cost_basic_economy"]),
-        "Digital/Loyalty": _int(params["product_cost_digital_loyalty"]),
-        "None":            _int(params["product_cost_none"]),
+        "High":   _int(params["product_cost_high"]),
+        "Medium": _int(params["product_cost_medium"]),
+        "Low":    _int(params["product_cost_low"]),
     }
 
     # ── 2. Read teams.csv → variable_cost_per_passenger ────────────

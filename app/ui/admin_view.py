@@ -428,7 +428,7 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
         capacity        = monthly_flights * SEATS_PER_FLIGHT
 
         BASELINE_BRANDING_COST = 3_000_000   # Medium branding – $3M/mo
-        BASELINE_PRODUCT_COST  = 2_000_000   # Digital/Loyalty – $2M/mo
+        BASELINE_PRODUCT_COST  = 2_000_000   # Low product – $2M/mo
 
         var_cost    = pax_n * vcpp_n
         fix_cost    = monthly_flights * FIXED_COST_PER_FLIGHT

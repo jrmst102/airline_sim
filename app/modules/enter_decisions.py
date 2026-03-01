@@ -8,7 +8,7 @@ Decision variables (Case Appendix):
   2. price_business   : float – business seat price ($)
   3. price_leisure    : float – leisure seat price ($)
   4. branding_level   : Low | Medium | High
-  5. product_strategy : Premium Cabin | Basic Economy | Digital/Loyalty | None
+  5. product_strategy : High | Medium | Low
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from app.data.log_manager import append_log_event
 
 # ── Valid decision choices (Case Appendix) ─────────────────────────────
 VALID_BRANDING = ("Low", "Medium", "High")
-VALID_PRODUCTS = ("Premium Cabin", "Basic Economy", "Digital/Loyalty", "None")
+VALID_PRODUCTS = ("High", "Medium", "Low")
 
 # Price floor / ceiling for sanity checks
 MIN_PRICE = 50.0
@@ -289,7 +289,7 @@ def _parse_cli_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--product-strategy", required=True,
 		choices=list(VALID_PRODUCTS),
-		help="Premium Cabin | Basic Economy | Digital/Loyalty | None",
+		help="High | Medium | Low",
 	)
 	parser.add_argument(
 		"--round",
