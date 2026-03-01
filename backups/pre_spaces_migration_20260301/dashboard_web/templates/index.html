@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1366, initial-scale=1">
+    <title>Airlines - A Competitive Strategy Game</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<div class="header">
+    <img src="/logo.png" alt="Logo" class="header-logo">
+    <div class="header-center">
+        <div class="header-title">Airlines - A Competitive Strategy Game</div>
+        <div class="header-subtitle" id="header-subtitle">Round – | Updated: –</div>
+    </div>
+</div>
+
+<!-- ── Charts Row ──────────────────────────────────────────────── -->
+<div class="charts-row">
+    <div class="chart-card">
+        <div class="chart-title">Market Share (Profit Ranking)</div>
+        <div class="chart-plot" id="chart-profit"></div>
+    </div>
+    <div class="chart-card">
+        <div class="chart-title">Market Share (Volume Ranking)</div>
+        <div class="chart-plot" id="chart-volume"></div>
+    </div>
+</div>
+
+<!-- ── Table Section ───────────────────────────────────────────── -->
+<div class="table-section">
+    <div class="table-card">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-rank">Rank</th>
+                    <th class="col-team">Team</th>
+                    <th class="col-profit">Profit</th>
+                    <th class="col-msp">Market Share (Profit)</th>
+                    <th class="col-msv">Market Share (Volume)</th>
+                    <th class="col-pax">Passengers</th>
+                    <th class="col-csi">CSI</th>
+                    <th class="col-oei">OEI</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Refresh Button ──────────────────────────────────────────── -->
+<div class="refresh-section">
+    <button class="refresh-btn" id="refresh-btn" onclick="loadDashboard()">Refresh</button>
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────────── -->
+<div class="footer">
+    Copyright 2026 by Dr. Jose Mendoza
+</div>
+
+<!-- ── JavaScript ──────────────────────────────────────────────── -->
+<script>
+    const PLOTLY_CONFIG = {
+        displayModeBar: false,
+        staticPlot: true,
+        responsive: true
+    };
+
+    const BAR_COLOR = '#57068C';
+
+    // Distinct color per airline (consistent across both charts)
+    const TEAM_COLORS = {
+        'Airline A': '#57068C',
+        'Airline B': '#2E86C1',
+        'Airline C': '#E67E22',
+        'Airline D': '#27AE60',
+        'Airline E': '#C0392B',
+        'Airline F': '#8E44AD'
+    };
+
+    function getBarColors(teams) {
+        return teams.map(t => TEAM_COLORS[t] || BAR_COLOR);
+    }
+
+    function formatTime(isoStr) {
+        const d = new Date(isoStr);
+        return d.toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+    }
+
+    function renderChart(divId, ranking) {
+        // Plotly horizontal bar: reversed so highest is at top
+        const teams = ranking.map(r => r.team).reverse();
+        const values = ranking.map(r => r.value).reverse();
+        const labels = values.map(v => v.toFixed(1) + '%');
+
+        const trace = {
+            type: 'bar',
+            orientation: 'h',
+            x: values,
+            y: teams,
+            text: labels,
+            textposition: 'outside',
+            textfont: { size: 12, color: '#222' },
+            marker: { color: getBarColors(teams) },
+            hoverinfo: 'none',
+            cliponaxis: false
+        };
+
+        const layout = {
+            margin: { l: 80, r: 50, t: 4, b: 24 },
+            xaxis: {
+                range: [0, Math.max(...values, 1) * 1.25],
+                showgrid: true,
+                gridcolor: '#eee',
+                ticksuffix: '%',
+                tickfont: { size: 11, color: '#666' },
+                zeroline: false
+            },
+            yaxis: {
+                tickfont: { size: 12, color: '#333' },
+                automargin: true,
+                standoff: 30
+            },
+            plot_bgcolor: '#fff',
+            paper_bgcolor: '#fff',
+            bargap: 0.3
+        };
+
+        Plotly.newPlot(divId, [trace], layout, PLOTLY_CONFIG);
+    }
+
+    function renderTable(tableData) {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = '';
+        tableData.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td class="col-rank">' + row.rank + '</td>' +
+                '<td class="col-team">' + row.team + '</td>' +
+                '<td class="col-profit">' + row.profit + '</td>' +
+                '<td class="col-msp">' + row.market_share_profit + '</td>' +
+                '<td class="col-msv">' + row.market_share_volume + '</td>' +
+                '<td class="col-pax">' + row.passengers + '</td>' +
+                '<td class="col-csi">' + row.csi + '</td>' +
+                '<td class="col-oei">' + row.oei + '</td>';
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function loadDashboard() {
+        const btn = document.getElementById('refresh-btn');
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+
+        try {
+            const resp = await fetch('/api/dashboard');
+            const data = await resp.json();
+
+            // Update subtitle
+            document.getElementById('header-subtitle').textContent =
+                'Round ' + data.round + ' | Updated: ' + formatTime(data.as_of);
+
+            // Render charts
+            renderChart('chart-profit', data.profit_ranking);
+            renderChart('chart-volume', data.volume_ranking);
+
+            // Render table
+            renderTable(data.table);
+        } catch (err) {
+            console.error('Dashboard load failed:', err);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Refresh';
+        }
+    }
+
+    // Initial load
+    loadDashboard();
+
+    // Auto-refresh every 60 seconds
+    setInterval(loadDashboard, 60000);
+</script>
+
+</body>
+</html>
