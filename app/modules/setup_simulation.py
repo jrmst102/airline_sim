@@ -120,7 +120,7 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_flights_per_day": 4,
         "baseline_pricing_posture": "Discount",
         "baseline_branding":        "Low",
-        "baseline_product":         "None",
+        "baseline_product":         "Digital/Loyalty",
         "baseline_csi":             68,
         "baseline_oei":             86,
     },
