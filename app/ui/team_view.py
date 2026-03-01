@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import os
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +21,9 @@ if _PROJECT_ROOT not in sys.path:
 
 import pandas as pd
 import streamlit as st
+
+from app.modules.enter_decisions import enter_decision
+from app.modules.move_next_round import move_next_round
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -275,13 +277,8 @@ def _get_all_decisions_for_round(
 
 
 # ---------------------------------------------------------------------------
-# Editable decisions builder + upsert helpers
+# Editable decisions builder + save helpers
 # ---------------------------------------------------------------------------
-DECISIONS_COLUMNS = [
-    "simulation_id", "round_number", "team_id", "flights_per_day",
-    "price_business", "price_leisure", "branding_level", "product_strategy",
-    "submitted_at_utc",
-]
 
 
 def _get_latest_decision_for_team(
@@ -385,52 +382,27 @@ def _validate_decisions_df(df: pd.DataFrame) -> str | None:
     return None
 
 
-def _atomic_write_csv(path: Path, df: pd.DataFrame) -> None:
-    """Write *df* to CSV via a temporary file, then atomic rename."""
-    tmp = path.with_suffix(".tmp")
-    df.to_csv(tmp, index=False)
-    tmp.replace(path)
-
-
-def _upsert_decisions(
-    sim_path: Path,
-    df_new: pd.DataFrame,
+def _save_decisions_via_module(
+    edited_df: pd.DataFrame,
     round_number: int,
 ) -> None:
-    """Upsert decisions keyed on (round_number, team_id). Preserves other rounds."""
-    now = datetime.now(timezone.utc).isoformat()
-    decisions_path = sim_path / "decisions.csv"
+    """Save all team decisions using the enter_decisions module.
 
-    # Build new rows with metadata columns
-    df_new = df_new.copy()
-    df_new["simulation_id"] = SIM_ID
-    df_new["round_number"] = str(round_number)
-    df_new["submitted_at_utc"] = now
-
-    # Ensure correct string representations for CSV
-    df_new["flights_per_day"] = df_new["flights_per_day"].astype(int).astype(str)
-    df_new["price_business"] = df_new["price_business"].astype(float).astype(str)
-    df_new["price_leisure"] = df_new["price_leisure"].astype(float).astype(str)
-
-    # Reorder columns to match schema
-    df_new = df_new[DECISIONS_COLUMNS]
-
-    # Load existing decisions (all rounds)
-    df_existing = _read_csv_safe(decisions_path)
-    if df_existing is None or df_existing.empty:
-        df_existing = pd.DataFrame(columns=DECISIONS_COLUMNS)
-
-    # Remove ONLY rows where round_number matches AND team_id is in df_new
-    team_ids_new = set(df_new["team_id"].unique())
-    mask = (
-        (pd.to_numeric(df_existing["round_number"], errors="coerce") == round_number)
-        & (df_existing["team_id"].isin(team_ids_new))
-    )
-    df_existing = df_existing[~mask]
-
-    # Append new rows and write atomically
-    df_final = pd.concat([df_existing, df_new], ignore_index=True)
-    _atomic_write_csv(decisions_path, df_final)
+    Uses the same code path as the simulation test suite,
+    ensuring consistent validation, CSV formatting, and logging.
+    """
+    for _, row in edited_df.iterrows():
+        enter_decision(
+            simulation_id=SIM_ID,
+            team_id=str(row["team_id"]),
+            flights_per_day=int(row["flights_per_day"]),
+            price_business=float(row["price_business"]),
+            price_leisure=float(row["price_leisure"]),
+            branding_level=str(row["branding_level"]),
+            product_strategy=str(row["product_strategy"]),
+            round_number=round_number,
+            root_dir=ROOT_DIR,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -671,7 +643,7 @@ def main() -> None:
             st.error(f"Validation failed: {error}")
         else:
             try:
-                _upsert_decisions(sim_path, edited_df, current_round)
+                _save_decisions_via_module(edited_df, current_round)
                 st.success(f"Decisions saved for all teams \u2014 Round {current_round}.")
                 st.rerun()
             except Exception as exc:
@@ -684,13 +656,12 @@ def main() -> None:
             st.error(f"Cannot advance \u2014 validation failed: {error}")
         else:
             try:
-                _upsert_decisions(sim_path, edited_df, current_round)
+                _save_decisions_via_module(edited_df, current_round)
             except Exception as exc:
                 st.error(f"Failed to save decisions before advancing: {exc}")
+                st.stop()
 
             try:
-                from app.modules.move_next_round import move_next_round
-
                 mnr_result = move_next_round(
                     simulation_id=SIM_ID,
                     admin_user_id=ADMIN_USER_ID,

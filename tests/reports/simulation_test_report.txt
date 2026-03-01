@@ -1,0 +1,701 @@
+========================================================================
+  Airline Simulation Test Suite Report
+========================================================================
+
+  Timestamp  : 2026-03-01T15:01:58.403987+00:00
+  RNG Seed   : 12345
+  Git Commit : 2b0c48a
+  Total Run  : 32 / 32 scenarios
+  PASSED     : 32
+  FAILED     : 0
+  Runtime    : 0.39s
+
+------------------------------------------------------------------------
+   ID  Scenario Name                                    Status  Notes
+------------------------------------------------------------------------
+    1  No changes                                       PASS    
+    2  One airline lowest prices                        PASS    
+    3  One airline highest prices                       PASS    
+    4  One airline brand+product only                   PASS    
+    5  Two airlines: lowest vs highest prices           PASS    
+    6  Two airlines: High vs Low brand+product          PASS    
+    7  Two airlines: mid prices + brand+product         PASS    
+    8  Three airlines: highest/lowest/random prices     PASS    
+    9  Three airlines: prices+brand+product (no extremes) PASS    
+   10  Four airlines: random prices                     PASS    
+   11  Five airlines: random prices                     PASS    
+   12  Five airlines: prices+brand+product              PASS    
+   13  All prices; five brand+product                   PASS    
+   14  All prices+brand+product                         PASS    
+   15  One airline: flights only                        PASS    
+   16  Two airlines: flights only                       PASS    
+   17  Three airlines: flights only                     PASS    
+   18  Four airlines: flights only                      PASS    
+   19  Five airlines: flights only                      PASS    
+   20  Six airlines: flights only                       PASS    
+   21  One airline: flights+prices                      PASS    
+   22  Two airlines: flights+prices                     PASS    
+   23  Three airlines: flights+prices                   PASS    
+   24  Four airlines: flights+prices                    PASS    
+   25  Five airlines: flights+prices                    PASS    
+   26  All airlines: flights+prices                     PASS    
+   27  All airlines: flights+prices+brand+product       PASS    
+   28  Five airlines: flights+prices+product            PASS    
+   29  Four airlines: flights+prices+product            PASS    
+   30  Three airlines: flights+prices+product           PASS    
+   31  Two airlines: flights+prices+product             PASS    
+   32  One airline: flights+prices+product              PASS    
+------------------------------------------------------------------------
+
+========================================================================
+  Scenario 01: No changes
+  STATUS: PASS
+  Elapsed: 0.017s
+
+  Inputs applied (changes from baseline):
+    (no changes from baseline)
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 02: One airline lowest prices
+  STATUS: PASS
+  Elapsed: 0.017s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=280, Price_L=130
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 03: One airline highest prices
+  STATUS: PASS
+  Elapsed: 0.016s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=460, Price_L=230
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 04: One airline brand+product only
+  STATUS: PASS
+  Elapsed: 0.014s
+
+  Inputs applied (changes from baseline):
+    Team A: Brand=Medium
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 05: Two airlines: lowest vs highest prices
+  STATUS: PASS
+  Elapsed: 0.024s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=280, Price_L=130
+    Team B: Price_B=460, Price_L=230
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 06: Two airlines: High vs Low brand+product
+  STATUS: PASS
+  Elapsed: 0.014s
+
+  Inputs applied (changes from baseline):
+    Team B: Brand=Low, Product=Basic Economy
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 07: Two airlines: mid prices + brand+product
+  STATUS: PASS
+  Elapsed: 0.014s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=397, Price_L=142, Brand=Medium, Product=Digital/Loyalty
+    Team B: Price_B=340, Price_L=175, Brand=High, Product=None
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 08: Three airlines: highest/lowest/random prices
+  STATUS: PASS
+  Elapsed: 0.014s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=460, Price_L=230
+    Team B: Price_B=280, Price_L=130
+    Team C: Price_B=386, Price_L=223
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 09: Three airlines: prices+brand+product (no extremes)
+  STATUS: PASS
+  Elapsed: 0.013s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=397, Price_L=142, Brand=Medium, Product=Digital/Loyalty
+    Team B: Price_B=340, Price_L=175, Brand=High, Product=None
+    Team C: Price_B=332, Price_L=188, Brand=Low, Product=None
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 10: Four airlines: random prices
+  STATUS: PASS
+  Elapsed: 0.012s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=396, Price_L=141
+    Team B: Price_B=366, Price_L=187
+    Team C: Price_B=339, Price_L=174
+    Team D: Price_B=434, Price_L=195
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 11: Five airlines: random prices
+  STATUS: PASS
+  Elapsed: 0.010s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=396, Price_L=141
+    Team B: Price_B=366, Price_L=187
+    Team C: Price_B=339, Price_L=174
+    Team D: Price_B=434, Price_L=195
+    Team E: Price_B=359, Price_L=188
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 12: Five airlines: prices+brand+product
+  STATUS: PASS
+  Elapsed: 0.010s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Digital/Loyalty
+    Team B: Price_B=339, Price_L=174, Brand=High, Product=None
+    Team C: Price_B=331, Price_L=187, Brand=Low, Product=None
+    Team D: Price_B=356, Price_L=211, Brand=High, Product=Basic Economy
+    Team E: Price_B=409, Price_L=211, Product=Digital/Loyalty
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 13: All prices; five brand+product
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Basic Economy
+    Team B: Price_B=366, Price_L=187, Brand=High, Product=Basic Economy
+    Team C: Price_B=339, Price_L=174, Product=Premium Cabin
+    Team D: Price_B=434, Price_L=195, Brand=High, Product=None
+    Team E: Price_B=359, Price_L=188, Brand=High
+    Team F: Price_B=354, Price_L=168
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 14: All prices+brand+product
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: Price_B=396, Price_L=141, Brand=Medium, Product=Digital/Loyalty
+    Team B: Price_B=339, Price_L=174, Brand=High, Product=None
+    Team C: Price_B=331, Price_L=187, Brand=Low, Product=None
+    Team D: Price_B=356, Price_L=211, Brand=High, Product=Basic Economy
+    Team E: Price_B=409, Price_L=211, Product=Digital/Loyalty
+    Team F: Price_B=342, Price_L=208, Brand=High, Product=None
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 15: One airline: flights only
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=4
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 16: Two airlines: flights only
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=4
+    Team B: FlightsPerDay=3
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 17: Three airlines: flights only
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3
+    Team B: FlightsPerDay=0
+    Team C: FlightsPerDay=2
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 18: Four airlines: flights only
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3
+    Team B: FlightsPerDay=0
+    Team C: FlightsPerDay=2
+    Team D: FlightsPerDay=2
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 19: Five airlines: flights only
+  STATUS: PASS
+  Elapsed: 0.011s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3
+    Team B: FlightsPerDay=0
+    Team C: FlightsPerDay=2
+    Team D: FlightsPerDay=2
+    Team E: FlightsPerDay=1
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 20: Six airlines: flights only
+  STATUS: PASS
+  Elapsed: 0.012s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3
+    Team B: FlightsPerDay=0
+    Team C: FlightsPerDay=2
+    Team D: FlightsPerDay=2
+    Team E: FlightsPerDay=1
+    Team F: FlightsPerDay=2
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 21: One airline: flights+prices
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 22: Two airlines: flights+prices
+  STATUS: PASS
+  Elapsed: 0.012s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
+    Team B: FlightsPerDay=2, Price_B=339, Price_L=174
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 23: Three airlines: flights+prices
+  STATUS: PASS
+  Elapsed: 0.013s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
+    Team B: FlightsPerDay=2, Price_B=339, Price_L=174
+    Team C: FlightsPerDay=5, Price_B=401, Price_L=160
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 24: Four airlines: flights+prices
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
+    Team B: FlightsPerDay=2, Price_B=339, Price_L=174
+    Team C: FlightsPerDay=5, Price_B=401, Price_L=160
+    Team D: FlightsPerDay=2, Price_B=321, Price_L=195
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 25: Five airlines: flights+prices
+  STATUS: PASS
+  Elapsed: 0.011s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
+    Team B: FlightsPerDay=2, Price_B=339, Price_L=174
+    Team C: FlightsPerDay=5, Price_B=401, Price_L=160
+    Team D: FlightsPerDay=2, Price_B=321, Price_L=195
+    Team E: FlightsPerDay=2, Price_B=435, Price_L=200
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 26: All airlines: flights+prices
+  STATUS: PASS
+  Elapsed: 0.010s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178
+    Team B: FlightsPerDay=2, Price_B=339, Price_L=174
+    Team C: FlightsPerDay=5, Price_B=401, Price_L=160
+    Team D: FlightsPerDay=2, Price_B=321, Price_L=195
+    Team E: FlightsPerDay=2, Price_B=435, Price_L=200
+    Team F: FlightsPerDay=1, Price_B=433, Price_L=171
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 27: All airlines: flights+prices+brand+product
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Brand=Medium, Product=Basic Economy
+    Team B: FlightsPerDay=2, Price_B=434, Price_L=195, Brand=Low
+    Team C: FlightsPerDay=0, Price_B=400, Price_L=173, Brand=High
+    Team D: FlightsPerDay=5, Price_B=431, Price_L=163, Brand=Medium, Product=Premium Cabin
+    Team E: FlightsPerDay=5, Price_B=397, Price_L=200, Brand=High
+    Team F: FlightsPerDay=1, Price_B=344, Price_L=167, Brand=Low
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 28: Five airlines: flights+prices+product
+  STATUS: PASS
+  Elapsed: 0.012s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
+    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=None
+    Team C: FlightsPerDay=1, Price_B=385, Price_L=155, Product=None
+    Team D: FlightsPerDay=2, Price_B=433, Price_L=220, Product=Basic Economy
+    Team E: FlightsPerDay=5, Price_B=433, Price_L=178, Product=Digital/Loyalty
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 29: Four airlines: flights+prices+product
+  STATUS: PASS
+  Elapsed: 0.011s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
+    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=None
+    Team C: FlightsPerDay=1, Price_B=385, Price_L=155, Product=None
+    Team D: FlightsPerDay=2, Price_B=433, Price_L=220, Product=Basic Economy
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 30: Three airlines: flights+prices+product
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
+    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=None
+    Team C: FlightsPerDay=1, Price_B=385, Price_L=155, Product=None
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 31: Two airlines: flights+prices+product
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
+    Team B: FlightsPerDay=1, Price_B=359, Price_L=212, Product=None
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Scenario 32: One airline: flights+prices+product
+  STATUS: PASS
+  Elapsed: 0.009s
+
+  Inputs applied (changes from baseline):
+    Team A: FlightsPerDay=3, Price_B=292, Price_L=178, Product=Digital/Loyalty
+
+  Decision Overwrite Check: PASS
+
+  Invariant checks:
+    [PASS] carried_total <= capacity
+    [PASS] Profit == Revenue - Cost
+    [PASS] Total_cost == sum(components)
+    [PASS] Sum(market_share_volume) ≈ 1
+    [PASS] Market total_passengers == sum(team pax)
+
+
+========================================================================
+  Skipped scenarios: 0
+  Total runtime: 0.39s
+========================================================================
