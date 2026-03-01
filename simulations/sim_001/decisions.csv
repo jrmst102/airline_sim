@@ -1,7 +1,19 @@
 simulation_id,round_number,team_id,flights_per_day,price_business,price_leisure,branding_level,product_strategy,submitted_at_utc
-sim_001,1,A,5,450.0,220.0,High,Premium Cabin,2026-03-01T14:08:19.041893+00:00
-sim_001,1,B,4,360.0,180.0,Medium,Digital/Loyalty,2026-03-01T14:08:19.041893+00:00
-sim_001,1,C,4,360.0,180.0,Medium,Basic Economy,2026-03-01T14:08:19.041893+00:00
-sim_001,1,D,4,290.0,140.0,Low,Digital/Loyalty,2026-03-01T14:08:19.041893+00:00
-sim_001,1,E,3,290.0,140.0,Low,Basic Economy,2026-03-01T14:08:19.041893+00:00
-sim_001,1,F,4,285.0,135.0,Low,Basic Economy,2026-03-01T14:08:19.041893+00:00
+sim_001,1,A,5,400.0,140.0,High,Premium Cabin,2026-03-01T15:15:11.949633+00:00
+sim_001,1,B,4,360.0,180.0,Medium,Digital/Loyalty,2026-03-01T15:15:11.951884+00:00
+sim_001,1,C,4,360.0,180.0,Medium,Basic Economy,2026-03-01T15:15:11.956016+00:00
+sim_001,1,D,4,290.0,140.0,Low,Digital/Loyalty,2026-03-01T15:15:11.957815+00:00
+sim_001,1,E,3,290.0,140.0,Low,Basic Economy,2026-03-01T15:15:11.959448+00:00
+sim_001,1,F,4,285.0,135.0,Low,Digital/Loyalty,2026-03-01T15:15:11.961256+00:00
+sim_001,2,A,5,400.0,140.0,High,Premium Cabin,2026-03-01T15:15:26.505340+00:00
+sim_001,2,B,4,360.0,180.0,Medium,Digital/Loyalty,2026-03-01T15:15:26.508019+00:00
+sim_001,2,C,4,360.0,180.0,Medium,Basic Economy,2026-03-01T15:15:26.510235+00:00
+sim_001,2,D,4,290.0,140.0,Low,Digital/Loyalty,2026-03-01T15:15:26.512230+00:00
+sim_001,2,E,3,290.0,140.0,Low,Basic Economy,2026-03-01T15:15:26.513641+00:00
+sim_001,2,F,4,285.0,135.0,Low,Digital/Loyalty,2026-03-01T15:15:26.514931+00:00
+sim_001,3,A,5,400.0,190.0,High,Premium Cabin,2026-03-01T15:15:48.292163+00:00
+sim_001,3,B,4,360.0,180.0,Medium,Digital/Loyalty,2026-03-01T15:15:48.295193+00:00
+sim_001,3,C,4,360.0,180.0,Medium,Basic Economy,2026-03-01T15:15:48.298909+00:00
+sim_001,3,D,4,290.0,140.0,Low,Digital/Loyalty,2026-03-01T15:15:48.301587+00:00
+sim_001,3,E,3,290.0,140.0,Low,Basic Economy,2026-03-01T15:15:48.303979+00:00
+sim_001,3,F,5,285.0,135.0,Low,Digital/Loyalty,2026-03-01T15:15:48.306545+00:00

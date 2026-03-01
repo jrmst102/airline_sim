@@ -19,4 +19,5 @@ branding_cost_high,5000000,Monthly branding cost – High
 product_cost_premium_cabin,4000000,Monthly cost – Premium Cabin
 product_cost_basic_economy,3000000,Monthly cost – Basic Economy
 product_cost_digital_loyalty,2000000,Monthly cost – Digital/Loyalty
-product_cost_none,0,Monthly cost – Nonefare_multiplier,3.0,Avg monthly trips per passenger (JFK–BOS shuttle corridor)
+product_cost_none,0,Monthly cost – None
+fare_multiplier,3.0,Avg monthly trips per passenger (JFK–BOS shuttle corridor)

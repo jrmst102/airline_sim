@@ -1,4 +1,48 @@
 event_id,simulation_id,actor_user_id,action,details,event_at_utc
-E1,sim_001,U_ADMIN,SETUP_SIMULATION,Created simulation 'Airline Simulation' with 6 airlines and 3 rounds,2026-03-01T14:07:26.099612+00:00
-E2,sim_001,U_ADMIN,START_SIMULATION,Started simulation and opened round 1,2026-03-01T14:07:27.084273+00:00
-E3,sim_001,U_ADMIN,MOVE_NEXT_ROUND,closed_round=1; opened_round=2; status=STARTED; processed_teams=6,2026-03-01T14:08:19.074876+00:00
+E1,sim_001,U_ADMIN,SETUP_SIMULATION,Created simulation 'Airline Simulation' with 6 airlines and 3 rounds,2026-03-01T15:13:58.076783+00:00
+E2,sim_001,U_ADMIN,START_SIMULATION,Started simulation and opened round 1,2026-03-01T15:13:59.239605+00:00
+E3,sim_001,A,UPDATE_DECISION,round=1; team_id=A; flights_per_day=5; price_business=400.0; price_leisure=140.0; branding_level=High; product_strategy=Premium Cabin,2026-03-01T15:15:00.535374+00:00
+E4,sim_001,B,UPDATE_DECISION,round=1; team_id=B; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Digital/Loyalty,2026-03-01T15:15:00.536946+00:00
+E5,sim_001,C,UPDATE_DECISION,round=1; team_id=C; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Basic Economy,2026-03-01T15:15:00.539011+00:00
+E6,sim_001,D,UPDATE_DECISION,round=1; team_id=D; flights_per_day=4; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:00.540393+00:00
+E7,sim_001,E,UPDATE_DECISION,round=1; team_id=E; flights_per_day=3; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Basic Economy,2026-03-01T15:15:00.542059+00:00
+E8,sim_001,F,UPDATE_DECISION,round=1; team_id=F; flights_per_day=3; price_business=285.0; price_leisure=135.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:00.543680+00:00
+E9,sim_001,A,UPDATE_DECISION,round=1; team_id=A; flights_per_day=5; price_business=400.0; price_leisure=140.0; branding_level=High; product_strategy=Premium Cabin,2026-03-01T15:15:09.806842+00:00
+E10,sim_001,B,UPDATE_DECISION,round=1; team_id=B; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Digital/Loyalty,2026-03-01T15:15:09.809239+00:00
+E11,sim_001,C,UPDATE_DECISION,round=1; team_id=C; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Basic Economy,2026-03-01T15:15:09.811544+00:00
+E12,sim_001,D,UPDATE_DECISION,round=1; team_id=D; flights_per_day=4; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:09.813624+00:00
+E13,sim_001,E,UPDATE_DECISION,round=1; team_id=E; flights_per_day=3; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Basic Economy,2026-03-01T15:15:09.815676+00:00
+E14,sim_001,F,UPDATE_DECISION,round=1; team_id=F; flights_per_day=4; price_business=285.0; price_leisure=135.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:09.817722+00:00
+E15,sim_001,A,UPDATE_DECISION,round=1; team_id=A; flights_per_day=5; price_business=400.0; price_leisure=140.0; branding_level=High; product_strategy=Premium Cabin,2026-03-01T15:15:11.949633+00:00
+E16,sim_001,B,UPDATE_DECISION,round=1; team_id=B; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Digital/Loyalty,2026-03-01T15:15:11.951884+00:00
+E17,sim_001,C,UPDATE_DECISION,round=1; team_id=C; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Basic Economy,2026-03-01T15:15:11.956016+00:00
+E18,sim_001,D,UPDATE_DECISION,round=1; team_id=D; flights_per_day=4; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:11.957815+00:00
+E19,sim_001,E,UPDATE_DECISION,round=1; team_id=E; flights_per_day=3; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Basic Economy,2026-03-01T15:15:11.959448+00:00
+E20,sim_001,F,UPDATE_DECISION,round=1; team_id=F; flights_per_day=4; price_business=285.0; price_leisure=135.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:11.961256+00:00
+E21,sim_001,U_ADMIN,MOVE_NEXT_ROUND,closed_round=1; opened_round=2; status=STARTED; processed_teams=6,2026-03-01T15:15:11.963466+00:00
+E22,sim_001,A,ENTER_DECISION,round=2; team_id=A; flights_per_day=5; price_business=400.0; price_leisure=140.0; branding_level=High; product_strategy=Premium Cabin,2026-03-01T15:15:25.291222+00:00
+E23,sim_001,B,ENTER_DECISION,round=2; team_id=B; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Digital/Loyalty,2026-03-01T15:15:25.294073+00:00
+E24,sim_001,C,ENTER_DECISION,round=2; team_id=C; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Basic Economy,2026-03-01T15:15:25.295893+00:00
+E25,sim_001,D,ENTER_DECISION,round=2; team_id=D; flights_per_day=4; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:25.298061+00:00
+E26,sim_001,E,ENTER_DECISION,round=2; team_id=E; flights_per_day=3; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Basic Economy,2026-03-01T15:15:25.299781+00:00
+E27,sim_001,F,ENTER_DECISION,round=2; team_id=F; flights_per_day=4; price_business=285.0; price_leisure=135.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:25.301194+00:00
+E28,sim_001,A,UPDATE_DECISION,round=2; team_id=A; flights_per_day=5; price_business=400.0; price_leisure=140.0; branding_level=High; product_strategy=Premium Cabin,2026-03-01T15:15:26.505340+00:00
+E29,sim_001,B,UPDATE_DECISION,round=2; team_id=B; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Digital/Loyalty,2026-03-01T15:15:26.508019+00:00
+E30,sim_001,C,UPDATE_DECISION,round=2; team_id=C; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Basic Economy,2026-03-01T15:15:26.510235+00:00
+E31,sim_001,D,UPDATE_DECISION,round=2; team_id=D; flights_per_day=4; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:26.512230+00:00
+E32,sim_001,E,UPDATE_DECISION,round=2; team_id=E; flights_per_day=3; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Basic Economy,2026-03-01T15:15:26.513641+00:00
+E33,sim_001,F,UPDATE_DECISION,round=2; team_id=F; flights_per_day=4; price_business=285.0; price_leisure=135.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:26.514931+00:00
+E34,sim_001,U_ADMIN,MOVE_NEXT_ROUND,closed_round=2; opened_round=3; status=STARTED; processed_teams=6,2026-03-01T15:15:26.516458+00:00
+E35,sim_001,A,ENTER_DECISION,round=3; team_id=A; flights_per_day=5; price_business=400.0; price_leisure=190.0; branding_level=High; product_strategy=Premium Cabin,2026-03-01T15:15:46.935809+00:00
+E36,sim_001,B,ENTER_DECISION,round=3; team_id=B; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Digital/Loyalty,2026-03-01T15:15:46.938019+00:00
+E37,sim_001,C,ENTER_DECISION,round=3; team_id=C; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Basic Economy,2026-03-01T15:15:46.940320+00:00
+E38,sim_001,D,ENTER_DECISION,round=3; team_id=D; flights_per_day=4; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:46.942477+00:00
+E39,sim_001,E,ENTER_DECISION,round=3; team_id=E; flights_per_day=3; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Basic Economy,2026-03-01T15:15:46.945370+00:00
+E40,sim_001,F,ENTER_DECISION,round=3; team_id=F; flights_per_day=5; price_business=285.0; price_leisure=135.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:46.946905+00:00
+E41,sim_001,A,UPDATE_DECISION,round=3; team_id=A; flights_per_day=5; price_business=400.0; price_leisure=190.0; branding_level=High; product_strategy=Premium Cabin,2026-03-01T15:15:48.292163+00:00
+E42,sim_001,B,UPDATE_DECISION,round=3; team_id=B; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Digital/Loyalty,2026-03-01T15:15:48.295193+00:00
+E43,sim_001,C,UPDATE_DECISION,round=3; team_id=C; flights_per_day=4; price_business=360.0; price_leisure=180.0; branding_level=Medium; product_strategy=Basic Economy,2026-03-01T15:15:48.298909+00:00
+E44,sim_001,D,UPDATE_DECISION,round=3; team_id=D; flights_per_day=4; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:48.301587+00:00
+E45,sim_001,E,UPDATE_DECISION,round=3; team_id=E; flights_per_day=3; price_business=290.0; price_leisure=140.0; branding_level=Low; product_strategy=Basic Economy,2026-03-01T15:15:48.303979+00:00
+E46,sim_001,F,UPDATE_DECISION,round=3; team_id=F; flights_per_day=5; price_business=285.0; price_leisure=135.0; branding_level=Low; product_strategy=Digital/Loyalty,2026-03-01T15:15:48.306545+00:00
+E47,sim_001,U_ADMIN,MOVE_NEXT_ROUND,closed_round=3; opened_round=None; status=ENDED; processed_teams=6,2026-03-01T15:15:48.309032+00:00

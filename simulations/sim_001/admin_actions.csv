@@ -1,4 +1,6 @@
 event_id,simulation_id,admin_user_id,action,details,event_at_utc
-E1,sim_001,U_ADMIN,SETUP_SIMULATION,Created simulation 'Airline Simulation' with 6 airlines and 3 rounds,2026-03-01T14:07:26.099612+00:00
-E2,sim_001,U_ADMIN,START_SIMULATION,Started simulation and opened round 1,2026-03-01T14:07:27.084273+00:00
-E3,sim_001,U_ADMIN,MOVE_NEXT_ROUND,closed_round=1; opened_round=2; status=STARTED; processed_teams=6,2026-03-01T14:08:19.074876+00:00
+E1,sim_001,U_ADMIN,SETUP_SIMULATION,Created simulation 'Airline Simulation' with 6 airlines and 3 rounds,2026-03-01T15:13:58.076783+00:00
+E2,sim_001,U_ADMIN,START_SIMULATION,Started simulation and opened round 1,2026-03-01T15:13:59.239605+00:00
+E3,sim_001,U_ADMIN,MOVE_NEXT_ROUND,closed_round=1; opened_round=2; status=STARTED; processed_teams=6,2026-03-01T15:15:11.963466+00:00
+E4,sim_001,U_ADMIN,MOVE_NEXT_ROUND,closed_round=2; opened_round=3; status=STARTED; processed_teams=6,2026-03-01T15:15:26.516458+00:00
+E5,sim_001,U_ADMIN,MOVE_NEXT_ROUND,closed_round=3; opened_round=None; status=ENDED; processed_teams=6,2026-03-01T15:15:48.309032+00:00
