@@ -185,12 +185,37 @@ def _current_round(sim_path: Path) -> int:
     return int(vals.max()) if not vals.empty else 0
 
 
+def _fill_baseline_estimates(df: pd.DataFrame) -> None:
+    """Fill empty revenue/total_cost cells with estimates for round-0 baselines.
+
+    revenue  ≈ passengers × $250 (avg fare midpoint)
+    cost     ≈ revenue − profit
+    """
+    if df is None or df.empty:
+        return
+    AVG_FARE = 250
+    pax = pd.to_numeric(df.get("passengers"), errors="coerce")
+    profit = pd.to_numeric(df.get("profit"), errors="coerce")
+    rev = pd.to_numeric(df.get("revenue"), errors="coerce")
+    cost = pd.to_numeric(df.get("total_cost"), errors="coerce")
+
+    rev_missing = rev.isna() & pax.notna()
+    if rev_missing.any():
+        est_rev = pax * AVG_FARE
+        df.loc[rev_missing, "revenue"] = est_rev[rev_missing].astype(int).astype(str)
+        if profit is not None:
+            cost_missing = cost.isna() & profit.notna()
+            if cost_missing.any():
+                est_cost = est_rev - profit
+                df.loc[cost_missing, "total_cost"] = est_cost[cost_missing].astype(int).astype(str)
+
+
 def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
     """
     Build a display-ready team stats DataFrame.
 
     Prefers round_results_team.csv filtered to *latest_round*.
-    Falls back to teams.csv with empty stat columns.
+    Falls back to teams.csv with baseline estimates.
     """
     teams_df = _read_csv_safe(sim_path / "teams.csv")
     results_df = _read_csv_safe(sim_path / "round_results_team.csv")
@@ -200,10 +225,19 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
         "team_name": "Team Name",
         "team_id": "Team ID",
         "round_number": "Round",
+        "passengers": "Passengers",
         "revenue": "Revenue",
-        "cost": "Cost",
+        "variable_cost": "Variable Cost",
+        "fixed_cost": "Fixed Cost",
+        "branding_cost": "Branding Cost",
+        "product_cost": "Product Cost",
+        "total_cost": "Total Cost",
         "profit": "Profit",
-        "market_share_volume": "Market Share",
+        "load_factor": "Load Factor",
+        "market_share_volume": "Mkt Share (Vol)",
+        "market_share_profit": "Mkt Share (Profit)",
+        "csi": "CSI",
+        "oei": "OEI",
     }
 
     if results_df is not None and not results_df.empty:
@@ -212,9 +246,27 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
             (c for c in results_df.columns if c.strip().lower() == "round_number"),
             None,
         )
+        used_fallback_round = False
         if rn_col and latest_round > 0:
             filtered = results_df[
                 pd.to_numeric(results_df[rn_col], errors="coerce") == latest_round
+            ]
+            if not filtered.empty:
+                results_df = filtered
+            else:
+                # No computed results for this round yet — show baseline (round 0)
+                # but display the current round number
+                fallback = results_df[
+                    pd.to_numeric(results_df[rn_col], errors="coerce") == 0
+                ]
+                if not fallback.empty:
+                    results_df = fallback.copy()
+                    results_df[rn_col] = str(latest_round)
+                    used_fallback_round = True
+        elif rn_col and latest_round == 0:
+            # Show round-0 baseline rows
+            filtered = results_df[
+                pd.to_numeric(results_df[rn_col], errors="coerce") == 0
             ]
             if not filtered.empty:
                 results_df = filtered
@@ -222,15 +274,23 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
         # Merge team names from teams.csv if the column isn't already present
         if (
             teams_df is not None
-            and "team_name" not in results_df.columns
             and "team_id" in results_df.columns
             and "team_id" in teams_df.columns
         ):
-            results_df = results_df.merge(
-                teams_df[["team_id", "team_name"]].drop_duplicates(),
-                on="team_id",
-                how="left",
-            )
+            merge_cols = ["team_id"]
+            if "team_name" not in results_df.columns and "team_name" in teams_df.columns:
+                merge_cols.append("team_name")
+            if "variable_cost_per_passenger" in teams_df.columns:
+                merge_cols.append("variable_cost_per_passenger")
+            if len(merge_cols) > 1:
+                results_df = results_df.merge(
+                    teams_df[merge_cols].drop_duplicates(),
+                    on="team_id",
+                    how="left",
+                )
+
+        # Fill empty revenue / cost from baseline estimates (round 0)
+        _fill_baseline_estimates(results_df)
 
         # Select & rename columns that exist
         out_cols: dict[str, str] = {}
@@ -246,13 +306,18 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
         else:
             table = results_df.copy()
 
-        # Sort by Profit desc if available
+        # Sort by Profit desc if available (BEFORE formatting)
         if "Profit" in table.columns:
-            table = table.sort_values("Profit", ascending=False)
+            table["_sort"] = pd.to_numeric(table["Profit"], errors="coerce")
+            table = table.sort_values("_sort", ascending=False).drop(columns=["_sort"])
         elif "Team Name" in table.columns:
             table = table.sort_values("Team Name")
 
-        # Format money & percentage columns
+        # Format numeric columns
+        if "Passengers" in table.columns:
+            table["Passengers"] = pd.to_numeric(
+                table["Passengers"], errors="coerce"
+            ).apply(lambda v: f"{v:,.0f}" if pd.notna(v) else "\u2014")
         for col in ("Revenue", "Cost", "Profit"):
             if col in table.columns:
                 table[col] = pd.to_numeric(table[col], errors="coerce").apply(
@@ -267,23 +332,61 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
 
     # Fallback: teams only, no results yet
     if teams_df is not None and not teams_df.empty:
-        cols_pick: dict[str, str] = {}
-        for src, dst in desired_cols.items():
-            match = next(
-                (c for c in teams_df.columns if c.strip().lower() == src), None
+        cols: dict[str, object] = {}
+
+        for src, dst in [("team_name", "Team Name"), ("team_id", "Team ID")]:
+            m = next((c for c in teams_df.columns if c.strip().lower() == src), None)
+            if m:
+                cols[dst] = teams_df[m]
+
+        cols["Round"] = "\u2014"
+
+        # Baseline passengers
+        m = next((c for c in teams_df.columns if c.strip().lower() == "baseline_passengers"), None)
+        if m:
+            pax_num = pd.to_numeric(teams_df[m], errors="coerce")
+            cols["Passengers"] = pax_num.apply(
+                lambda v: f"{v:,.0f}" if pd.notna(v) else "\u2014"
             )
-            if match is not None:
-                cols_pick[match] = dst
-
-        if cols_pick:
-            table = teams_df[list(cols_pick.keys())].rename(columns=cols_pick)
         else:
-            table = teams_df.copy()
+            cols["Passengers"] = "\u2014"
 
-        for col in ("Round", "Revenue", "Cost", "Profit", "Market Share"):
-            if col not in table.columns:
-                table[col] = "\u2014"
+        # Revenue / Cost estimates
+        AVG_FARE = 250
+        pax_col = next((c for c in teams_df.columns if c.strip().lower() == "baseline_passengers"), None)
+        profit_col = next((c for c in teams_df.columns if c.strip().lower() == "baseline_profit_millions"), None)
+        if pax_col is not None:
+            pax_n = pd.to_numeric(teams_df[pax_col], errors="coerce")
+            est_rev = pax_n * AVG_FARE
+            cols["Revenue"] = est_rev.apply(lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014")
+            if profit_col is not None:
+                profit_n = pd.to_numeric(teams_df[profit_col], errors="coerce") * 1_000_000
+                est_cost = est_rev - profit_n
+                cols["Cost"] = est_cost.apply(lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014")
+            else:
+                cols["Cost"] = "\u2014"
+        else:
+            cols["Revenue"] = "\u2014"
+            cols["Cost"] = "\u2014"
 
+        # Baseline profit
+        if profit_col is not None:
+            cols["Profit"] = pd.to_numeric(teams_df[profit_col], errors="coerce").apply(
+                lambda v: f"${v:.1f}M" if pd.notna(v) else "\u2014"
+            )
+        else:
+            cols["Profit"] = "\u2014"
+
+        # Market share
+        ms_col = next((c for c in teams_df.columns if c.strip().lower() == "baseline_volume_share"), None)
+        if ms_col is not None:
+            cols["Market Share"] = pd.to_numeric(teams_df[ms_col], errors="coerce").apply(
+                lambda v: f"{v:.1%}" if pd.notna(v) else "\u2014"
+            )
+        else:
+            cols["Market Share"] = "\u2014"
+
+        table = pd.DataFrame(cols)
         return table.reset_index(drop=True)
 
     return pd.DataFrame()

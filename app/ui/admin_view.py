@@ -255,6 +255,43 @@ def _current_round_info(sim_path: Path) -> tuple[int, str, int]:
     return rn, r_status, total_rounds
 
 
+def _fill_baseline_estimates(show_df: pd.DataFrame, teams_df: pd.DataFrame | None) -> None:
+    """Fill empty revenue/total_cost cells with estimates derived from baseline data.
+
+    For the round-0 baseline snapshot the case appendix provides passengers
+    and profit but not revenue or cost.  We can estimate:
+        revenue  ≈ passengers × average_fare  (average fare ≈ $250 placeholder)
+        cost     ≈ revenue − profit
+    This gives meaningful numbers in the Team Stats table instead of "—".
+    """
+    if show_df is None or show_df.empty:
+        return
+
+    AVG_FARE_ESTIMATE = 250  # reasonable midpoint across postures/segments
+
+    pax = pd.to_numeric(show_df.get("passengers"), errors="coerce")
+    profit = pd.to_numeric(show_df.get("profit"), errors="coerce")
+    rev = pd.to_numeric(show_df.get("revenue"), errors="coerce")
+    cost = pd.to_numeric(show_df.get("total_cost"), errors="coerce")
+
+    # Only fill where revenue is missing but passengers is available
+    rev_missing = rev.isna() & pax.notna()
+    if rev_missing.any():
+        # Use variable_cost_per_passenger if available for a better estimate
+        vcpp = pd.to_numeric(show_df.get("variable_cost_per_passenger"), errors="coerce")
+        estimated_rev = pax * AVG_FARE_ESTIMATE
+        show_df.loc[rev_missing, "revenue"] = estimated_rev[rev_missing].astype(int).astype(str)
+
+        # Estimate cost = revenue − profit
+        if profit is not None:
+            estimated_cost = estimated_rev - profit
+            cost_missing = cost.isna() & profit.notna()
+            if cost_missing.any():
+                show_df.loc[cost_missing, "total_cost"] = (
+                    estimated_cost[cost_missing].astype(int).astype(str)
+                )
+
+
 def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
     """Build a display-ready team stats table."""
     teams_df = _read_csv_safe(sim_path / "teams.csv")
@@ -290,17 +327,23 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
                 show_df = None
 
         if show_df is not None and not show_df.empty:
-            # Merge team_name from teams.csv if not present
-            if (
-                teams_df is not None
-                and "team_name" not in show_df.columns
-                and "team_id" in show_df.columns
-                and "team_id" in teams_df.columns
-            ):
-                show_df = show_df.merge(
-                    teams_df[["team_id", "team_name"]].drop_duplicates(),
-                    on="team_id", how="left",
-                )
+            # Merge team info from teams.csv if columns are missing
+            if teams_df is not None and "team_id" in show_df.columns and "team_id" in teams_df.columns:
+                merge_cols = ["team_id"]
+                if "team_name" not in show_df.columns and "team_name" in teams_df.columns:
+                    merge_cols.append("team_name")
+                # Bring variable_cost_per_passenger for revenue/cost estimation
+                if "variable_cost_per_passenger" in teams_df.columns:
+                    merge_cols.append("variable_cost_per_passenger")
+                if len(merge_cols) > 1:
+                    show_df = show_df.merge(
+                        teams_df[merge_cols].drop_duplicates(),
+                        on="team_id", how="left",
+                    )
+
+            # Fill missing revenue / cost from baseline estimates
+            # (round-0 baseline has passengers and profit but no revenue/cost)
+            _fill_baseline_estimates(show_df, teams_df)
 
             out: dict[str, str] = {}
             for src, dst in desired.items():
@@ -354,9 +397,23 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
         else:
             cols["Passengers"] = "\u2014"
 
-        # Revenue / Cost not available in baseline
-        cols["Revenue"] = "\u2014"
-        cols["Cost"] = "\u2014"
+        # Estimate Revenue and Cost from baseline data
+        pax_col = next((c for c in teams_df.columns if c.strip().lower() == "baseline_passengers"), None)
+        profit_col = next((c for c in teams_df.columns if c.strip().lower() == "baseline_profit_millions"), None)
+        AVG_FARE = 250
+        if pax_col is not None:
+            pax_num = pd.to_numeric(teams_df[pax_col], errors="coerce")
+            est_rev = pax_num * AVG_FARE
+            cols["Revenue"] = est_rev.apply(lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014")
+            if profit_col is not None:
+                profit_num = pd.to_numeric(teams_df[profit_col], errors="coerce") * 1_000_000
+                est_cost = est_rev - profit_num
+                cols["Cost"] = est_cost.apply(lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014")
+            else:
+                cols["Cost"] = "\u2014"
+        else:
+            cols["Revenue"] = "\u2014"
+            cols["Cost"] = "\u2014"
 
         # Baseline profit (stored in $M)
         m = next((c for c in teams_df.columns if c.strip().lower() == "baseline_profit_millions"), None)
@@ -602,17 +659,13 @@ def main() -> None:
                       disabled=sim_is_completed):
             _action_stop()
 
-    # Row 2: Move Next Round, Undo Round, End Simulation
-    r2c1, r2c2, r2c3 = st.columns(3)
+    # Row 2: Undo Round, End Simulation
+    r2c1, r2c2 = st.columns(2)
     with r2c1:
-        if st.button("\u23ED Move Next Round", use_container_width=True,
-                      disabled=sim_is_completed):
-            _action_move_next_round()
-    with r2c2:
         if st.button("\u21A9 Undo Round", use_container_width=True,
                       disabled=sim_is_completed):
             _action_undo_round()
-    with r2c3:
+    with r2c2:
         if st.button("\U0001F6D1 End Simulation", use_container_width=True,
                       disabled=sim_is_completed, type="primary"):
             _action_end_simulation()
