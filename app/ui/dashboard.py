@@ -226,6 +226,8 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
         "team_id": "Team ID",
         "round_number": "Round",
         "passengers": "Passengers",
+        "price_business": "Biz Price",
+        "price_leisure": "Lei Price",
         "revenue": "Revenue",
         "variable_cost": "Variable Cost",
         "fixed_cost": "Fixed Cost",
@@ -319,7 +321,7 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
                 table["Passengers"], errors="coerce"
             ).apply(lambda v: f"{v:,.0f}" if pd.notna(v) else "\u2014")
         for col in ("Revenue", "Variable Cost", "Fixed Cost", "Branding Cost",
-                     "Product Cost", "Total Cost", "Profit"):
+                     "Product Cost", "Total Cost", "Profit", "Biz Price", "Lei Price"):
             if col in table.columns:
                 table[col] = pd.to_numeric(table[col], errors="coerce").apply(
                     lambda v: f"${v:,.0f}" if pd.notna(v) else "\u2014"
@@ -386,6 +388,8 @@ def _build_team_table(sim_path: Path, latest_round: int) -> pd.DataFrame:
             return f"{v:.1%}" if pd.notna(v) else "\u2014"
 
         cols["Passengers"]    = pax_n.apply(fmt_int)
+        cols["Biz Price"]      = "$360"   # baseline Match price
+        cols["Lei Price"]      = "$180"   # baseline Match price
         cols["Revenue"]       = revenue.apply(fmt_dollar)
         cols["Variable Cost"] = var_cost.apply(fmt_dollar)
         cols["Fixed Cost"]    = fix_cost.apply(fmt_dollar)

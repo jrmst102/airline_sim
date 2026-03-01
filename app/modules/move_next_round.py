@@ -193,6 +193,8 @@ def move_next_round(
 				"avg_revenue_per_flight": _fmt_number(tr.avg_revenue_per_flight, 2),
 				"avg_cost_per_flight": _fmt_number(tr.avg_cost_per_flight, 2),
 				"avg_profit_per_flight": _fmt_number(tr.avg_profit_per_flight, 2),
+				"price_business": _fmt_number(tr.price_business, 2),
+				"price_leisure": _fmt_number(tr.price_leisure, 2),
 				"csi": "",
 				"oei": "",
 				"created_at_utc": now,

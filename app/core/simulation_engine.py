@@ -68,6 +68,8 @@ class TeamRoundResult:
 	avg_revenue_per_flight: float
 	avg_cost_per_flight: float
 	avg_profit_per_flight: float
+	price_business: float
+	price_leisure: float
 
 
 @dataclass(frozen=True)
@@ -287,6 +289,8 @@ def compute_round_results(
 			avg_revenue_per_flight=avg_rev,
 			avg_cost_per_flight=avg_cost,
 			avg_profit_per_flight=avg_prof,
+			price_business=d.price_business,
+			price_leisure=d.price_leisure,
 		))
 
 	market_result = MarketRoundResult(

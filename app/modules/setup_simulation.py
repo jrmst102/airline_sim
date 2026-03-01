@@ -225,6 +225,8 @@ CSV_SCHEMAS: dict[str, list[str]] = {
         "avg_revenue_per_flight",
         "avg_cost_per_flight",
         "avg_profit_per_flight",
+        "price_business",
+        "price_leisure",
         "csi",
         "oei",
         "created_at_utc",
@@ -580,6 +582,8 @@ def setup_simulation(
             "avg_revenue_per_flight": str(round(avg_rev, 2)),
             "avg_cost_per_flight":  str(round(avg_cost, 2)),
             "avg_profit_per_flight": str(round(avg_prof, 2)),
+            "price_business":       str(FARES["Match"]["business"]),  # baseline Match price
+            "price_leisure":        str(FARES["Match"]["leisure"]),   # baseline Match price
             "csi":                  "100.0",  # neutral baseline index
             "oei":                  "100.0",  # neutral baseline index
             "created_at_utc":       now,
