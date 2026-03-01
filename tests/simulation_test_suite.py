@@ -362,6 +362,7 @@ def run_all_scenarios(
             if stop_on_fail and result.status == "FAIL":
                 break
     finally:
+        reset_store()
         if not keep_sim_folders:
             shutil.rmtree(tmp_root, ignore_errors=True)
         else:

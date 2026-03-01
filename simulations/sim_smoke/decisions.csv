@@ -1,0 +1,7 @@
+simulation_id,round_number,team_id,flights_per_day,price_business,price_leisure,branding_level,product_strategy,submitted_at_utc
+sim_smoke,1,A,5,450,220,High,High,2026-03-01T17:02:27.135957+00:00
+sim_smoke,1,B,4,360,180,Medium,Low,2026-03-01T17:02:27.135957+00:00
+sim_smoke,1,C,4,360,180,Medium,Medium,2026-03-01T17:02:27.135957+00:00
+sim_smoke,1,D,4,290,140,Low,Low,2026-03-01T17:02:27.135957+00:00
+sim_smoke,1,E,3,290,140,Low,Medium,2026-03-01T17:02:27.135957+00:00
+sim_smoke,1,F,3,450,220,Medium,Low,2026-03-01T17:02:27.135957+00:00
