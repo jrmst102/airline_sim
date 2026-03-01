@@ -581,6 +581,22 @@ def main() -> None:
 
     st.markdown("---")
 
+    # ── Start Simulation (only when CREATED) ───────────────────────
+    if status == "CREATED":
+        st.info(
+            "The simulation has been set up but not started yet. "
+            "Click **Start Simulation** to open Round 1 for decisions."
+        )
+        if st.button("▶️ Start Simulation", use_container_width=True):
+            try:
+                from app.modules.start_simulation import start_simulation
+                start_simulation(simulation_id=SIM_ID, root_dir=ROOT_DIR)
+                st.success("Simulation started — Round 1 is now **OPEN**.")
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Start failed: {exc}")
+        st.markdown("---")
+
     # ── Enter / Update Decisions (all teams) ───────────────────────
     st.subheader(f"Enter Decisions \u2014 Round {current_round}")
 
