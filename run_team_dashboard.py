@@ -13,6 +13,7 @@ Environment variables:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -24,7 +25,7 @@ def main() -> None:
         description="Run the Team Dashboard (FastAPI, no Streamlit)."
     )
     parser.add_argument("--host", default="0.0.0.0", help="Bind address (default: 0.0.0.0)")
-    parser.add_argument("--port", type=int, default=8081, help="Port (default: 8081)")
+    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8081")), help="Port (default: $PORT or 8081)")
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
     args = parser.parse_args()
 

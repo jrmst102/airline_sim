@@ -113,6 +113,12 @@ def _redirect_team(msg: str = "", ok: bool = True) -> RedirectResponse:
 
 # ── Routes ─────────────────────────────────────────────────────────────
 
+@app.get("/health")
+async def health():
+    """Lightweight health check for App Platform / load balancers."""
+    return {"status": "ok"}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def root():
     return RedirectResponse(url="/team/login", status_code=302)

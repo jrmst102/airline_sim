@@ -252,6 +252,7 @@ Dashboard files live in `code/team_dashboard/`:
 | File | Purpose |
 | --- | --- |
 | `code/team_dashboard/app.py` | FastAPI application, routes, session management |
+| `code/team_dashboard/main.py` | App Platform entry point (path setup + re-exports `app`) |
 | `code/team_dashboard/services/team_auth.py` | Authentication against `usernames.csv` (plain-text credentials) |
 | `code/team_dashboard/usernames.csv` | Team credentials file (username,password per line) |
 | `code/team_dashboard/services/team_decisions.py` | Decision defaults, save/upsert, undo, past decisions |
@@ -401,6 +402,8 @@ airline_sim/
 ├── run_dashboard.py         # Web dashboard launcher (FastAPI)
 ├── run_admin_dashboard.py   # Admin dashboard launcher (FastAPI)
 ├── run_team_dashboard.py    # Team dashboard launcher (FastAPI)
+├── Procfile                 # App Platform run command
+├── app.yaml                 # DigitalOcean App Platform spec
 ├── requirements.txt
 ├── .env.example             # Spaces credential template
 ├── app/
@@ -423,6 +426,7 @@ airline_sim/
 │           ├── decisions.py
 │           └── results.py
 ├── code/
+│   ├── __init__.py
 │   ├── admin_dashboard/     # Admin dashboard (FastAPI + Jinja2)
 │   │   ├── app.py
 │   │   ├── services/
@@ -431,7 +435,9 @@ airline_sim/
 │   │   ├── templates/
 │   │   └── static/
 │   ├── team_dashboard/      # Team dashboard (FastAPI + Jinja2)
+│   │   ├── __init__.py
 │   │   ├── app.py
+│   │   ├── main.py          # App Platform entry point (re-exports app)
 │   │   ├── usernames.csv    # Team credentials (username,password)
 │   │   ├── services/
 │   │   │   ├── team_auth.py
@@ -461,3 +467,84 @@ UI text is centralized in `app/ui/components.py`.
 - Simulation title: **Airlines**
 - Simulation subtitle: **Competitive Strategy Simulation**
 - Copyright notice: **Copyright 2026 by Dr. Jose Mendoza**
+
+## Deploying to DigitalOcean App Platform
+
+The Team Dashboard is ready to deploy as a web service on [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform). The app reads/writes all CSV data through DigitalOcean Spaces — no local persistence is needed.
+
+### Run command & module path
+
+```
+uvicorn code.team_dashboard.main:app --host 0.0.0.0 --port $PORT
+```
+
+This is defined in the `Procfile` at the repo root. The entry point `code/team_dashboard/main.py` sets up import paths and re-exports the FastAPI `app` object.
+
+### Environment variables
+
+Set these in the App Platform UI (mark secrets as **Encrypted**):
+
+| Variable | Type | Value |
+| --- | --- | --- |
+| `SPACES_ACCESS_KEY_ID` | SECRET | *(your Spaces key)* |
+| `SPACES_SECRET_ACCESS_KEY` | SECRET | *(your Spaces secret)* |
+| `SPACES_REGION` | Plain | `sfo3` |
+| `SPACES_BUCKET` | Plain | `airlines-sim` |
+| `SPACES_ENDPOINT` | Plain | `https://sfo3.digitaloceanspaces.com` |
+| `SESSION_SECRET` | SECRET | *(random string for cookie signing)* |
+
+### App Platform setup steps
+
+1. Go to **DigitalOcean Console → Apps → Create App**
+2. Choose **GitHub** as source → select repo `jrmst102/airline_sim`
+3. Select branch: `main`
+4. App Platform should detect the `Procfile` and set the run command automatically. Verify it shows:
+   ```
+   uvicorn code.team_dashboard.main:app --host 0.0.0.0 --port $PORT
+   ```
+5. Set service type: **Web Service**
+6. Add the environment variables listed above (mark secrets as Encrypted)
+7. Choose instance size: **Basic (Starter)** — smallest is fine to start
+8. Click **Deploy**
+
+Alternatively, import `app.yaml` directly: in the App Platform creation flow, choose **Import from app spec** and point to `app.yaml` in the repo root.
+
+### Running locally (production-like)
+
+```bash
+pip install -r requirements.txt
+
+export SPACES_ACCESS_KEY_ID=your_key
+export SPACES_SECRET_ACCESS_KEY=your_secret
+export SPACES_REGION=sfo3
+export SPACES_BUCKET=airlines-sim
+export SPACES_ENDPOINT=https://sfo3.digitaloceanspaces.com
+export SESSION_SECRET=some-random-secret
+
+# Using the Procfile command:
+uvicorn code.team_dashboard.main:app --host 0.0.0.0 --port 8081
+
+# Or using the launcher script:
+python run_team_dashboard.py
+```
+
+### Health check
+
+After deployment, verify:
+
+```bash
+curl https://your-app-url.ondigitalocean.app/health
+# → {"status":"ok"}
+```
+
+### Smoke test checklist
+
+After deployment, verify each item:
+
+- `/health` returns `200` with `{"status":"ok"}`
+- `/team/login` loads the login page
+- Login works with credentials from `usernames.csv` (e.g. `Team1` / `MrGreen3`)
+- Decision page loads and shows simulation status / round indicators
+- Save writes decisions to Spaces (verify by checking the updated CSV in the bucket)
+- Undo works (team-scoped; does not affect other teams)
+- Past decisions table shows only when simulation is started and round > 1
