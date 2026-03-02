@@ -1,0 +1,2 @@
+simulation_id,route_id,origin,destination,distance_miles,is_active,created_at_utc
+TS_32,R1,JFK,BOS,187,1,2026-03-01T16:59:56.779576+00:00
