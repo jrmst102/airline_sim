@@ -9,6 +9,7 @@ This repository provides:
 - CSV-backed simulation state and lifecycle modules
 - Core round/state/market computation models
 - Admin dashboard (FastAPI + Jinja2, no Streamlit) with simulation controls and live team table
+- Team dashboard (FastAPI + Jinja2, no Streamlit) with login, decision entry, and performance view
 - Standalone FastAPI web dashboard with Plotly.js charts
 - DigitalOcean Spaces cloud storage with local filesystem fallback
 - Centralised CSV manager routed through the storage abstraction layer
@@ -28,6 +29,9 @@ Then choose how to run:
 # Admin dashboard (FastAPI + Jinja2, no Streamlit)
 python run_admin_dashboard.py              # default: http://0.0.0.0:8080
 
+# Team dashboard (FastAPI + Jinja2, no Streamlit)
+python run_team_dashboard.py               # default: http://0.0.0.0:8081
+
 # Standalone web dashboard (FastAPI + Plotly.js)
 python run_dashboard.py                    # default: http://0.0.0.0:8000
 ```
@@ -42,7 +46,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Dependencies: `bcrypt`, `boto3`, `fastapi`, `gspread`, `google-auth`, `jinja2`, `python-dotenv`, `python-multipart`, `uvicorn`.
+Dependencies: `bcrypt`, `boto3`, `fastapi`, `gspread`, `google-auth`, `itsdangerous`, `jinja2`, `python-dotenv`, `python-multipart`, `uvicorn`.
 
 ### DigitalOcean Spaces (optional)
 
@@ -206,7 +210,56 @@ Dashboard files live in `code/admin_dashboard/`:
 | `code/admin_dashboard/templates/admin_home.html` | Admin page template |
 | `code/admin_dashboard/static/admin.css` | NYU-themed CSS |
 
-### Option 3: Web Dashboard (FastAPI)
+### Option 3: Team Dashboard (FastAPI)
+
+A server-rendered team-facing dashboard for entering decisions and viewing performance. Uses FastAPI + Jinja2 templates with signed session cookies — no Streamlit.
+
+```bash
+python run_team_dashboard.py               # default: http://0.0.0.0:8081
+python run_team_dashboard.py --port 8082   # custom port
+python run_team_dashboard.py --reload      # auto-reload for development
+```
+
+Features:
+- **Login page** — teams authenticate with pre-provisioned usernames (e.g. `Team 1`) and bcrypt-hashed passwords from `users.csv`
+- **Decision form** — flights per day, business/leisure prices, branding level, product strategy; pre-filled from previous round
+- **Save & Undo** — upsert decisions for the current round or undo to reset to defaults
+- **Performance metrics** — latest-round KPIs (revenue, cost, profit, passengers, load factor, market share, CSI, OEI)
+- **Performance history table** — all completed rounds in a sortable table
+- **Past decisions table** — review decisions from prior rounds
+- **Session cookies** — `itsdangerous`-signed cookies, 24-hour expiry
+- NYU-themed styling consistent with `admin_dashboard`
+
+Required environment variables:
+
+| Variable | Default |
+| --- | --- |
+| `SESSION_SECRET` | `airline-sim-dev-secret` (override in production) |
+
+Team dashboard endpoints:
+
+| Endpoint | Method | Action |
+| --- | --- | --- |
+| `/team/login` | GET | Login form |
+| `/team/login` | POST | Authenticate and set session |
+| `/team` | GET | Team home (requires session) |
+| `/team/save` | POST | Save decisions for current round |
+| `/team/undo` | POST | Undo current-round decisions |
+| `/team/logout` | GET | Clear session and redirect to login |
+
+Dashboard files live in `code/team_dashboard/`:
+
+| File | Purpose |
+| --- | --- |
+| `code/team_dashboard/app.py` | FastAPI application, routes, session management |
+| `code/team_dashboard/services/team_auth.py` | Authentication wrapper (bcrypt via `user_management`) |
+| `code/team_dashboard/services/team_decisions.py` | Decision defaults, save/upsert, undo, past decisions |
+| `code/team_dashboard/services/team_performance.py` | Team performance data from `round_results_team.csv` |
+| `code/team_dashboard/templates/team_login.html` | Login page template |
+| `code/team_dashboard/templates/team_home.html` | Team home template (form + metrics + tables) |
+| `code/team_dashboard/static/team.css` | NYU-themed CSS |
+
+### Option 4: Web Dashboard (FastAPI)
 
 A standalone web dashboard for viewing simulation results. Uses FastAPI on the backend and Plotly.js for interactive charts. No Streamlit required.
 

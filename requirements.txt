@@ -3,6 +3,7 @@ boto3
 fastapi
 gspread
 google-auth
+itsdangerous
 jinja2
 python-dotenv
 python-multipart
