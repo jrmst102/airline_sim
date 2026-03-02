@@ -1,1 +1,1 @@
-# Admin Dashboard package
+# Admin Dashboard – FastAPI-based admin panel for Airline Simulation

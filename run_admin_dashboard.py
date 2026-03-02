@@ -1,57 +1,41 @@
 #!/usr/bin/env python3
-"""Launch the newer admin dashboard (non-legacy Streamlit app).
+"""Launch the Admin Dashboard (FastAPI + Jinja2, no Streamlit).
 
 Usage:
-    python run_admin_dashboard.py
-    python run_admin_dashboard.py --port 8502
-    python run_admin_dashboard.py -- --server.headless true
+    python run_admin_dashboard.py                # default: http://0.0.0.0:8080
+    python run_admin_dashboard.py --port 8090    # custom port
+    python run_admin_dashboard.py --reload       # auto-reload for development
 """
 
 from __future__ import annotations
 
 import argparse
-import subprocess
 import sys
 from pathlib import Path
+
+import uvicorn
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Run the newer admin dashboard (not the legacy Streamlit admin view)."
+        description="Run the Admin Dashboard (FastAPI, no Streamlit)."
     )
     parser.add_argument("--host", default="0.0.0.0", help="Bind address (default: 0.0.0.0)")
-    parser.add_argument("--port", type=int, default=8501, help="Port (default: 8501)")
-    parser.add_argument(
-        "streamlit_args",
-        nargs=argparse.REMAINDER,
-        help="Additional arguments forwarded to streamlit (prefix with --)",
-    )
+    parser.add_argument("--port", type=int, default=8080, help="Port (default: 8080)")
+    parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
     args = parser.parse_args()
 
     project_root = Path(__file__).resolve().parent
-    entrypoint = project_root / "app" / "ui" / "pages" / "home.py"
+    code_root = project_root / "code"
+    if str(code_root) not in sys.path:
+        sys.path.insert(0, str(code_root))
 
-    if not entrypoint.exists():
-        raise FileNotFoundError(f"Dashboard entrypoint not found: {entrypoint}")
-
-    extra_args = args.streamlit_args
-    if extra_args and extra_args[0] == "--":
-        extra_args = extra_args[1:]
-
-    cmd = [
-        sys.executable,
-        "-m",
-        "streamlit",
-        "run",
-        str(entrypoint),
-        "--server.address",
-        args.host,
-        "--server.port",
-        str(args.port),
-        *extra_args,
-    ]
-
-    raise SystemExit(subprocess.call(cmd, cwd=str(project_root)))
+    uvicorn.run(
+        "admin_dashboard.app:app",
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+    )
 
 
 if __name__ == "__main__":

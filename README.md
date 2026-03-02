@@ -8,7 +8,7 @@ This repository provides:
 
 - CSV-backed simulation state and lifecycle modules
 - Core round/state/market computation models
-- Streamlit UI views for admin and team workflows (page-based navigation)
+- Admin dashboard (FastAPI + Jinja2, no Streamlit) with simulation controls and live team table
 - Standalone FastAPI web dashboard with Plotly.js charts
 - DigitalOcean Spaces cloud storage with local filesystem fallback
 - Centralised CSV manager routed through the storage abstraction layer
@@ -25,11 +25,11 @@ pip install -r requirements.txt
 Then choose how to run:
 
 ```bash
-# Streamlit admin dashboard (page-based UI)
-python run_admin_dashboard.py
+# Admin dashboard (FastAPI + Jinja2, no Streamlit)
+python run_admin_dashboard.py              # default: http://0.0.0.0:8080
 
 # Standalone web dashboard (FastAPI + Plotly.js)
-python run_dashboard.py
+python run_dashboard.py                    # default: http://0.0.0.0:8000
 ```
 
 ## Setup
@@ -42,7 +42,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Dependencies: `bcrypt`, `boto3`, `gspread`, `google-auth`, `python-dotenv`.
+Dependencies: `bcrypt`, `boto3`, `fastapi`, `gspread`, `google-auth`, `jinja2`, `python-dotenv`, `uvicorn`.
 
 ### DigitalOcean Spaces (optional)
 
@@ -170,24 +170,41 @@ python -m app.modules.export_results_batch sim_001 --section both --output-type 
 
 This writes results to worksheets named `SimResults_Market` and `SimResults_Team`.
 
-### Option 2: Streamlit GUI (Admin Dashboard)
+### Option 2: Admin Dashboard (FastAPI)
 
-1. **Launch the admin dashboard**
+A server-rendered admin panel for simulation control and live team data. Uses FastAPI + Jinja2 templates — no Streamlit.
 
 ```bash
-python run_admin_dashboard.py              # default: http://0.0.0.0:8501
-python run_admin_dashboard.py --port 8502   # custom port
+python run_admin_dashboard.py              # default: http://0.0.0.0:8080
+python run_admin_dashboard.py --port 8090   # custom port
+python run_admin_dashboard.py --reload      # auto-reload for development
 ```
 
-2. **Open the local URL shown by Streamlit** (usually `http://localhost:8501`).
+Features:
+- **Status panel** — current round, simulation status (CREATED/STARTED/ENDED), last-updated timestamp
+- **Admin actions** — Set Up Simulation, Start, End, Undo Last Period (all POST endpoints)
+- **Team data table** — reads `round_results_team.csv` from Spaces (or local), sortable columns, AJAX refresh
+- **Safety** — confirm prompts on destructive actions, double-click protection
+- NYU-themed styling consistent with `dashboard_web`
 
-3. **Navigate through the page-based UI**
-	- **Home** — Choose Admin or Team view.
-	- **Setup** — Initialize simulation/team data.
-	- **Decisions** — Submit team decisions.
-	- **Results** — Review round outcomes and insights.
+Admin action endpoints (all POST):
 
-UI pages live in `app/ui/pages/` (Home, Setup, Decisions, Results).
+| Endpoint | Action |
+| --- | --- |
+| `POST /admin/setup` | Initialise simulation (calls `setup_simulation`) |
+| `POST /admin/start` | Start simulation (calls `start_simulation`) |
+| `POST /admin/end` | End simulation (calls `end_simulation`) |
+| `POST /admin/undo` | Undo last period (calls `undo_round`) |
+
+Dashboard files live in `code/admin_dashboard/`:
+
+| File | Purpose |
+| --- | --- |
+| `code/admin_dashboard/app.py` | FastAPI application, routes, Jinja2 rendering |
+| `code/admin_dashboard/services/admin_actions.py` | Thin wrappers around simulation modules |
+| `code/admin_dashboard/services/team_data.py` | Reads team CSV from Spaces → table payload |
+| `code/admin_dashboard/templates/admin_home.html` | Admin page template |
+| `code/admin_dashboard/static/admin.css` | NYU-themed CSS |
 
 ### Option 3: Web Dashboard (FastAPI)
 
@@ -259,28 +276,21 @@ python main.py historical-decisions-team sim_001
 - Use a Google service-account JSON key via `--credentials-json`.
 - Share the target spreadsheet with the service-account email so it can read/write.
 
-## UI Usage (Streamlit)
+## Admin Dashboard (no Streamlit)
 
-Launch the admin dashboard:
+The admin dashboard is a standalone FastAPI application in `code/admin_dashboard/`. It reads and writes all data through the centralised storage layer (DigitalOcean Spaces or local fallback).
 
 ```bash
 python run_admin_dashboard.py
 ```
 
-The UI uses a page-based navigation model with pages in `app/ui/pages/`:
+The admin page displays a status panel, four action buttons (Setup / Start / End / Undo), and a live team-data table sourced from `round_results_team.csv`.
 
-| Page | File | Purpose |
-| --- | --- | --- |
-| Home | `app/ui/pages/home.py` | Workspace selector (Admin / Team view) |
-| Setup | `app/ui/pages/setup.py` | Initialize simulation and teams |
-| Decisions | `app/ui/pages/decisions.py` | Submit team decisions |
-| Results | `app/ui/pages/results.py` | Display round results and insights |
+Team data columns displayed: Passengers, Revenue, Total Cost, Profit, Volume Share, Profit Share, Load Factor, Business Price, Leisure Price, CSI, OEI.
 
-Supporting UI modules:
+### Required environment variables
 
-- `app/ui/components.py` — Shared UI components, cards, headers, sidebar navigation
-- `app/ui/layout.py` — CSS loading and page shell
-- `app/ui/team_view.py` — Team decision entry and historical results
+Same as the main application — see the [DigitalOcean Spaces](#digitalocean-spaces-optional) section above.
 
 ## Test Suite
 
@@ -335,7 +345,7 @@ The store is selected automatically at runtime:
 airline_sim/
 ├── main.py                  # CLI command router
 ├── run_dashboard.py         # Web dashboard launcher (FastAPI)
-├── run_admin_dashboard.py   # Admin dashboard launcher (Streamlit)
+├── run_admin_dashboard.py   # Admin dashboard launcher (FastAPI)
 ├── requirements.txt
 ├── .env.example             # Spaces credential template
 ├── app/
@@ -358,6 +368,13 @@ airline_sim/
 │           ├── decisions.py
 │           └── results.py
 ├── code/
+│   ├── admin_dashboard/     # Admin dashboard (FastAPI + Jinja2)
+│   │   ├── app.py
+│   │   ├── services/
+│   │   │   ├── admin_actions.py
+│   │   │   └── team_data.py
+│   │   ├── templates/
+│   │   └── static/
 │   └── dashboard_web/       # Standalone FastAPI web dashboard
 │       ├── app.py
 │       ├── dashboard_data.py
