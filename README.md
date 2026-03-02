@@ -221,7 +221,7 @@ python run_team_dashboard.py --reload      # auto-reload for development
 ```
 
 Features:
-- **Login page** — teams authenticate with pre-provisioned usernames (e.g. `Team 1`) and bcrypt-hashed passwords from `users.csv`
+- **Login page** — teams authenticate with credentials from `usernames.csv` (e.g. `Team1` / `MrGreen3`); usernames map to team IDs (`Team1`→A … `Team6`→F)
 - **Decision form** — flights per day, business/leisure prices, branding level, product strategy; pre-filled from previous round
 - **Save & Undo** — upsert decisions for the current round or undo to reset to defaults
 - **Performance metrics** — latest-round KPIs (revenue, cost, profit, passengers, load factor, market share, CSI, OEI)
@@ -252,7 +252,8 @@ Dashboard files live in `code/team_dashboard/`:
 | File | Purpose |
 | --- | --- |
 | `code/team_dashboard/app.py` | FastAPI application, routes, session management |
-| `code/team_dashboard/services/team_auth.py` | Authentication wrapper (bcrypt via `user_management`) |
+| `code/team_dashboard/services/team_auth.py` | Authentication against `usernames.csv` (plain-text credentials) |
+| `code/team_dashboard/usernames.csv` | Team credentials file (username,password per line) |
 | `code/team_dashboard/services/team_decisions.py` | Decision defaults, save/upsert, undo, past decisions |
 | `code/team_dashboard/services/team_performance.py` | Team performance data from `round_results_team.csv` |
 | `code/team_dashboard/templates/team_login.html` | Login page template |
@@ -431,6 +432,7 @@ airline_sim/
 │   │   └── static/
 │   ├── team_dashboard/      # Team dashboard (FastAPI + Jinja2)
 │   │   ├── app.py
+│   │   ├── usernames.csv    # Team credentials (username,password)
 │   │   ├── services/
 │   │   │   ├── team_auth.py
 │   │   │   ├── team_decisions.py
