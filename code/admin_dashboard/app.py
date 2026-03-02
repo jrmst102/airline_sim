@@ -24,11 +24,13 @@ from jinja2 import Environment, FileSystemLoader
 
 from admin_dashboard.services.admin_actions import (
     action_end,
+    action_move_next_round,
     action_setup,
     action_start,
     action_undo,
 )
 from admin_dashboard.services.team_data import (
+    get_decision_status,
     get_simulation_status,
     get_team_table,
 )
@@ -69,10 +71,12 @@ def _render_admin(request: Request, msg: str = "", ok: bool = True) -> HTMLRespo
     """Render the admin home page with optional banner."""
     sim_status = get_simulation_status(DEFAULT_SIM_ID)
     team_data = get_team_table(DEFAULT_SIM_ID)
+    decision_status = get_decision_status(DEFAULT_SIM_ID)
     template = _jinja_env.get_template("admin_home.html")
     html = template.render(
         sim_status=sim_status,
         team_data=team_data,
+        decision_status=decision_status,
         msg=msg,
         ok=ok,
         sim_id=DEFAULT_SIM_ID,
@@ -119,6 +123,13 @@ async def admin_start():
 async def admin_end():
     """End the simulation."""
     result = action_end(simulation_id=DEFAULT_SIM_ID)
+    return _redirect_with_banner(result["success"], result["message"])
+
+
+@app.post("/admin/next-round")
+async def admin_next_round():
+    """Process current round and advance to the next."""
+    result = action_move_next_round(simulation_id=DEFAULT_SIM_ID)
     return _redirect_with_banner(result["success"], result["message"])
 
 

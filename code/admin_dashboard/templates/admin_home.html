@@ -52,6 +52,30 @@
             </div>
         </div>
 
+        <!-- Decision Status Card -->
+        {% if sim_status.status == 'STARTED' %}
+        <div class="card">
+            <div class="card-title">Decision Status <span class="card-subtitle">Round {{ decision_status.current_round }}</span></div>
+            <div class="decision-status-list">
+                {% for tid, submitted in decision_status.teams.items() %}
+                <div class="decision-status-row">
+                    <span class="decision-icon {{ 'icon-submitted' if submitted else 'icon-pending' }}"
+                          title="{{ 'Submitted' if submitted else 'Pending' }}">
+                        {{ '✔' if submitted else '✗' }}
+                    </span>
+                    <span class="decision-team">Team {{ tid }}</span>
+                    <span class="decision-label {{ 'label-submitted' if submitted else 'label-pending' }}">
+                        {{ 'Submitted' if submitted else 'Pending' }}
+                    </span>
+                </div>
+                {% endfor %}
+                {% if not decision_status.teams %}
+                <div class="info-msg">No teams found.</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Actions Card -->
         <div class="card">
             <div class="card-title">Admin Actions</div>
@@ -81,6 +105,16 @@
                 <button type="submit" class="btn btn-primary"
                         onclick="return disableBtn(this)">
                     Start Simulation
+                </button>
+            </form>
+
+            <div class="action-divider"></div>
+
+            <!-- Move to Next Round -->
+            <form method="post" action="/admin/next-round" class="action-form">
+                <button type="submit" class="btn btn-primary"
+                        onclick="return confirmAction(this, 'Process the current round and advance to the next? This will close the current round, compute results, and open the next round.')">
+                    Move to Next Round
                 </button>
             </form>
 

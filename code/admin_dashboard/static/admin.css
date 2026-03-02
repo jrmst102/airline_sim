@@ -378,6 +378,55 @@ html, body {
     padding: 24px 8px !important;
 }
 
+/* ── Decision Status ───────────────────────────────────────────── */
+.decision-status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.decision-status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: #F8F6FB;
+}
+
+.decision-icon {
+    font-size: 16px;
+    width: 22px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.icon-submitted { color: #2E7D32; }
+.icon-pending   { color: #C62828; }
+
+.decision-team {
+    font-weight: 600;
+    color: #333;
+    min-width: 70px;
+}
+
+.decision-label {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.label-submitted {
+    background: #E8F5E9;
+    color: #2E7D32;
+}
+
+.label-pending {
+    background: #FFEBEE;
+    color: #C62828;
+}
+
 /* ── Footer (matches dashboard_web) ────────────────────────────── */
 .footer {
     height: 40px;

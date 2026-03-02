@@ -94,6 +94,35 @@ def action_end(
         return {"success": False, "message": f"End failed: {exc}"}
 
 
+def action_move_next_round(
+    simulation_id: str = DEFAULT_SIM_ID,
+    admin_user_id: str = "U_ADMIN",
+) -> dict:
+    """Process the current round and advance to the next one."""
+    try:
+        from app.modules.move_next_round import move_next_round
+
+        result = move_next_round(
+            simulation_id=simulation_id,
+            admin_user_id=admin_user_id,
+        )
+        return {
+            "success": True,
+            "message": (
+                f"Round {result.closed_round} processed — "
+                f"{result.processed_team_count} team(s) scored. "
+                + (
+                    f"Now in round {result.opened_round}."
+                    if result.opened_round
+                    else "Simulation complete."
+                )
+            ),
+        }
+    except Exception as exc:
+        logger.exception("Move next round failed")
+        return {"success": False, "message": f"Move next round failed: {exc}"}
+
+
 def action_undo(
     simulation_id: str = DEFAULT_SIM_ID,
     admin_user_id: str = "U_ADMIN",

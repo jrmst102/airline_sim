@@ -19,6 +19,40 @@ from app.data.csv_manager import csv_exists, load_csv, read_csv_rows
 DEFAULT_SIM_ID = "sim_001"
 
 
+def get_decision_status(simulation_id: str = DEFAULT_SIM_ID) -> dict:
+    """Return per-team decision submission status for the current round.
+
+    Returns a dict with:
+      - ``current_round`` (int)
+      - ``teams`` — dict mapping team_id → bool (True = submitted)
+    """
+    status = get_simulation_status(simulation_id)
+    current_round = status["current_round"]
+
+    # Read all active teams
+    team_ids: list[str] = []
+    if csv_exists(simulation_id, "teams.csv"):
+        for row in read_csv_rows(simulation_id, "teams.csv"):
+            if row.get("is_active", "0") == "1":
+                team_ids.append(row.get("team_id", ""))
+
+    # Read decisions for the current round
+    submitted: dict[str, bool] = {tid: False for tid in team_ids}
+    if csv_exists(simulation_id, "decisions.csv") and current_round > 0:
+        for row in read_csv_rows(simulation_id, "decisions.csv"):
+            rn = 0
+            try:
+                rn = int(float(row.get("round_number", "0")))
+            except (TypeError, ValueError):
+                pass
+            if rn == current_round:
+                tid = row.get("team_id", "")
+                if tid in submitted:
+                    submitted[tid] = True
+
+    return {"current_round": current_round, "teams": submitted}
+
+
 def _float(v: str, default: float = 0.0) -> float:
     try:
         return float(v)
