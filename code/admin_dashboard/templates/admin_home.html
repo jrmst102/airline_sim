@@ -26,10 +26,75 @@
 </div>
 {% endif %}
 
+<!-- ── Admin Actions Bar ────────────────────────────────────────── -->
+<div class="actions-bar">
+    <div class="card actions-card">
+        <div class="actions-row">
+            <!-- Setup -->
+            <form method="post" action="/admin/setup" class="action-form action-form-setup">
+                <div class="form-row">
+                    <label for="sim_name">Name</label>
+                    <input type="text" id="sim_name" name="sim_name"
+                           value="Airline Simulation" class="form-input">
+                </div>
+                <div class="form-row">
+                    <label for="total_rounds">Rounds</label>
+                    <input type="number" id="total_rounds" name="total_rounds"
+                           value="5" min="1" max="20" class="form-input form-input-short">
+                </div>
+                <button type="submit" class="btn btn-primary btn-action"
+                        onclick="return confirmAction(this, 'WARNING: Setting up the simulation will reset all simulation values. Are you sure you want to proceed?')">
+                    Set Up
+                </button>
+            </form>
+
+            <div class="action-divider-v"></div>
+
+            <!-- Start -->
+            <form method="post" action="/admin/start" class="action-form">
+                <button type="submit" class="btn btn-primary btn-action"
+                        onclick="return disableBtn(this)">
+                    Start Simulation
+                </button>
+            </form>
+
+            <div class="action-divider-v"></div>
+
+            <!-- Move to Next Round -->
+            <form method="post" action="/admin/next-round" class="action-form">
+                <button type="submit" class="btn btn-success btn-action"
+                        onclick="return confirmAction(this, 'Process the current round and advance to the next? This will close the current round, compute results, and open the next round.')">
+                    Move to Next Round
+                </button>
+            </form>
+
+            <div class="action-divider-v"></div>
+
+            <!-- End -->
+            <form method="post" action="/admin/end" class="action-form" id="end-form">
+                <button type="submit" class="btn btn-danger btn-action"
+                        onclick="return endSimWithReport(this)">
+                    End Simulation
+                </button>
+            </form>
+
+            <div class="action-divider-v"></div>
+
+            <!-- Undo -->
+            <form method="post" action="/admin/undo" class="action-form">
+                <button type="submit" class="btn btn-warning btn-action"
+                        onclick="return confirmAction(this, 'Are you sure you want to UNDO the last period? This will reopen the previous round.')">
+                    Undo Last Period
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- ── Main Grid ───────────────────────────────────────────────── -->
 <div class="main-grid">
 
-    <!-- Left Panel: Status + Actions -->
+    <!-- Left Panel: Status + Decisions -->
     <div class="panel panel-left">
 
         <!-- Status Card -->
@@ -56,8 +121,8 @@
         <!-- Decision Status Card -->
         {% if sim_status.status == 'STARTED' %}
         <div class="card">
-            <div class="card-title">Decision Status <span class="card-subtitle">Round {{ decision_status.current_round }}</span></div>
-            <div class="decision-status-list">
+            <div class="card-title">Decision Status <span class="card-subtitle" id="decision-round-label">Round {{ decision_status.current_round }}</span></div>
+            <div class="decision-status-list" id="decision-status-list">
                 {% for tid, submitted in decision_status.teams.items() %}
                 <div class="decision-status-row">
                     <span class="decision-icon {{ 'icon-submitted' if submitted else 'icon-pending' }}"
@@ -74,71 +139,9 @@
                 <div class="info-msg">No teams found.</div>
                 {% endif %}
             </div>
+            <div class="decision-updated" id="decision-updated"></div>
         </div>
         {% endif %}
-
-        <!-- Actions Card -->
-        <div class="card">
-            <div class="card-title">Admin Actions</div>
-
-            <!-- Setup -->
-            <form method="post" action="/admin/setup" class="action-form">
-                <div class="form-row">
-                    <label for="sim_name">Simulation Name</label>
-                    <input type="text" id="sim_name" name="sim_name"
-                           value="Airline Simulation" class="form-input">
-                </div>
-                <div class="form-row">
-                    <label for="total_rounds">Rounds</label>
-                    <input type="number" id="total_rounds" name="total_rounds"
-                           value="3" min="1" max="20" class="form-input form-input-short">
-                </div>
-                <button type="submit" class="btn btn-primary"
-                        onclick="return disableBtn(this)">
-                    Set Up Simulation
-                </button>
-            </form>
-
-            <div class="action-divider"></div>
-
-            <!-- Start -->
-            <form method="post" action="/admin/start" class="action-form">
-                <button type="submit" class="btn btn-primary"
-                        onclick="return disableBtn(this)">
-                    Start Simulation
-                </button>
-            </form>
-
-            <div class="action-divider"></div>
-
-            <!-- Move to Next Round -->
-            <form method="post" action="/admin/next-round" class="action-form">
-                <button type="submit" class="btn btn-primary"
-                        onclick="return confirmAction(this, 'Process the current round and advance to the next? This will close the current round, compute results, and open the next round.')">
-                    Move to Next Round
-                </button>
-            </form>
-
-            <div class="action-divider"></div>
-
-            <!-- End (confirm) -->
-            <form method="post" action="/admin/end" class="action-form">
-                <button type="submit" class="btn btn-danger"
-                        onclick="return confirmAction(this, 'Are you sure you want to END the simulation? This cannot be undone easily.')">
-                    End Simulation
-                </button>
-            </form>
-
-            <div class="action-divider"></div>
-
-            <!-- Undo (confirm) -->
-            <form method="post" action="/admin/undo" class="action-form">
-                <button type="submit" class="btn btn-warning"
-                        onclick="return confirmAction(this, 'Are you sure you want to UNDO the last period? This will reopen the previous round.')">
-                    Undo Last Period
-                </button>
-            </form>
-        </div>
     </div>
 
     <!-- Right Panel: Team Data Table -->
@@ -226,6 +229,37 @@
 </div>
 {% endif %}
 
+<!-- ── Line Charts Section (per-round trends) ──────────────────── -->
+{% if team_history and team_history.rounds|length > 0 %}
+<div class="charts-section">
+    <div class="charts-row">
+        <div class="card chart-card">
+            <div class="card-title">Revenue per Round</div>
+            <div class="chart-container"><canvas id="lineRevenueChart"></canvas></div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-title">Profit per Round</div>
+            <div class="chart-container"><canvas id="lineProfitChart"></canvas></div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-title">Costs per Round</div>
+            <div class="chart-container"><canvas id="lineCostChart"></canvas></div>
+        </div>
+    </div>
+    <div class="charts-row" style="margin-top:16px">
+        <div class="card chart-card">
+            <div class="card-title">Price Business per Round</div>
+            <div class="chart-container"><canvas id="linePriceBizChart"></canvas></div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-title">Price Leisure per Round</div>
+            <div class="chart-container"><canvas id="linePriceLeiChart"></canvas></div>
+        </div>
+        <div class="card chart-card chart-card-placeholder"></div>
+    </div>
+</div>
+{% endif %}
+
 <!-- ── Footer ──────────────────────────────────────────────────── -->
 <div class="footer">
     Copyright 2026 by Dr. Jose Mendoza
@@ -245,6 +279,13 @@
     /* Confirm destructive actions */
     function confirmAction(btn, message) {
         if (!confirm(message)) return false;
+        return disableBtn(btn);
+    }
+
+    /* End Simulation: open report then submit */
+    function endSimWithReport(btn) {
+        if (!confirm('Are you sure you want to END the simulation? This cannot be undone easily.')) return false;
+        window.open('/admin/report', '_blank');
         return disableBtn(btn);
     }
 
@@ -332,6 +373,63 @@
         }
     })();
 
+    /* ── Auto-refresh Decision Status every 60 seconds ─────── */
+    (function() {
+        var list = document.getElementById('decision-status-list');
+        if (!list) return;
+
+        var updatedEl = document.getElementById('decision-updated');
+
+        function refreshDecisions() {
+            var url = '/api/admin/decisions?_t=' + Date.now();
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('Cache-Control', 'no-cache');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState !== 4) return;
+                if (xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        var roundLabel = document.getElementById('decision-round-label');
+                        if (roundLabel) roundLabel.textContent = 'Round ' + data.current_round;
+                        var teams = data.teams || {};
+                        var keys = Object.keys(teams);
+                        if (keys.length === 0) {
+                            list.innerHTML = '<div class="info-msg">No teams found.</div>';
+                        } else {
+                            var html = '';
+                            for (var i = 0; i < keys.length; i++) {
+                                var tid = keys[i];
+                                var sub = teams[tid];
+                                html += '<div class="decision-status-row">'
+                                    + '<span class="decision-icon ' + (sub ? 'icon-submitted' : 'icon-pending') + '"'
+                                    + ' title="' + (sub ? 'Submitted' : 'Pending') + '">'
+                                    + (sub ? '\u2714' : '\u2717') + '</span>'
+                                    + '<span class="decision-team">Team ' + tid + '</span>'
+                                    + '<span class="decision-label ' + (sub ? 'label-submitted' : 'label-pending') + '">'
+                                    + (sub ? 'Submitted' : 'Pending') + '</span>'
+                                    + '</div>';
+                            }
+                            list.innerHTML = html;
+                        }
+                        if (updatedEl) {
+                            var now = new Date();
+                            updatedEl.textContent = 'Last refreshed: ' + now.toLocaleTimeString();
+                        }
+                    } catch (e) {
+                        console.error('Decision parse error:', e);
+                    }
+                } else {
+                    console.error('Decision poll HTTP error:', xhr.status);
+                }
+                setTimeout(refreshDecisions, 60000);
+            };
+            xhr.send();
+        }
+
+        setTimeout(refreshDecisions, 5000);
+    })();
+
     /* ── Charts ─────────────────────────────────────────────── */
     (function() {
         {% if team_data.teams %}
@@ -341,9 +439,9 @@
         var revShares  = [{% for t in team_data.teams %}{{ (t.market_share_revenue * 100)|round(1) }}{% if not loop.last %}, {% endif %}{% endfor %}];
 
         var palette = [
-            '#57068C', '#8E24AA', '#AB47BC', '#CE93D8',
-            '#4A148C', '#7B1FA2', '#BA68C8', '#E1BEE7',
-            '#311B92', '#5C6BC0'
+            '#57068C', '#E67E22', '#2E86C1', '#28B463',
+            '#E74C3C', '#F1C40F', '#8E44AD', '#1ABC9C',
+            '#D35400', '#3498DB'
         ];
         var bgColors = teamNames.map(function(_, i) { return palette[i % palette.length]; });
 
@@ -367,13 +465,36 @@
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: { font: { size: 11 }, padding: 12, usePointStyle: true }
+                            labels: {
+                                font: { size: 11 },
+                                padding: 12,
+                                usePointStyle: true,
+                                generateLabels: function(chart) {
+                                    var data = chart.data;
+                                    var total = data.datasets[0].data.reduce(function(a, b) { return a + b; }, 0);
+                                    return data.labels.map(function(label, i) {
+                                        var val = data.datasets[0].data[i];
+                                        var pct = total > 0 ? (val / total * 100).toFixed(1) : '0.0';
+                                        return {
+                                            text: label + ' (' + pct + '%)',
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: data.datasets[0].borderColor,
+                                            lineWidth: data.datasets[0].borderWidth,
+                                            pointStyle: 'circle',
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                            }
                         },
                         tooltip: {
                             callbacks: {
                                 label: function(ctx) {
                                     var val = ctx.parsed;
-                                    return ctx.label + ': $' + val.toLocaleString(undefined, {maximumFractionDigits: 0});
+                                    var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                    var pct = total > 0 ? (val / total * 100).toFixed(1) : '0.0';
+                                    return ctx.label + ': $' + val.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' (' + pct + '%)';
                                 }
                             }
                         }
@@ -465,6 +586,98 @@
                 }
             });
         }
+        {% endif %}
+    })();
+
+    /* ── Line Charts (per-round trends) ─────────────────────── */
+    (function() {
+        {% if team_history and team_history.rounds|length > 0 %}
+        var roundLabels = [{% for r in team_history.rounds %}'Round {{ r }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+        var lineColors = [
+            '#57068C', '#E67E22', '#2E86C1', '#28B463',
+            '#E74C3C', '#F1C40F', '#8E44AD', '#1ABC9C',
+            '#D35400', '#3498DB'
+        ];
+
+        var histTeams = {{ team_history.teams | tojson }};
+        var teamIds = Object.keys(histTeams);
+
+        function buildLineDatasets(metric) {
+            return teamIds.map(function(tid, i) {
+                var t = histTeams[tid];
+                return {
+                    label: t.name,
+                    data: t[metric],
+                    borderColor: lineColors[i % lineColors.length],
+                    backgroundColor: lineColors[i % lineColors.length],
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.2,
+                    fill: false
+                };
+            });
+        }
+
+        function lineOpts(dollarFormat) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: { size: 11 },
+                            callback: function(v) {
+                                if (dollarFormat) return '$' + v.toLocaleString();
+                                return v.toLocaleString();
+                            }
+                        },
+                        grid: { color: '#EEE' }
+                    },
+                    x: {
+                        ticks: { font: { size: 11 } },
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11 }, padding: 10, usePointStyle: true }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                var v = ctx.parsed.y;
+                                if (dollarFormat) return ctx.dataset.label + ': $' + v.toLocaleString(undefined, {maximumFractionDigits: 0});
+                                return ctx.dataset.label + ': ' + v.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        /* 1. Revenue per Round */
+        var c1 = document.getElementById('lineRevenueChart');
+        if (c1) new Chart(c1, { type: 'line', data: { labels: roundLabels, datasets: buildLineDatasets('revenue') }, options: lineOpts(true) });
+
+        /* 2. Profit per Round */
+        var c2 = document.getElementById('lineProfitChart');
+        if (c2) new Chart(c2, { type: 'line', data: { labels: roundLabels, datasets: buildLineDatasets('profit') }, options: lineOpts(true) });
+
+        /* 3. Costs per Round */
+        var c3 = document.getElementById('lineCostChart');
+        if (c3) new Chart(c3, { type: 'line', data: { labels: roundLabels, datasets: buildLineDatasets('total_cost') }, options: lineOpts(true) });
+
+        /* 4. Price Business per Round */
+        var c4 = document.getElementById('linePriceBizChart');
+        if (c4) new Chart(c4, { type: 'line', data: { labels: roundLabels, datasets: buildLineDatasets('price_business') }, options: lineOpts(true) });
+
+        /* 5. Price Leisure per Round */
+        var c5 = document.getElementById('linePriceLeiChart');
+        if (c5) new Chart(c5, { type: 'line', data: { labels: roundLabels, datasets: buildLineDatasets('price_leisure') }, options: lineOpts(true) });
+
         {% endif %}
     })();
 </script>

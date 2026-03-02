@@ -20,7 +20,7 @@ html, body {
 
 /* ── Header (matches dashboard_web) ────────────────────────────── */
 .header {
-    height: 120px;
+    height: 150px;
     padding: 0 24px;
     display: flex;
     align-items: center;
@@ -32,8 +32,8 @@ html, body {
 .header-logo {
     position: absolute;
     left: 24px;
-    max-width: 240px;
-    max-height: 100px;
+    max-width: 360px;
+    max-height: 150px;
     object-fit: contain;
 }
 
@@ -91,12 +91,65 @@ html, body {
     to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Actions Bar (horizontal, under header) ────────────────────── */
+.actions-bar {
+    padding: 8px 24px 0;
+}
+
+.actions-card {
+    padding: 10px 16px;
+}
+
+.actions-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.actions-row .action-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.actions-row .action-form-setup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.actions-row .action-form-setup .form-row {
+    margin-bottom: 0;
+}
+
+.actions-row .form-input {
+    width: 140px;
+    flex: none;
+}
+
+.actions-row .form-input-short {
+    width: 55px;
+    max-width: 55px;
+}
+
+.btn-action {
+    width: auto;
+    padding: 0 16px;
+    white-space: nowrap;
+}
+
+.action-divider-v {
+    width: 1px;
+    height: 28px;
+    background: #DDD;
+    flex-shrink: 0;
+}
+
 /* ── Main Grid ─────────────────────────────────────────────────── */
 .main-grid {
     display: flex;
     gap: 20px;
     padding: 16px 24px;
-    min-height: calc(100vh - 120px - 40px);
 }
 
 .panel-left {
@@ -121,9 +174,9 @@ html, body {
 }
 
 .card-table {
-    height: 100%;
     display: flex;
     flex-direction: column;
+    max-height: 380px;
 }
 
 .card-title {
@@ -273,6 +326,15 @@ html, body {
     background: #D35400;
 }
 
+.btn-success {
+    background: #28A745;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #218838;
+}
+
 .btn-refresh {
     margin-left: auto;
     background: #57068C;
@@ -300,6 +362,7 @@ html, body {
 .table-wrap {
     flex: 1;
     overflow: auto;
+    min-height: 0;
 }
 
 .data-table {
@@ -427,6 +490,13 @@ html, body {
     color: #C62828;
 }
 
+.decision-updated {
+    margin-top: 8px;
+    font-size: 10px;
+    color: #999;
+    text-align: right;
+}
+
 /* ── Footer (matches dashboard_web) ────────────────────────────── */
 .footer {
     height: 40px;
@@ -455,4 +525,8 @@ html, body {
 .chart-container {
     position: relative;
     height: 280px;
+}
+
+.chart-card-placeholder {
+    visibility: hidden;
 }

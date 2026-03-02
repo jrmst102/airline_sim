@@ -18,7 +18,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
 
@@ -31,8 +31,10 @@ from admin_dashboard.services.admin_actions import (
 )
 from admin_dashboard.services.team_data import (
     get_decision_status,
+    get_report_data,
     get_simulation_status,
     get_team_table,
+    get_team_history,
 )
 
 # ── Logging ────────────────────────────────────────────────────────────
@@ -72,11 +74,13 @@ def _render_admin(request: Request, msg: str = "", ok: bool = True) -> HTMLRespo
     sim_status = get_simulation_status(DEFAULT_SIM_ID)
     team_data = get_team_table(DEFAULT_SIM_ID)
     decision_status = get_decision_status(DEFAULT_SIM_ID)
+    team_history = get_team_history(DEFAULT_SIM_ID)
     template = _jinja_env.get_template("admin_home.html")
     html = template.render(
         sim_status=sim_status,
         team_data=team_data,
         decision_status=decision_status,
+        team_history=team_history,
         msg=msg,
         ok=ok,
         sim_id=DEFAULT_SIM_ID,
@@ -152,6 +156,20 @@ async def api_teams():
     return get_team_table(DEFAULT_SIM_ID)
 
 
+@app.get("/api/admin/decisions")
+async def api_decisions():
+    """JSON endpoint for decision submission status (for AJAX polling)."""
+    data = get_decision_status(DEFAULT_SIM_ID)
+    return JSONResponse(
+        content=data,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
+
+
 @app.get("/logo.png")
 async def logo():
     """Serve the simulation logo."""
@@ -159,3 +177,22 @@ async def logo():
         return FileResponse(str(_LOGO_PATH), media_type="image/png")
     # 1×1 transparent pixel fallback
     return HTMLResponse(content="", status_code=404)
+
+
+@app.get("/admin/report", response_class=HTMLResponse)
+async def admin_report():
+    """Render a printable final results report in a new window."""
+    from datetime import datetime, timezone
+
+    data = get_report_data(DEFAULT_SIM_ID)
+    template = _jinja_env.get_template("report.html")
+    html = template.render(
+        simulation=data["simulation"],
+        final_results=data["final_results"],
+        decisions_history=data["decisions_history"],
+        performance_history=data["performance_history"],
+        rounds=data["rounds"],
+        team_names=data["team_names"],
+        generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+    )
+    return HTMLResponse(content=html)
