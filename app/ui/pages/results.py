@@ -22,12 +22,10 @@ def render(sim_id: str, team_id: str = "T1") -> None:
 	configure_page(st)
 	load_css()
 
-	root_dir = Path("simulations")
+	root_dir = Path("simulation/simulations")
 	snapshot = build_ui_snapshot(simulation_id=sim_id, root_dir=root_dir, team_id=team_id)
 	render_standard_header(simulation_id=sim_id, snapshot=snapshot)
-
-	with st.sidebar:
-		render_sidebar_navigation(st, active_item="Display Round Results")
+	render_sidebar_navigation(st, active_item="Display Round Results")
 
 	def main_renderer() -> None:
 		card("Results", "Market and team reporting")

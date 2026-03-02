@@ -22,12 +22,10 @@ def render(sim_id: str) -> None:
 	configure_page(st)
 	load_css()
 
-	root_dir = Path("simulations")
+	root_dir = Path("simulation/simulations")
 	snapshot = build_ui_snapshot(simulation_id=sim_id, root_dir=root_dir)
 	render_standard_header(simulation_id=sim_id, snapshot=snapshot)
-
-	with st.sidebar:
-		render_sidebar_navigation(st, active_item="Home")
+	render_sidebar_navigation(st, active_item="Home")
 
 	def main_renderer() -> None:
 		card("Setup Simulation", "Create or overwrite a simulation workspace")

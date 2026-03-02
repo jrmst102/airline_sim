@@ -305,7 +305,7 @@ airline_sim/
 │       └── static/
 ├── simulation/
 │   └── simulations/         # Simulation data (CSV files)
-│   └── sim_001/
+│       └── sim_001/
 ├── tests/                   # Test suite
 │   ├── simulation_test_suite.py
 │   └── helpers/

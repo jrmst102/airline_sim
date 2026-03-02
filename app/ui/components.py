@@ -197,7 +197,7 @@ def get_streamlit():
 def configure_page(st, *, page_title: str = SIMULATION_TITLE) -> None:
 	if st.session_state.get("_airline_sim_page_configured"):
 		return
-	st.set_page_config(page_title=page_title, layout="wide", initial_sidebar_state="expanded")
+	st.set_page_config(page_title=page_title, layout="wide", initial_sidebar_state="collapsed")
 	st.session_state["_airline_sim_page_configured"] = True
 
 

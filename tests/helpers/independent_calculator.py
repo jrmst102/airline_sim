@@ -114,7 +114,7 @@ def compute_independent(
     Parameters
     ----------
     sim_path : Path
-        Path to the simulation folder (e.g. ``simulations/sim_001``).
+        Path to the simulation folder (e.g. ``simulation/simulations/sim_001``).
     round_number : int
         Which round to compute results for.
 

@@ -39,7 +39,7 @@ def _data_root() -> Path:
 
 def _sim_dir(sim_id: str) -> Path:
     """Return the directory for a given simulation ID."""
-    return _data_root() / "simulations" / sim_id
+    return _data_root() / "simulation" / "simulations" / sim_id
 
 
 # ---------------------------------------------------------------------------

@@ -31,7 +31,7 @@ from app.modules.move_next_round import move_next_round
 PAGE_TITLE = "Airlines - Competitive Strategy Simulation"
 COPYRIGHT = "Copyright 2026 by Dr. Jose Mendoza"
 SIM_ID = "sim_001"
-ROOT_DIR = Path("simulations")
+ROOT_DIR = Path("simulation/simulations")
 ADMIN_USER_ID = "U_ADMIN"
 
 TEAM_OPTIONS = ["A", "B", "C", "D", "E", "F"]
@@ -55,7 +55,7 @@ def _data_root() -> Path:
 
 
 def _sim_dir() -> Path:
-    return _data_root() / "simulations" / SIM_ID
+    return _data_root() / "simulation" / "simulations" / SIM_ID
 
 
 # ---------------------------------------------------------------------------
