@@ -116,6 +116,40 @@ def move_next_round(
 		and _as_int(row.get("round_number", "0")) == open_round_number
 	]
 
+	# Build a lookup of which teams already have a decision this round
+	teams_with_decisions = {row.get("team_id") for row in round_decisions}
+
+	# For teams that did NOT submit a decision this round, carry forward
+	# their most recent previous decision (or the seeded baseline).
+	for team_id in active_team_ids:
+		if team_id not in teams_with_decisions:
+			# Find the latest decision for this team from any earlier round
+			prev = [
+				row for row in decision_rows_all
+				if row.get("team_id") == team_id
+				and row.get("simulation_id") == simulation_id
+				and _as_int(row.get("round_number", "0")) < open_round_number
+			]
+			if prev:
+				# Use the decision from the most recent round
+				prev.sort(key=lambda r: _as_int(r.get("round_number", "0")))
+				fallback = dict(prev[-1])
+			else:
+				# No previous decision at all — use hard-coded defaults
+				fallback = {
+					"team_id": team_id,
+					"flights_per_day": "3",
+					"price_business": "360",
+					"price_leisure": "180",
+					"branding_level": "Medium",
+					"product_strategy": "Medium",
+				}
+			# Add as a carried-forward decision for this round
+			fallback["round_number"] = str(open_round_number)
+			fallback["simulation_id"] = simulation_id
+			fallback["submitted_at_utc"] = _utc_now()
+			round_decisions.append(fallback)
+
 	engine_decisions = [
 		TeamDecisionInput(
 			team_id=row.get("team_id", ""),
