@@ -22,12 +22,23 @@ DEFAULT_SIM_ID = "sim_001"
 def get_decision_status(simulation_id: str = DEFAULT_SIM_ID) -> dict:
     """Return per-team decision submission status for the current round.
 
+    Only counts decisions that were **manually submitted** by a team user.
+    Seeded baseline decisions (created during setup) are ignored — they
+    have the same ``submitted_at_utc`` as the simulation's ``created_at_utc``.
+
     Returns a dict with:
       - ``current_round`` (int)
       - ``teams`` — dict mapping team_id → bool (True = submitted)
     """
     status = get_simulation_status(simulation_id)
     current_round = status["current_round"]
+
+    # Get the simulation creation timestamp so we can filter out seeded defaults
+    seed_timestamp = ""
+    if csv_exists(simulation_id, "simulation.csv"):
+        _, sim_rows = load_csv(simulation_id, "simulation.csv")
+        if sim_rows:
+            seed_timestamp = sim_rows[0].get("created_at_utc", "")
 
     # Read all active teams
     team_ids: list[str] = []
@@ -36,7 +47,7 @@ def get_decision_status(simulation_id: str = DEFAULT_SIM_ID) -> dict:
             if row.get("is_active", "0") == "1":
                 team_ids.append(row.get("team_id", ""))
 
-    # Read decisions for the current round
+    # Read decisions for the current round — skip seeded defaults
     submitted: dict[str, bool] = {tid: False for tid in team_ids}
     if csv_exists(simulation_id, "decisions.csv") and current_round > 0:
         for row in read_csv_rows(simulation_id, "decisions.csv"):
@@ -47,6 +58,10 @@ def get_decision_status(simulation_id: str = DEFAULT_SIM_ID) -> dict:
                 pass
             if rn == current_round:
                 tid = row.get("team_id", "")
+                sub_ts = row.get("submitted_at_utc", "")
+                # Skip if this is a seeded baseline decision
+                if seed_timestamp and sub_ts == seed_timestamp:
+                    continue
                 if tid in submitted:
                     submitted[tid] = True
 
