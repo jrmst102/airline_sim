@@ -119,6 +119,27 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/team/state")
+async def team_state(request: Request):
+    """Lightweight JSON endpoint for client-side polling.
+
+    Returns the current simulation state so the browser can detect
+    changes (e.g. simulation started, round advanced) and auto-refresh.
+    Requires a valid session cookie.
+    """
+    session = _get_session(request)
+    if not session:
+        return {"error": "unauthenticated"}
+    sim_id = session.get("sim_id", DEFAULT_SIM_ID)
+    state = get_simulation_state(sim_id)
+    return {
+        "status": state["status"],
+        "current_round": state["current_round"],
+        "is_started": state["is_started"],
+        "is_ended": state["is_ended"],
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 async def root():
     return RedirectResponse(url="/team/login", status_code=302)
