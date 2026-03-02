@@ -8,8 +8,10 @@ This repository provides:
 
 - CSV-backed simulation state and lifecycle modules
 - Core round/state/market computation models
-- Streamlit UI views for admin and team workflows
+- Streamlit UI views for admin and team workflows (page-based navigation)
 - Standalone FastAPI web dashboard with Plotly.js charts
+- DigitalOcean Spaces cloud storage with local filesystem fallback
+- Centralised CSV manager routed through the storage abstraction layer
 - 32-scenario test suite with dual-layer verification (engine + independent calculator)
 
 ## Quick Start
@@ -23,8 +25,8 @@ pip install -r requirements.txt
 Then choose how to run:
 
 ```bash
-# Streamlit admin/team UI
-python -m streamlit run app/ui/dashboard.py
+# Streamlit admin dashboard (page-based UI)
+python run_admin_dashboard.py
 
 # Standalone web dashboard (FastAPI + Plotly.js)
 python run_dashboard.py
@@ -40,7 +42,27 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Dependencies: `bcrypt`, `gspread`, `google-auth`, `fastapi`, `uvicorn`, `jinja2`.
+Dependencies: `bcrypt`, `boto3`, `gspread`, `google-auth`, `python-dotenv`.
+
+### DigitalOcean Spaces (optional)
+
+For cloud storage, copy `.env.example` to `.env` and fill in your Spaces credentials:
+
+```bash
+cp .env.example .env
+```
+
+Required environment variables (only when Spaces is enabled):
+
+| Variable | Default |
+| --- | --- |
+| `SPACES_ACCESS_KEY_ID` | *(required)* |
+| `SPACES_SECRET_ACCESS_KEY` | *(required)* |
+| `SPACES_REGION` | `sfo3` |
+| `SPACES_BUCKET` | `airlines-sim` |
+| `SPACES_ENDPOINT` | `https://sfo3.digitaloceanspaces.com` |
+
+If `SPACES_ACCESS_KEY_ID` is **not** set, the system falls back to local filesystem I/O — no cloud dependency is required for development.
 
 ## Decision Variables
 
@@ -148,23 +170,24 @@ python -m app.modules.export_results_batch sim_001 --section both --output-type 
 
 This writes results to worksheets named `SimResults_Market` and `SimResults_Team`.
 
-### Option 2: Streamlit GUI
+### Option 2: Streamlit GUI (Admin Dashboard)
 
-1. **Launch Streamlit dashboard**
+1. **Launch the admin dashboard**
 
 ```bash
-python -m streamlit run app/ui/dashboard.py
+python run_admin_dashboard.py              # default: http://0.0.0.0:8501
+python run_admin_dashboard.py --port 8502   # custom port
 ```
 
 2. **Open the local URL shown by Streamlit** (usually `http://localhost:8501`).
 
-3. **Run the lifecycle from the UI**
-	- Use **Setup** to initialize simulation/team data.
-	- Use **Start** to begin round processing.
-	- Use **Enter Decision** (team workflow) to submit team decisions.
-	- Use **Move Next** to compute and advance rounds.
-	- Use **Display Results** / insights to review outcomes.
-	- Use **End** when the simulation is complete.
+3. **Navigate through the page-based UI**
+	- **Home** — Choose Admin or Team view.
+	- **Setup** — Initialize simulation/team data.
+	- **Decisions** — Submit team decisions.
+	- **Results** — Review round outcomes and insights.
+
+UI pages live in `app/ui/pages/` (Home, Setup, Decisions, Results).
 
 ### Option 3: Web Dashboard (FastAPI)
 
@@ -238,15 +261,25 @@ python main.py historical-decisions-team sim_001
 
 ## UI Usage (Streamlit)
 
-Launch the dashboard UI:
+Launch the admin dashboard:
 
 ```bash
-python -m streamlit run app/ui/dashboard.py
+python run_admin_dashboard.py
 ```
 
-The UI also includes dedicated views in:
+The UI uses a page-based navigation model with pages in `app/ui/pages/`:
 
-- `app/ui/admin_view.py` — Admin controls (setup, start, move, end, parameter changes)
+| Page | File | Purpose |
+| --- | --- | --- |
+| Home | `app/ui/pages/home.py` | Workspace selector (Admin / Team view) |
+| Setup | `app/ui/pages/setup.py` | Initialize simulation and teams |
+| Decisions | `app/ui/pages/decisions.py` | Submit team decisions |
+| Results | `app/ui/pages/results.py` | Display round results and insights |
+
+Supporting UI modules:
+
+- `app/ui/components.py` — Shared UI components, cards, headers, sidebar navigation
+- `app/ui/layout.py` — CSS loading and page shell
 - `app/ui/team_view.py` — Team decision entry and historical results
 
 ## Test Suite
@@ -282,21 +315,48 @@ python -m tests.simulation_test_suite --seed 42
 | `tests/helpers/independent_calculator.py` | From-scratch formula reimplementation (no engine imports) |
 | `tests/helpers/comparator.py` | Comparison logic and diff reporting |
 
+## Storage Layer
+
+All simulation CSV I/O is routed through a centralised storage abstraction:
+
+| Module | Purpose |
+| --- | --- |
+| `app/storage/config.py` | Reads Spaces credentials from environment / `.env` |
+| `app/storage/spaces_store.py` | S3-compatible client with local filesystem fallback |
+| `app/data/csv_manager.py` | Centralised CSV read/write helpers via the storage layer |
+
+The store is selected automatically at runtime:
+- **Spaces mode** — when `SPACES_ACCESS_KEY_ID` is set, all reads/writes go to the configured DigitalOcean Spaces bucket.
+- **Local mode** — otherwise, files are read/written relative to the project root (no cloud dependency).
+
 ## Project Structure
 
 ```
 airline_sim/
 ├── main.py                  # CLI command router
-├── run_dashboard.py         # Web dashboard launcher
+├── run_dashboard.py         # Web dashboard launcher (FastAPI)
+├── run_admin_dashboard.py   # Admin dashboard launcher (Streamlit)
 ├── requirements.txt
+├── .env.example             # Spaces credential template
 ├── app/
 │   ├── main.py              # CLI entry point
 │   ├── config.py
 │   ├── auth/                # Login, password, permissions
 │   ├── core/                # Simulation engine, demand/cost/pricing models
-│   ├── data/                # CSV I/O, schema validation, backups
+│   ├── data/                # CSV manager, schema validation, backups
 │   ├── modules/             # Lifecycle modules (setup, start, decisions, etc.)
-│   └── ui/                  # Streamlit views (admin, team, dashboard)
+│   ├── storage/             # Storage abstraction (Spaces + local fallback)
+│   │   ├── config.py
+│   │   └── spaces_store.py
+│   └── ui/                  # Streamlit views
+│       ├── components.py
+│       ├── layout.py
+│       ├── team_view.py
+│       └── pages/           # Page-based navigation
+│           ├── home.py
+│           ├── setup.py
+│           ├── decisions.py
+│           └── results.py
 ├── code/
 │   └── dashboard_web/       # Standalone FastAPI web dashboard
 │       ├── app.py
@@ -306,6 +366,7 @@ airline_sim/
 ├── simulation/
 │   └── simulations/         # Simulation data (CSV files)
 │       └── sim_001/
+├── backup/                  # Pre-migration backups
 ├── tests/                   # Test suite
 │   ├── simulation_test_suite.py
 │   └── helpers/
