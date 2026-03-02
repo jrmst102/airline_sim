@@ -6,14 +6,16 @@ Airlines simulation for the Competitive Strategy course.
 
 This repository provides:
 
+- **Unified web application** — single FastAPI app serving both Admin and Team dashboards behind a shared login page
 - CSV-backed simulation state and lifecycle modules
 - Core round/state/market computation models
-- Admin dashboard (FastAPI + Jinja2, no Streamlit) with simulation controls and live team table
-- Team dashboard (FastAPI + Jinja2, no Streamlit) with login, decision entry, and performance view
+- Admin dashboard with simulation controls, live team table, interactive charts (pie, bar, line), and printable final report
+- Team dashboard with login, decision entry, performance view, and auto-refresh
 - Standalone FastAPI web dashboard with Plotly.js charts
 - DigitalOcean Spaces cloud storage with local filesystem fallback
 - Centralised CSV manager routed through the storage abstraction layer
 - 32-scenario test suite with dual-layer verification (engine + independent calculator)
+- Ready to deploy on DigitalOcean App Platform
 
 ## Quick Start
 
@@ -23,18 +25,22 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Then choose how to run:
+Then run the unified application:
 
 ```bash
-# Admin dashboard (FastAPI + Jinja2, no Streamlit)
+# Unified app (Admin + Team dashboards with shared login)
 python run_admin_dashboard.py              # default: http://0.0.0.0:8080
 
-# Team dashboard (FastAPI + Jinja2, no Streamlit)
+# Or equivalently:
 python run_team_dashboard.py               # default: http://0.0.0.0:8081
 
 # Standalone web dashboard (FastAPI + Plotly.js)
 python run_dashboard.py                    # default: http://0.0.0.0:8000
 ```
+
+Both `run_admin_dashboard.py` and `run_team_dashboard.py` launch the same unified app. The login page at `/` routes users to the correct dashboard based on their credentials:
+- **Admin** credentials → Admin Dashboard (`/admin`)
+- **Team** credentials → Team Dashboard (`/team`)
 
 ## Setup
 
@@ -174,9 +180,9 @@ python -m app.modules.export_results_batch sim_001 --section both --output-type 
 
 This writes results to worksheets named `SimResults_Market` and `SimResults_Team`.
 
-### Option 2: Admin Dashboard (FastAPI)
+### Option 2: Unified Dashboard (FastAPI)
 
-A server-rendered admin panel for simulation control and live team data. Uses FastAPI + Jinja2 templates — no Streamlit.
+A single FastAPI application serving both the Admin and Team dashboards behind a shared login page. Uses Jinja2 templates with signed session cookies — no Streamlit.
 
 ```bash
 python run_admin_dashboard.py              # default: http://0.0.0.0:8080
@@ -184,13 +190,24 @@ python run_admin_dashboard.py --port 8090   # custom port
 python run_admin_dashboard.py --reload      # auto-reload for development
 ```
 
-Features:
+#### Login
+
+All users log in at `/` (or `/team/login`). Credentials are stored in `code/team_dashboard/usernames.csv`:
+- **Admin** credentials → redirected to `/admin` (Admin Dashboard)
+- **Team** credentials → redirected to `/team` (Team Dashboard)
+- Admin routes (`/admin/*`) are protected by session middleware — unauthenticated users are redirected to login
+
+#### Admin Dashboard Features
+
 - **Status panel** — current round, simulation status (CREATED/STARTED/ENDED), last-updated timestamp
-- **Decision status** — per-team icons (✔ Submitted / ✗ Pending) for the current round; ignores seeded baseline defaults
-- **Admin actions** — Set Up Simulation, Start, Move to Next Round, End, Undo Last Period (all POST endpoints)
+- **Decision status** — per-team icons (✔ Submitted / ✗ Pending) for the current round; auto-refreshes every 30 seconds and on tab focus
+- **Admin actions** — Set Up Simulation (with confirmation warning), Start, Move to Next Round (green button), End Simulation, Undo Last Period
 - **Move to Next Round** — processes the current round (computes results for all teams) and advances; teams that did not submit decisions automatically repeat their previous round's choices
 - **Team data table** — reads `round_results_team.csv` from Spaces (or local), sortable columns, AJAX refresh
-- **Safety** — confirm prompts on destructive actions, double-click protection
+- **Charts** — Pie chart (team profits), bar charts (market share by volume and revenue), and 5 line charts (Revenue, Profit, Costs, Price Business, Price Leisure per round per team) with multicolor palette
+- **End Simulation report** — opens a printable report in a new window with final results, decisions history, and performance history by round
+- **Logout** — link in the header returns to the login page
+- **Safety** — confirm prompts on destructive actions (Setup warns about data loss), double-click protection
 - NYU-themed styling consistent with `dashboard_web`
 
 Admin action endpoints (all POST):
@@ -209,21 +226,13 @@ Dashboard files live in `code/admin_dashboard/`:
 | --- | --- |
 | `code/admin_dashboard/app.py` | FastAPI application, routes, Jinja2 rendering |
 | `code/admin_dashboard/services/admin_actions.py` | Thin wrappers around simulation modules |
-| `code/admin_dashboard/services/team_data.py` | Reads team CSV from Spaces → table payload |
-| `code/admin_dashboard/templates/admin_home.html` | Admin page template |
+| `code/admin_dashboard/services/team_data.py` | Reads team CSV from Spaces → table payload, chart data, report data |
+| `code/admin_dashboard/templates/admin_home.html` | Admin page template (charts, decision polling, actions) |
+| `code/admin_dashboard/templates/report.html` | Printable end-of-simulation report template |
 | `code/admin_dashboard/static/admin.css` | NYU-themed CSS |
 
-### Option 3: Team Dashboard (FastAPI)
+#### Team Dashboard Features
 
-A server-rendered team-facing dashboard for entering decisions and viewing performance. Uses FastAPI + Jinja2 templates with signed session cookies — no Streamlit.
-
-```bash
-python run_team_dashboard.py               # default: http://0.0.0.0:8081
-python run_team_dashboard.py --port 8082   # custom port
-python run_team_dashboard.py --reload      # auto-reload for development
-```
-
-Features:
 - **Login page** — teams authenticate with credentials from `usernames.csv` (e.g. `Team1` / `MrGreen3`); usernames map to team IDs (`Team1`→A … `Team6`→F)
 - **Decision form** — flights per day, business/leisure prices, branding level, product strategy; pre-filled from previous round
 - **Save & Undo** — upsert decisions for the current round or undo to reset to defaults
@@ -240,33 +249,51 @@ Required environment variables:
 | --- | --- |
 | `SESSION_SECRET` | `airline-sim-dev-secret` (override in production) |
 
-Team dashboard endpoints:
+All endpoints:
 
 | Endpoint | Method | Action |
 | --- | --- | --- |
+| `/` | GET | Redirect to login |
 | `/team/login` | GET | Login form |
-| `/team/login` | POST | Authenticate and set session |
-| `/team` | GET | Team home (requires session) |
+| `/team/login` | POST | Authenticate and route to `/admin` or `/team` |
+| `/team` | GET | Team home (requires team session) |
 | `/team/save` | POST | Save decisions for current round |
 | `/team/undo` | POST | Undo current-round decisions |
 | `/team/state` | GET | JSON simulation state for auto-refresh polling |
 | `/team/logout` | GET | Clear session and redirect to login |
+| `/admin` | GET | Admin dashboard (requires admin session) |
+| `/admin/setup` | POST | Initialise simulation |
+| `/admin/start` | POST | Start simulation |
+| `/admin/end` | POST | End simulation |
+| `/admin/next-round` | POST | Process round and advance |
+| `/admin/undo` | POST | Undo last period |
+| `/admin/report` | GET | Printable final results report |
+| `/api/admin/status` | GET | JSON simulation status |
+| `/api/admin/teams` | GET | JSON team data |
+| `/api/admin/decisions` | GET | JSON decision status (no-cache) |
+| `/health` | GET | Health check (`{"status": "ok"}`) |
 
-Dashboard files live in `code/team_dashboard/`:
+Dashboard files:
 
 | File | Purpose |
 | --- | --- |
-| `code/team_dashboard/app.py` | FastAPI application, routes, session management |
-| `code/team_dashboard/main.py` | App Platform entry point (path setup + re-exports `app`) |
-| `code/team_dashboard/services/team_auth.py` | Authentication against `usernames.csv` (plain-text credentials) |
-| `code/team_dashboard/usernames.csv` | Team credentials file (username,password per line) |
+| `code/team_dashboard/main.py` | Unified entry point — mounts both dashboards, session guard, static files |
+| `code/team_dashboard/app.py` | Team routes, session management |
+| `code/team_dashboard/services/team_auth.py` | Authentication against `usernames.csv` (admin + team users) |
+| `code/team_dashboard/usernames.csv` | Credentials file (username,password per line) |
 | `code/team_dashboard/services/team_decisions.py` | Decision defaults, save/upsert, undo, past decisions |
 | `code/team_dashboard/services/team_performance.py` | Team performance data from `round_results_team.csv` |
-| `code/team_dashboard/templates/team_login.html` | Login page template |
+| `code/team_dashboard/templates/team_login.html` | Shared login page template |
 | `code/team_dashboard/templates/team_home.html` | Team home template (form + metrics + tables) |
-| `code/team_dashboard/static/team.css` | NYU-themed CSS |
+| `code/team_dashboard/static/team.css` | Team NYU-themed CSS |
+| `code/admin_dashboard/app.py` | Admin routes, Jinja2 rendering |
+| `code/admin_dashboard/services/admin_actions.py` | Simulation action wrappers |
+| `code/admin_dashboard/services/team_data.py` | Team table, chart data, report data |
+| `code/admin_dashboard/templates/admin_home.html` | Admin page (charts, polling, actions) |
+| `code/admin_dashboard/templates/report.html` | Printable report |
+| `code/admin_dashboard/static/admin.css` | Admin NYU-themed CSS |
 
-### Option 4: Web Dashboard (FastAPI)
+### Option 3: Web Dashboard (FastAPI)
 
 A standalone web dashboard for viewing simulation results. Uses FastAPI on the backend and Plotly.js for interactive charts. No Streamlit required.
 
@@ -336,17 +363,15 @@ python main.py historical-decisions-team sim_001
 - Use a Google service-account JSON key via `--credentials-json`.
 - Share the target spreadsheet with the service-account email so it can read/write.
 
-## Admin Dashboard (no Streamlit)
+## Unified Dashboard
 
-The admin dashboard is a standalone FastAPI application in `code/admin_dashboard/`. It reads and writes all data through the centralised storage layer (DigitalOcean Spaces or local fallback).
+The application is a single FastAPI server in `code/team_dashboard/main.py` that mounts both the Admin and Team dashboards. It reads and writes all data through the centralised storage layer (DigitalOcean Spaces or local fallback).
 
 ```bash
-python run_admin_dashboard.py
+python run_admin_dashboard.py    # or: python run_team_dashboard.py
 ```
 
-The admin page displays a status panel, decision status icons per team, five action buttons (Setup / Start / Move to Next Round / End / Undo), and a live team-data table sourced from `round_results_team.csv`.
-
-Team data columns displayed: Passengers, Revenue, Total Cost, Profit, Volume Share, Profit Share, Load Factor, Business Price, Leisure Price, CSI, OEI.
+The login page at `/` accepts both Admin and Team credentials and routes users to the appropriate dashboard. Admin routes are protected by session middleware.
 
 ### Required environment variables
 
@@ -405,8 +430,8 @@ The store is selected automatically at runtime:
 airline_sim/
 ├── main.py                  # CLI command router
 ├── run_dashboard.py         # Web dashboard launcher (FastAPI)
-├── run_admin_dashboard.py   # Admin dashboard launcher (FastAPI)
-├── run_team_dashboard.py    # Team dashboard launcher (FastAPI)
+├── run_admin_dashboard.py   # Unified dashboard launcher (FastAPI, port 8080)
+├── run_team_dashboard.py    # Unified dashboard launcher (FastAPI, port 8081)
 ├── kill_port.py             # Kill process on port 8080
 ├── Procfile                 # App Platform run command
 ├── app.yaml                 # DigitalOcean App Platform spec
@@ -433,20 +458,22 @@ airline_sim/
 │           └── results.py
 ├── code/
 │   ├── __init__.py
-│   ├── admin_dashboard/     # Admin dashboard (FastAPI + Jinja2)
+│   ├── admin_dashboard/     # Admin dashboard routes & templates
 │   │   ├── app.py
 │   │   ├── services/
 │   │   │   ├── admin_actions.py
 │   │   │   └── team_data.py
 │   │   ├── templates/
+│   │   │   ├── admin_home.html
+│   │   │   └── report.html
 │   │   └── static/
-│   ├── team_dashboard/      # Team dashboard (FastAPI + Jinja2)
+│   ├── team_dashboard/      # Team dashboard routes & unified entry point
 │   │   ├── __init__.py
-│   │   ├── app.py
-│   │   ├── main.py          # App Platform entry point (re-exports app)
-│   │   ├── usernames.csv    # Team credentials (username,password)
+│   │   ├── app.py           # Team routes, session management
+│   │   ├── main.py          # Unified entry point (mounts admin + team)
+│   │   ├── usernames.csv    # All credentials (Admin + Teams)
 │   │   ├── services/
-│   │   │   ├── team_auth.py
+│   │   │   ├── team_auth.py # Auth for both admin and team users
 │   │   │   ├── team_decisions.py
 │   │   │   └── team_performance.py
 │   │   ├── templates/
@@ -476,7 +503,7 @@ UI text is centralized in `app/ui/components.py`.
 
 ## Deploying to DigitalOcean App Platform
 
-The Team Dashboard is ready to deploy as a web service on [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform). The app reads/writes all CSV data through DigitalOcean Spaces — no local persistence is needed.
+The unified application (Admin + Team dashboards) is ready to deploy as a single web service on [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform). The app reads/writes all CSV data through DigitalOcean Spaces — no local persistence is needed.
 
 ### Run command & module path
 
@@ -528,10 +555,10 @@ export SPACES_ENDPOINT=https://sfo3.digitaloceanspaces.com
 export SESSION_SECRET=some-random-secret
 
 # Using the Procfile command:
-uvicorn code.team_dashboard.main:app --host 0.0.0.0 --port 8081
+uvicorn code.team_dashboard.main:app --host 0.0.0.0 --port 8080
 
 # Or using the launcher script:
-python run_team_dashboard.py
+python run_admin_dashboard.py
 ```
 
 ### Health check
@@ -548,9 +575,13 @@ curl https://your-app-url.ondigitalocean.app/health
 After deployment, verify each item:
 
 - `/health` returns `200` with `{"status":"ok"}`
-- `/team/login` loads the login page
-- Login works with credentials from `usernames.csv` (e.g. `Team1` / `MrGreen3`)
-- Decision page loads and shows simulation status / round indicators
+- `/team/login` loads the shared login page
+- Admin login works (e.g. `Admin` / `RoadRunner1`) → redirected to `/admin`
+- Team login works (e.g. `Team1` / `MrGreen3`) → redirected to `/team`
+- `/admin` is protected — unauthenticated access redirects to login
+- Admin dashboard shows charts, decision status, and action buttons
+- Team decision page loads and shows simulation status / round indicators
 - Save writes decisions to Spaces (verify by checking the updated CSV in the bucket)
 - Undo works (team-scoped; does not affect other teams)
 - Past decisions table shows only when simulation is started and round > 1
+- Logout from either dashboard returns to the login page
