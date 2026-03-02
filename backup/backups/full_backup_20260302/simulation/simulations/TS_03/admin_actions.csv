@@ -1,0 +1,3 @@
+event_id,simulation_id,admin_user_id,action,details,event_at_utc
+E1,TS_03,U_ADMIN,SETUP_SIMULATION,Created simulation 'Scenario 3: One airline highest prices' with 6 airlines and 3 rounds,2026-03-01T16:59:56.425243+00:00
+E2,TS_03,U_ADMIN,START_SIMULATION,Started simulation and opened round 1,2026-03-01T16:59:56.430257+00:00

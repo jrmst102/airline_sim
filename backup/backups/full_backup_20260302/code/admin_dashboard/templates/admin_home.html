@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1366, initial-scale=1">
+    <title>Airlines - Admin Dashboard</title>
+    <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<div class="header">
+    <img src="/logo.png" alt="Logo" class="header-logo">
+    <div class="header-center">
+        <div class="header-title">Airlines - Admin Dashboard</div>
+        <div class="header-subtitle">Competitive Strategy Simulation</div>
+    </div>
+</div>
+
+<!-- ── Banner (flash message) ──────────────────────────────────── -->
+{% if msg %}
+<div class="banner {{ 'banner-success' if ok else 'banner-error' }}" id="banner">
+    <span>{{ msg }}</span>
+    <button class="banner-close" onclick="document.getElementById('banner').remove()">✕</button>
+</div>
+{% endif %}
+
+<!-- ── Main Grid ───────────────────────────────────────────────── -->
+<div class="main-grid">
+
+    <!-- Left Panel: Status + Actions -->
+    <div class="panel panel-left">
+
+        <!-- Status Card -->
+        <div class="card">
+            <div class="card-title">Simulation Status</div>
+            <div class="status-grid">
+                <div class="status-label">Status</div>
+                <div class="status-value status-badge
+                    {% if sim_status.status == 'STARTED' %}badge-running
+                    {% elif sim_status.status == 'ENDED' %}badge-ended
+                    {% elif sim_status.status == 'CREATED' %}badge-created
+                    {% else %}badge-default{% endif %}">
+                    {{ sim_status.status }}
+                </div>
+                <div class="status-label">Current Round</div>
+                <div class="status-value">{{ sim_status.current_round }} / {{ sim_status.total_rounds }}</div>
+                <div class="status-label">Simulation</div>
+                <div class="status-value">{{ sim_status.name or sim_id }}</div>
+                <div class="status-label">Last Updated</div>
+                <div class="status-value status-time">{{ sim_status.updated_at_utc or '—' }}</div>
+            </div>
+        </div>
+
+        <!-- Decision Status Card -->
+        {% if sim_status.status == 'STARTED' %}
+        <div class="card">
+            <div class="card-title">Decision Status <span class="card-subtitle">Round {{ decision_status.current_round }}</span></div>
+            <div class="decision-status-list">
+                {% for tid, submitted in decision_status.teams.items() %}
+                <div class="decision-status-row">
+                    <span class="decision-icon {{ 'icon-submitted' if submitted else 'icon-pending' }}"
+                          title="{{ 'Submitted' if submitted else 'Pending' }}">
+                        {{ '✔' if submitted else '✗' }}
+                    </span>
+                    <span class="decision-team">Team {{ tid }}</span>
+                    <span class="decision-label {{ 'label-submitted' if submitted else 'label-pending' }}">
+                        {{ 'Submitted' if submitted else 'Pending' }}
+                    </span>
+                </div>
+                {% endfor %}
+                {% if not decision_status.teams %}
+                <div class="info-msg">No teams found.</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Actions Card -->
+        <div class="card">
+            <div class="card-title">Admin Actions</div>
+
+            <!-- Setup -->
+            <form method="post" action="/admin/setup" class="action-form">
+                <div class="form-row">
+                    <label for="sim_name">Simulation Name</label>
+                    <input type="text" id="sim_name" name="sim_name"
+                           value="Airline Simulation" class="form-input">
+                </div>
+                <div class="form-row">
+                    <label for="total_rounds">Rounds</label>
+                    <input type="number" id="total_rounds" name="total_rounds"
+                           value="3" min="1" max="20" class="form-input form-input-short">
+                </div>
+                <button type="submit" class="btn btn-primary"
+                        onclick="return disableBtn(this)">
+                    Set Up Simulation
+                </button>
+            </form>
+
+            <div class="action-divider"></div>
+
+            <!-- Start -->
+            <form method="post" action="/admin/start" class="action-form">
+                <button type="submit" class="btn btn-primary"
+                        onclick="return disableBtn(this)">
+                    Start Simulation
+                </button>
+            </form>
+
+            <div class="action-divider"></div>
+
+            <!-- Move to Next Round -->
+            <form method="post" action="/admin/next-round" class="action-form">
+                <button type="submit" class="btn btn-primary"
+                        onclick="return confirmAction(this, 'Process the current round and advance to the next? This will close the current round, compute results, and open the next round.')">
+                    Move to Next Round
+                </button>
+            </form>
+
+            <div class="action-divider"></div>
+
+            <!-- End (confirm) -->
+            <form method="post" action="/admin/end" class="action-form">
+                <button type="submit" class="btn btn-danger"
+                        onclick="return confirmAction(this, 'Are you sure you want to END the simulation? This cannot be undone easily.')">
+                    End Simulation
+                </button>
+            </form>
+
+            <div class="action-divider"></div>
+
+            <!-- Undo (confirm) -->
+            <form method="post" action="/admin/undo" class="action-form">
+                <button type="submit" class="btn btn-warning"
+                        onclick="return confirmAction(this, 'Are you sure you want to UNDO the last period? This will reopen the previous round.')">
+                    Undo Last Period
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Panel: Team Data Table -->
+    <div class="panel panel-right">
+        <div class="card card-table">
+            <div class="card-title">
+                Team Data
+                <span class="card-subtitle">Round {{ team_data.round }}</span>
+                <button class="btn-refresh" onclick="refreshTeamData()" id="refresh-btn"
+                        title="Refresh table data">↻ Refresh</button>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table" id="team-table">
+                    <thead>
+                        <tr>
+                            <th class="col-rank sortable" data-col="0" data-type="num">#</th>
+                            <th class="col-team sortable" data-col="1" data-type="str">Team</th>
+                            <th class="col-num sortable" data-col="2" data-type="num">Passengers</th>
+                            <th class="col-num sortable" data-col="3" data-type="num">Revenue</th>
+                            <th class="col-num sortable" data-col="4" data-type="num">Total Cost</th>
+                            <th class="col-num sortable" data-col="5" data-type="num">Profit</th>
+                            <th class="col-pct sortable" data-col="6" data-type="num">Vol Share</th>
+                            <th class="col-pct sortable" data-col="7" data-type="num">Profit Share</th>
+                            <th class="col-pct sortable" data-col="8" data-type="num">Load Factor</th>
+                            <th class="col-num-sm sortable" data-col="9" data-type="num">Biz $</th>
+                            <th class="col-num-sm sortable" data-col="10" data-type="num">Lei $</th>
+                            <th class="col-idx sortable" data-col="11" data-type="num">CSI</th>
+                            <th class="col-idx sortable" data-col="12" data-type="num">OEI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        {% for t in team_data.teams %}
+                        <tr>
+                            <td class="col-rank">{{ loop.index }}</td>
+                            <td class="col-team">{{ t.team_name }}</td>
+                            <td class="col-num">{{ "{:,}".format(t.passengers) }}</td>
+                            <td class="col-num">${{ "{:,.0f}".format(t.revenue) }}</td>
+                            <td class="col-num">${{ "{:,.0f}".format(t.total_cost) }}</td>
+                            <td class="col-num">${{ "{:,.0f}".format(t.profit) }}</td>
+                            <td class="col-pct">{{ "{:.1f}%".format(t.market_share_volume * 100) }}</td>
+                            <td class="col-pct">{{ "{:.1f}%".format(t.market_share_profit * 100) }}</td>
+                            <td class="col-pct">{{ "{:.1f}%".format(t.load_factor * 100) }}</td>
+                            <td class="col-num-sm">${{ t.price_business }}</td>
+                            <td class="col-num-sm">${{ t.price_leisure }}</td>
+                            <td class="col-idx">{{ t.csi }}</td>
+                            <td class="col-idx">{{ t.oei }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not team_data.teams %}
+                        <tr>
+                            <td colspan="13" class="empty-msg">No team data available. Set up and start a simulation first.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────────── -->
+<div class="footer">
+    Copyright 2026 by Dr. Jose Mendoza
+</div>
+
+<!-- ── JavaScript ──────────────────────────────────────────────── -->
+<script>
+    /* Double-click protection: disable button after click */
+    function disableBtn(btn) {
+        setTimeout(function() {
+            btn.disabled = true;
+            btn.textContent = 'Processing…';
+        }, 0);
+        return true;
+    }
+
+    /* Confirm destructive actions */
+    function confirmAction(btn, message) {
+        if (!confirm(message)) return false;
+        return disableBtn(btn);
+    }
+
+    /* Client-side column sorting */
+    document.querySelectorAll('.sortable').forEach(function(th) {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', function() {
+            var table = document.getElementById('team-table');
+            var tbody = table.querySelector('tbody');
+            var rows = Array.from(tbody.querySelectorAll('tr'));
+            var col = parseInt(th.dataset.col);
+            var type = th.dataset.type;
+            var asc = th.dataset.asc !== '1';
+            th.dataset.asc = asc ? '1' : '0';
+
+            // Clear sort indicators on other headers
+            document.querySelectorAll('.sortable').forEach(function(h) {
+                h.classList.remove('sort-asc', 'sort-desc');
+            });
+            th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+
+            rows.sort(function(a, b) {
+                var aVal = a.cells[col] ? a.cells[col].textContent.trim() : '';
+                var bVal = b.cells[col] ? b.cells[col].textContent.trim() : '';
+                if (type === 'num') {
+                    aVal = parseFloat(aVal.replace(/[$,%]/g, '').replace(/,/g, '')) || 0;
+                    bVal = parseFloat(bVal.replace(/[$,%]/g, '').replace(/,/g, '')) || 0;
+                    return asc ? aVal - bVal : bVal - aVal;
+                }
+                return asc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            });
+
+            rows.forEach(function(row) { tbody.appendChild(row); });
+        });
+    });
+
+    /* AJAX table refresh */
+    async function refreshTeamData() {
+        var btn = document.getElementById('refresh-btn');
+        btn.disabled = true;
+        btn.textContent = '↻ Loading…';
+        try {
+            var resp = await fetch('/api/admin/teams');
+            var data = await resp.json();
+            var tbody = document.getElementById('table-body');
+            if (!data.teams || data.teams.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="13" class="empty-msg">No team data available.</td></tr>';
+            } else {
+                var html = '';
+                data.teams.forEach(function(t, i) {
+                    html += '<tr>'
+                        + '<td class="col-rank">' + (i + 1) + '</td>'
+                        + '<td class="col-team">' + t.team_name + '</td>'
+                        + '<td class="col-num">' + t.passengers.toLocaleString() + '</td>'
+                        + '<td class="col-num">$' + t.revenue.toLocaleString(undefined, {maximumFractionDigits:0}) + '</td>'
+                        + '<td class="col-num">$' + t.total_cost.toLocaleString(undefined, {maximumFractionDigits:0}) + '</td>'
+                        + '<td class="col-num">$' + t.profit.toLocaleString(undefined, {maximumFractionDigits:0}) + '</td>'
+                        + '<td class="col-pct">' + (t.market_share_volume * 100).toFixed(1) + '%</td>'
+                        + '<td class="col-pct">' + (t.market_share_profit * 100).toFixed(1) + '%</td>'
+                        + '<td class="col-pct">' + (t.load_factor * 100).toFixed(1) + '%</td>'
+                        + '<td class="col-num-sm">$' + t.price_business + '</td>'
+                        + '<td class="col-num-sm">$' + t.price_leisure + '</td>'
+                        + '<td class="col-idx">' + t.csi + '</td>'
+                        + '<td class="col-idx">' + t.oei + '</td>'
+                        + '</tr>';
+                });
+                tbody.innerHTML = html;
+            }
+            // Update round label
+            var subtitle = document.querySelector('.card-subtitle');
+            if (subtitle) subtitle.textContent = 'Round ' + data.round;
+        } catch (err) {
+            console.error('Refresh failed:', err);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '↻ Refresh';
+        }
+    }
+
+    /* Auto-dismiss banner after 8 seconds */
+    (function() {
+        var banner = document.getElementById('banner');
+        if (banner) {
+            setTimeout(function() { banner.remove(); }, 8000);
+        }
+    })();
+</script>
+
+</body>
+</html>

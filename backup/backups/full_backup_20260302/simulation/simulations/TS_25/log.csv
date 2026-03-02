@@ -1,0 +1,9 @@
+event_id,simulation_id,actor_user_id,action,details,event_at_utc
+E1,TS_25,U_ADMIN,SETUP_SIMULATION,Created simulation 'Scenario 25: Five airlines: flights+prices' with 6 airlines and 3 rounds,2026-03-01T16:59:56.704066+00:00
+E2,TS_25,U_ADMIN,START_SIMULATION,Started simulation and opened round 1,2026-03-01T16:59:56.706750+00:00
+E3,TS_25,A,UPDATE_DECISION,round=1; team_id=A; flights_per_day=3; price_business=292.0; price_leisure=178.0; branding_level=High; product_strategy=High,2026-03-01T16:59:56.708300+00:00
+E4,TS_25,B,UPDATE_DECISION,round=1; team_id=B; flights_per_day=2; price_business=339.0; price_leisure=174.0; branding_level=Medium; product_strategy=Low,2026-03-01T16:59:56.709339+00:00
+E5,TS_25,C,UPDATE_DECISION,round=1; team_id=C; flights_per_day=5; price_business=401.0; price_leisure=160.0; branding_level=Medium; product_strategy=Medium,2026-03-01T16:59:56.710551+00:00
+E6,TS_25,D,UPDATE_DECISION,round=1; team_id=D; flights_per_day=2; price_business=321.0; price_leisure=195.0; branding_level=Low; product_strategy=Low,2026-03-01T16:59:56.711806+00:00
+E7,TS_25,E,UPDATE_DECISION,round=1; team_id=E; flights_per_day=2; price_business=435.0; price_leisure=200.0; branding_level=Low; product_strategy=Medium,2026-03-01T16:59:56.713071+00:00
+E8,TS_25,F,UPDATE_DECISION,round=1; team_id=F; flights_per_day=3; price_business=450.0; price_leisure=220.0; branding_level=Medium; product_strategy=Low,2026-03-01T16:59:56.714132+00:00

@@ -1,0 +1,204 @@
+/* ================================================================
+   Airlines Dashboard – styles.css
+   NYU color palette · 1366×768 viewport · zero vertical scroll
+   ================================================================ */
+
+/* ── Reset & Base ──────────────────────────────────────────────── */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    max-height: 768px;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(180deg, #F4F0FA 0%, #ECE5F7 100%);
+    color: #222;
+}
+
+/* ── Header ────────────────────────────────────────────────────── */
+.header {
+    height: 150px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: #F4F0FA;
+}
+
+.header-logo {
+    position: absolute;
+    left: 24px;
+    max-width: 280px;
+    max-height: 130px;
+    object-fit: contain;
+}
+
+.header-center {
+    text-align: center;
+}
+
+.header-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #57068C;
+    line-height: 1.3;
+}
+
+.header-subtitle {
+    font-size: 13px;
+    color: #444;
+    line-height: 1.3;
+}
+
+/* ── Charts Section ────────────────────────────────────────────── */
+.charts-row {
+    height: 320px;
+    padding: 0 24px;
+    display: flex;
+    gap: 24px;
+}
+
+.chart-card {
+    width: 50%;
+    height: 100%;
+    background: #FFFFFF;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #222;
+}
+
+.chart-plot {
+    flex: 1;
+    min-height: 0;
+}
+
+/* ── Table Section ─────────────────────────────────────────────── */
+.table-section {
+    height: 260px;
+    padding: 8px 24px 0 24px;
+}
+
+.table-card {
+    background: #FFFFFF;
+    border-radius: 10px;
+    padding: 10px 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    height: 100%;
+    overflow: hidden;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.data-table thead tr {
+    background: #57068C;
+    height: 32px;
+}
+
+.data-table thead th {
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.data-table tbody tr {
+    height: 28px;
+}
+
+.data-table tbody tr:nth-child(even) {
+    background: #F7F4FB;
+}
+
+.data-table tbody td {
+    font-size: 12px;
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Column widths */
+.col-rank   { width: 6%; text-align: center; }
+.col-team   { width: 18%; }
+.col-profit { width: 16%; text-align: right; }
+.col-msp    { width: 15%; text-align: right; }
+.col-msv    { width: 15%; text-align: right; }
+.col-pax    { width: 15%; text-align: right; }
+.col-csi    { width: 7%; text-align: center; }
+.col-oei    { width: 8%; text-align: center; }
+
+/* Right-align numeric header cells */
+.data-table thead th.col-profit,
+.data-table thead th.col-msp,
+.data-table thead th.col-msv,
+.data-table thead th.col-pax {
+    text-align: right;
+}
+.data-table thead th.col-rank,
+.data-table thead th.col-csi,
+.data-table thead th.col-oei {
+    text-align: center;
+}
+
+/* ── Refresh Section ───────────────────────────────────────────── */
+.refresh-section {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.refresh-btn {
+    width: 140px;
+    height: 36px;
+    border-radius: 8px;
+    background: #57068C;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.refresh-btn:hover {
+    background: #7A1FA2;
+}
+
+.refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── Footer ────────────────────────────────────────────────────── */
+.footer {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #666666;
+}
