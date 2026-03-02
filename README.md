@@ -186,7 +186,9 @@ python run_admin_dashboard.py --reload      # auto-reload for development
 
 Features:
 - **Status panel** — current round, simulation status (CREATED/STARTED/ENDED), last-updated timestamp
-- **Admin actions** — Set Up Simulation, Start, End, Undo Last Period (all POST endpoints)
+- **Decision status** — per-team icons (✔ Submitted / ✗ Pending) for the current round; ignores seeded baseline defaults
+- **Admin actions** — Set Up Simulation, Start, Move to Next Round, End, Undo Last Period (all POST endpoints)
+- **Move to Next Round** — processes the current round (computes results for all teams) and advances; teams that did not submit decisions automatically repeat their previous round's choices
 - **Team data table** — reads `round_results_team.csv` from Spaces (or local), sortable columns, AJAX refresh
 - **Safety** — confirm prompts on destructive actions, double-click protection
 - NYU-themed styling consistent with `dashboard_web`
@@ -198,6 +200,7 @@ Admin action endpoints (all POST):
 | `POST /admin/setup` | Initialise simulation (calls `setup_simulation`) |
 | `POST /admin/start` | Start simulation (calls `start_simulation`) |
 | `POST /admin/end` | End simulation (calls `end_simulation`) |
+| `POST /admin/next-round` | Process current round and advance (calls `move_next_round`) |
 | `POST /admin/undo` | Undo last period (calls `undo_round`) |
 
 Dashboard files live in `code/admin_dashboard/`:
@@ -224,6 +227,7 @@ Features:
 - **Login page** — teams authenticate with credentials from `usernames.csv` (e.g. `Team1` / `MrGreen3`); usernames map to team IDs (`Team1`→A … `Team6`→F)
 - **Decision form** — flights per day, business/leisure prices, branding level, product strategy; pre-filled from previous round
 - **Save & Undo** — upsert decisions for the current round or undo to reset to defaults
+- **Auto-refresh** — polls `/team/state` every 10 seconds and reloads when the simulation status or round changes (e.g. admin starts the sim or advances the round)
 - **Performance metrics** — latest-round KPIs (revenue, cost, profit, passengers, load factor, market share, CSI, OEI)
 - **Performance history table** — all completed rounds in a sortable table
 - **Past decisions table** — review decisions from prior rounds
@@ -245,6 +249,7 @@ Team dashboard endpoints:
 | `/team` | GET | Team home (requires session) |
 | `/team/save` | POST | Save decisions for current round |
 | `/team/undo` | POST | Undo current-round decisions |
+| `/team/state` | GET | JSON simulation state for auto-refresh polling |
 | `/team/logout` | GET | Clear session and redirect to login |
 
 Dashboard files live in `code/team_dashboard/`:
@@ -339,7 +344,7 @@ The admin dashboard is a standalone FastAPI application in `code/admin_dashboard
 python run_admin_dashboard.py
 ```
 
-The admin page displays a status panel, four action buttons (Setup / Start / End / Undo), and a live team-data table sourced from `round_results_team.csv`.
+The admin page displays a status panel, decision status icons per team, five action buttons (Setup / Start / Move to Next Round / End / Undo), and a live team-data table sourced from `round_results_team.csv`.
 
 Team data columns displayed: Passengers, Revenue, Total Cost, Profit, Volume Share, Profit Share, Load Factor, Business Price, Leisure Price, CSI, OEI.
 
@@ -402,6 +407,7 @@ airline_sim/
 ├── run_dashboard.py         # Web dashboard launcher (FastAPI)
 ├── run_admin_dashboard.py   # Admin dashboard launcher (FastAPI)
 ├── run_team_dashboard.py    # Team dashboard launcher (FastAPI)
+├── kill_port.py             # Kill process on port 8080
 ├── Procfile                 # App Platform run command
 ├── app.yaml                 # DigitalOcean App Platform spec
 ├── requirements.txt
