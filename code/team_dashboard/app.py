@@ -116,7 +116,26 @@ def _redirect_team(msg: str = "", ok: bool = True) -> RedirectResponse:
 @app.get("/health")
 async def health():
     """Lightweight health check for App Platform / load balancers."""
-    return {"status": "ok"}
+    from app.storage.config import spaces_configured
+    return {
+        "status": "ok",
+        "spaces_configured": spaces_configured(),
+        "sim_id": DEFAULT_SIM_ID,
+    }
+
+
+@app.get("/debug/state")
+async def debug_state():
+    """Diagnostic endpoint — shows storage backend and current sim state."""
+    from app.storage.config import spaces_configured
+    from app.storage.spaces_store import get_store
+    store = get_store()
+    state = get_simulation_state(DEFAULT_SIM_ID)
+    return {
+        "spaces_configured": spaces_configured(),
+        "store_type": type(store).__name__,
+        "sim_state": state,
+    }
 
 
 @app.get("/team/state")
