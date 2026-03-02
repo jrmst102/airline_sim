@@ -177,6 +177,13 @@ def get_team_table(simulation_id: str = DEFAULT_SIM_ID) -> dict:
             "oei": _int(row.get("oei", "0")),
         })
 
+    # Compute market_share_revenue from raw revenue values
+    total_revenue = sum(t["revenue"] for t in teams)
+    for t in teams:
+        t["market_share_revenue"] = (
+            t["revenue"] / total_revenue if total_revenue > 0 else 0.0
+        )
+
     # Sort by profit descending
     teams.sort(key=lambda t: t["profit"], reverse=True)
 

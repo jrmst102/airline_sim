@@ -436,3 +436,23 @@ html, body {
     font-size: 12px;
     color: #666666;
 }
+
+/* ── Charts ────────────────────────────────────────────────────── */
+.charts-section {
+    padding: 0 24px 16px;
+}
+
+.charts-row {
+    display: flex;
+    gap: 16px;
+}
+
+.chart-card {
+    flex: 1;
+    min-width: 0;
+}
+
+.chart-container {
+    position: relative;
+    height: 280px;
+}

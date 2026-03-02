@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=1366, initial-scale=1">
     <title>Airlines - Admin Dashboard</title>
     <link rel="stylesheet" href="/static/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -199,6 +200,32 @@
 
 </div>
 
+<!-- ── Charts Section ──────────────────────────────────────────── -->
+{% if team_data.teams %}
+<div class="charts-section">
+    <div class="charts-row">
+        <div class="card chart-card">
+            <div class="card-title">Profit by Team</div>
+            <div class="chart-container">
+                <canvas id="profitPieChart"></canvas>
+            </div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-title">Market Share (Volume)</div>
+            <div class="chart-container">
+                <canvas id="volumeBarChart"></canvas>
+            </div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-title">Market Share (Revenue)</div>
+            <div class="chart-container">
+                <canvas id="revenueBarChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- ── Footer ──────────────────────────────────────────────────── -->
 <div class="footer">
     Copyright 2026 by Dr. Jose Mendoza
@@ -303,6 +330,142 @@
         if (banner) {
             setTimeout(function() { banner.remove(); }, 8000);
         }
+    })();
+
+    /* ── Charts ─────────────────────────────────────────────── */
+    (function() {
+        {% if team_data.teams %}
+        var teamNames = [{% for t in team_data.teams %}'{{ t.team_name }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+        var profits   = [{% for t in team_data.teams %}{{ t.profit }}{% if not loop.last %}, {% endif %}{% endfor %}];
+        var volShares  = [{% for t in team_data.teams %}{{ (t.market_share_volume * 100)|round(1) }}{% if not loop.last %}, {% endif %}{% endfor %}];
+        var revShares  = [{% for t in team_data.teams %}{{ (t.market_share_revenue * 100)|round(1) }}{% if not loop.last %}, {% endif %}{% endfor %}];
+
+        var palette = [
+            '#57068C', '#8E24AA', '#AB47BC', '#CE93D8',
+            '#4A148C', '#7B1FA2', '#BA68C8', '#E1BEE7',
+            '#311B92', '#5C6BC0'
+        ];
+        var bgColors = teamNames.map(function(_, i) { return palette[i % palette.length]; });
+
+        /* 1. Profit Pie Chart */
+        var ctxPie = document.getElementById('profitPieChart');
+        if (ctxPie) {
+            new Chart(ctxPie, {
+                type: 'pie',
+                data: {
+                    labels: teamNames,
+                    datasets: [{
+                        data: profits,
+                        backgroundColor: bgColors,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 11 }, padding: 12, usePointStyle: true }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    var val = ctx.parsed;
+                                    return ctx.label + ': $' + val.toLocaleString(undefined, {maximumFractionDigits: 0});
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* 2. Market Share (Volume) Bar Chart */
+        var ctxVol = document.getElementById('volumeBarChart');
+        if (ctxVol) {
+            new Chart(ctxVol, {
+                type: 'bar',
+                data: {
+                    labels: teamNames,
+                    datasets: [{
+                        label: 'Volume Share (%)',
+                        data: volShares,
+                        backgroundColor: bgColors,
+                        borderRadius: 4,
+                        maxBarThickness: 48
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: Math.max(100, Math.ceil(Math.max.apply(null, volShares) + 5)),
+                            ticks: { callback: function(v) { return v + '%'; }, font: { size: 11 } },
+                            grid: { color: '#EEE' }
+                        },
+                        x: {
+                            ticks: { font: { size: 11 } },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) { return ctx.parsed.y.toFixed(1) + '%'; }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* 3. Market Share (Revenue) Bar Chart */
+        var ctxRev = document.getElementById('revenueBarChart');
+        if (ctxRev) {
+            new Chart(ctxRev, {
+                type: 'bar',
+                data: {
+                    labels: teamNames,
+                    datasets: [{
+                        label: 'Revenue Share (%)',
+                        data: revShares,
+                        backgroundColor: bgColors,
+                        borderRadius: 4,
+                        maxBarThickness: 48
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: Math.max(100, Math.ceil(Math.max.apply(null, revShares) + 5)),
+                            ticks: { callback: function(v) { return v + '%'; }, font: { size: 11 } },
+                            grid: { color: '#EEE' }
+                        },
+                        x: {
+                            ticks: { font: { size: 11 } },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) { return ctx.parsed.y.toFixed(1) + '%'; }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        {% endif %}
     })();
 </script>
 
