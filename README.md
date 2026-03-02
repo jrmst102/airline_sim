@@ -42,7 +42,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Dependencies: `bcrypt`, `boto3`, `fastapi`, `gspread`, `google-auth`, `jinja2`, `python-dotenv`, `uvicorn`.
+Dependencies: `bcrypt`, `boto3`, `fastapi`, `gspread`, `google-auth`, `jinja2`, `python-dotenv`, `python-multipart`, `uvicorn`.
 
 ### DigitalOcean Spaces (optional)
 

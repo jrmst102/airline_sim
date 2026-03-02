@@ -135,9 +135,9 @@
                         </tr>
                     </thead>
                     <tbody id="table-body">
-                        {% for i, t in enumerate(team_data.teams) %}
+                        {% for t in team_data.teams %}
                         <tr>
-                            <td class="col-rank">{{ i + 1 }}</td>
+                            <td class="col-rank">{{ loop.index }}</td>
                             <td class="col-team">{{ t.team_name }}</td>
                             <td class="col-num">{{ "{:,}".format(t.passengers) }}</td>
                             <td class="col-num">${{ "{:,.0f}".format(t.revenue) }}</td>
