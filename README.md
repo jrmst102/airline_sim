@@ -399,6 +399,7 @@ airline_sim/
 ├── main.py                  # CLI command router
 ├── run_dashboard.py         # Web dashboard launcher (FastAPI)
 ├── run_admin_dashboard.py   # Admin dashboard launcher (FastAPI)
+├── run_team_dashboard.py    # Team dashboard launcher (FastAPI)
 ├── requirements.txt
 ├── .env.example             # Spaces credential template
 ├── app/
@@ -426,6 +427,14 @@ airline_sim/
 │   │   ├── services/
 │   │   │   ├── admin_actions.py
 │   │   │   └── team_data.py
+│   │   ├── templates/
+│   │   └── static/
+│   ├── team_dashboard/      # Team dashboard (FastAPI + Jinja2)
+│   │   ├── app.py
+│   │   ├── services/
+│   │   │   ├── team_auth.py
+│   │   │   ├── team_decisions.py
+│   │   │   └── team_performance.py
 │   │   ├── templates/
 │   │   └── static/
 │   └── dashboard_web/       # Standalone FastAPI web dashboard
