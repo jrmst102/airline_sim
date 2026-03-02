@@ -1,0 +1,7 @@
+simulation_id,team_id,team_name,is_active,baseline_passengers,baseline_volume_share,baseline_profit_millions,baseline_profit_share,variable_cost_per_passenger,baseline_flights_per_day,baseline_pricing_posture,baseline_branding_level,baseline_product_strategy,baseline_csi,baseline_oei,created_at_utc
+TS_32,A,Airline A,1,26400,0.22,6.5,0.26,155,5,Premium,High,High,88,78,2026-03-01T16:59:56.779576+00:00
+TS_32,B,Airline B,1,22800,0.19,4.8,0.19,170,4,Match,Medium,Low,82,72,2026-03-01T16:59:56.779576+00:00
+TS_32,C,Airline C,1,21600,0.18,4.2,0.17,160,4,Match,Medium,Medium,76,74,2026-03-01T16:59:56.779576+00:00
+TS_32,D,Airline D,1,19200,0.16,4.5,0.18,130,4,Discount,Low,Low,68,86,2026-03-01T16:59:56.779576+00:00
+TS_32,E,Airline E,1,15600,0.13,2.0,0.08,110,3,Discount,Low,Medium,62,90,2026-03-01T16:59:56.779576+00:00
+TS_32,F,Airline F,1,14400,0.12,3.0,0.12,145,3,Premium,Medium,Low,80,76,2026-03-01T16:59:56.779576+00:00
