@@ -181,7 +181,14 @@ async def login_submit(
         "role": user.role,
         "sim_id": DEFAULT_SIM_ID,
     }
-    resp = RedirectResponse(url="/team", status_code=303)
+
+    # Route by role: admin → /admin, team → /team
+    if user.role == "admin":
+        dest = "/admin"
+    else:
+        dest = "/team"
+
+    resp = RedirectResponse(url=dest, status_code=303)
     return _set_session(resp, session_data)
 
 

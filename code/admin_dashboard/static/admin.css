@@ -37,6 +37,23 @@ html, body {
     object-fit: contain;
 }
 
+.header-logout {
+    position: absolute;
+    right: 24px;
+    color: #57068C;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border: 1px solid #57068C;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+}
+.header-logout:hover {
+    background: #57068C;
+    color: #fff;
+}
+
 .header-center {
     text-align: center;
 }

@@ -91,12 +91,13 @@ def login(
             "message": "Invalid username or password",
         }
 
-    # Admin users should not log in here
+    # Admin user
     if key == "admin":
+        user = AuthUser(username="Admin", team_id="", role="admin")
         return {
-            "success": False,
-            "user": None,
-            "message": "Admin users should use the Admin Dashboard.",
+            "success": True,
+            "user": user,
+            "message": "Welcome, Admin",
         }
 
     team_id = _TEAM_ID_MAP.get(key, "")

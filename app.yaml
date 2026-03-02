@@ -1,6 +1,6 @@
-name: airline-sim-team-dashboard
+name: airline-sim
 services:
-  - name: team-dashboard
+  - name: airline-sim
     github:
       repo: jrmst102/airline_sim
       branch: main

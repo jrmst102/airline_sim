@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Launch the Team Dashboard (FastAPI + Jinja2, no Streamlit).
+"""Launch the unified Airline Simulation Dashboard (Team + Admin).
 
 Usage:
     python run_team_dashboard.py                # default: http://0.0.0.0:8081
@@ -22,7 +22,7 @@ import uvicorn
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Run the Team Dashboard (FastAPI, no Streamlit)."
+        description="Run the unified Airline Simulation Dashboard."
     )
     parser.add_argument("--host", default="0.0.0.0", help="Bind address (default: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8081")), help="Port (default: $PORT or 8081)")
@@ -33,9 +33,11 @@ def main() -> None:
     code_root = project_root / "code"
     if str(code_root) not in sys.path:
         sys.path.insert(0, str(code_root))
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
 
     uvicorn.run(
-        "team_dashboard.app:app",
+        "team_dashboard.main:app",
         host=args.host,
         port=args.port,
         reload=args.reload,

@@ -1,1 +1,1 @@
-web: uvicorn code.team_dashboard.main:app --host 0.0.0.0 --port ${PORT:-8081}
+web: uvicorn code.team_dashboard.main:app --host 0.0.0.0 --port ${PORT:-8080}

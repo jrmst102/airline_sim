@@ -34,3 +34,4 @@ Thumbs.db
 
 # Test artifacts
 .pytest_cache/
+code/_combined_static/
