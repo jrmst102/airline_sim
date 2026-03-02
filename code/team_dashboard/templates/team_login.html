@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Airlines - Team Login</title>
+    <link rel="stylesheet" href="/static/team.css">
+</head>
+<body class="login-body">
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<div class="header">
+    <img src="/logo.png" alt="Logo" class="header-logo">
+    <div class="header-center">
+        <div class="header-title">Airlines - Team Dashboard</div>
+        <div class="header-subtitle">Competitive Strategy Simulation</div>
+    </div>
+</div>
+
+<!-- ── Login Card ──────────────────────────────────────────────── -->
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-card-title">Team Login</div>
+
+        {% if msg %}
+        <div class="banner {{ 'banner-success' if ok else 'banner-error' }}" id="banner">
+            <span>{{ msg }}</span>
+            <button class="banner-close" onclick="document.getElementById('banner').remove()">✕</button>
+        </div>
+        {% endif %}
+
+        <form method="post" action="/team/login" class="login-form">
+            <div class="form-row">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username"
+                       placeholder="e.g. Team 1" required autofocus
+                       class="form-input">
+            </div>
+            <div class="form-row">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password"
+                       placeholder="Enter password" required
+                       class="form-input">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full"
+                    onclick="return disableBtn(this)">
+                Log In
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────────── -->
+<div class="footer">
+    Copyright 2026 by Dr. Jose Mendoza
+</div>
+
+<script>
+    function disableBtn(btn) {
+        setTimeout(function() {
+            btn.disabled = true;
+            btn.textContent = 'Logging in…';
+        }, 0);
+        return true;
+    }
+
+    /* Auto-dismiss banner after 8 seconds */
+    (function() {
+        var banner = document.getElementById('banner');
+        if (banner) {
+            setTimeout(function() { banner.remove(); }, 8000);
+        }
+    })();
+</script>
+
+</body>
+</html>
