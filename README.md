@@ -486,7 +486,8 @@ airline_sim/
 ├── simulation/
 │   └── simulations/         # Simulation data (CSV files)
 │       └── sim_001/
-├── backup/                  # Pre-migration backups
+├── backup/                  # Bucket backups & pre-migration archives
+├── backup_spaces.py         # DO Spaces bucket backup script
 ├── tests/                   # Test suite
 │   ├── simulation_test_suite.py
 │   └── helpers/
@@ -500,6 +501,23 @@ UI text is centralized in `app/ui/components.py`.
 - Simulation title: **Airlines**
 - Simulation subtitle: **Competitive Strategy Simulation**
 - Copyright notice: **Copyright 2026 by Dr. Jose Mendoza**
+
+## Backup DigitalOcean Spaces Bucket
+
+`backup_spaces.py` downloads every object from the configured DO Spaces bucket into `backup/spaces_backup_YYYYMMDD_HHMMSS/`, preserving the key structure. It is **read-only** and never writes to the bucket.
+
+```bash
+# Full backup
+python backup_spaces.py
+
+# List objects without downloading
+python backup_spaces.py --dry-run
+
+# Back up only keys starting with a given prefix
+python backup_spaces.py --prefix sim_001
+```
+
+The script uses the same Spaces credentials from `.env` (see [Setup — DigitalOcean Spaces](#digitalocean-spaces-optional)).
 
 ## Deploying to DigitalOcean App Platform
 
