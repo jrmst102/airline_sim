@@ -24,21 +24,38 @@ def action_setup(
     simulation_name: str = "Airline Simulation",
     total_rounds: int = 3,
 ) -> dict:
-    """Set up (initialise) a simulation."""
+    """Set up (initialise) a simulation with full user accounts."""
     try:
-        from app.modules.setup_simulation import setup_simulation
-
-        setup_simulation(
-            simulation_id=simulation_id,
-            simulation_name=simulation_name,
-            total_rounds=total_rounds,
-            overwrite=True,
+        from app.modules.simulation_management import (
+            create_simulation,
+            get_simulation,
+            remove_simulation,
         )
+
+        # If the simulation already exists, remove it first (re-setup)
+        existing = get_simulation(simulation_id)
+        if existing:
+            remove_simulation(simulation_id)
+
+        result = create_simulation(
+            simulation_id=simulation_id,
+            name=simulation_name,
+            total_rounds=total_rounds,
+            auto_create_teams=True,
+        )
+
+        # Build credential summary for the banner
+        cred_lines = []
+        for c in result.credentials:
+            label = f"Team {c.team_id}" if c.team_id else c.role
+            cred_lines.append(f"{label}: {c.username} / {c.password}")
+        cred_text = " | ".join(cred_lines)
+
         return {
             "success": True,
             "message": (
                 f"Setup complete — simulation '{simulation_id}' initialised "
-                f"with {total_rounds} rounds."
+                f"with {total_rounds} rounds. Credentials: {cred_text}"
             ),
         }
     except Exception as exc:

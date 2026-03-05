@@ -88,10 +88,16 @@ class AdminGuardMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        # Only guard /admin routes (not /api/admin — those are AJAX)
-        if path.startswith("/admin"):
+        # Guard /admin routes and /api/admin routes
+        if path.startswith("/admin") or path.startswith("/api/admin"):
             session = _get_session(request)
             if not session or session.get("role") != "admin":
+                # For API routes return 401 JSON; for pages redirect
+                if path.startswith("/api/"):
+                    from fastapi.responses import JSONResponse
+                    return JSONResponse(
+                        {"error": "unauthenticated"}, status_code=401
+                    )
                 return RedirectResponse(url="/team/login", status_code=302)
         return await call_next(request)
 

@@ -16,7 +16,21 @@
         <div class="header-title">Airlines - Admin Dashboard</div>
         <div class="header-subtitle">Competitive Strategy Simulation</div>
     </div>
-    <a href="/team/logout" class="header-logout" title="Logout">Logout</a>
+    <div class="header-right">
+        {% if sim_ids and sim_ids|length > 1 %}
+        <form method="post" action="/admin/switch-sim" class="sim-switcher">
+            <select name="sim_id" onchange="this.form.submit()" title="Switch simulation">
+                {% for sid in sim_ids %}
+                <option value="{{ sid }}" {{ 'selected' if sid == sim_id else '' }}>{{ sid }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        {% else %}
+        <span class="sim-label" title="Active simulation">{{ sim_id }}</span>
+        {% endif %}
+        <a href="/admin/simulations" class="header-logout" title="Manage Simulations">Simulations</a>
+        <a href="/team/logout" class="header-logout" title="Logout">Logout</a>
+    </div>
 </div>
 
 <!-- ── Banner (flash message) ──────────────────────────────────── -->

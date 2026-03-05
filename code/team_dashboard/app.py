@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from itsdangerous import URLSafeSerializer
 from jinja2 import Environment, FileSystemLoader
 
-from team_dashboard.services.team_auth import login as auth_login
+from app.auth.login_manager import login as auth_login
 from team_dashboard.services.team_decisions import (
     get_decision_defaults,
     get_past_decisions,
@@ -165,28 +165,29 @@ async def login_submit(
     password: str = Form(...),
 ):
     """Validate credentials and set session cookie."""
-    result = auth_login(
-        simulation_id=DEFAULT_SIM_ID,
-        username=username,
-        password=password,
-    )
-    if not result["success"]:
-        params = urlencode({"msg": result["message"], "ok": "0"})
+    result = auth_login(username=username, password=password)
+
+    if not result.success:
+        params = urlencode({"msg": result.message, "ok": "0"})
         return RedirectResponse(url=f"/team/login?{params}", status_code=303)
 
-    user = result["user"]
+    user = result.user
     session_data = {
         "username": user.username,
+        "user_id": user.user_id,
         "team_id": user.team_id,
-        "role": user.role,
-        "sim_id": DEFAULT_SIM_ID,
+        "role": user.dashboard,       # "admin" or "team"
+        "sim_id": user.sim_id,
+        "sim_ids": result.sim_ids,
     }
 
-    # Route by role: admin → /admin, team → /team
-    if user.role == "admin":
-        dest = "/admin"
-    else:
-        dest = "/team"
+    # If admin needs sim picker, redirect there
+    if result.needs_sim_picker:
+        resp = RedirectResponse(url="/admin/select-sim", status_code=303)
+        return _set_session(resp, session_data)
+
+    # Route by dashboard: admin → /admin, team → /team
+    dest = "/admin" if user.dashboard == "admin" else "/team"
 
     resp = RedirectResponse(url=dest, status_code=303)
     return _set_session(resp, session_data)

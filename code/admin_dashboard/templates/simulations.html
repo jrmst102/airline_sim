@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1366, initial-scale=1">
+    <title>Airlines - Manage Simulations</title>
+    <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<div class="header">
+    <img src="/logo.png" alt="Logo" class="header-logo">
+    <div class="header-center">
+        <div class="header-title">Airlines - Manage Simulations</div>
+        <div class="header-subtitle">Competitive Strategy Simulation</div>
+    </div>
+    <div class="header-right">
+        <a href="/admin" class="header-logout" title="Back to Dashboard">Dashboard</a>
+        <a href="/team/logout" class="header-logout" title="Logout">Logout</a>
+    </div>
+</div>
+
+<!-- ── Banner ──────────────────────────────────────────────────── -->
+{% if msg %}
+<div class="banner {{ 'banner-success' if ok else 'banner-error' }}" id="banner">
+    <span>{{ msg }}</span>
+    <button class="banner-close" onclick="document.getElementById('banner').remove()">&#10005;</button>
+</div>
+{% endif %}
+
+<!-- ── Main Content ────────────────────────────────────────────── -->
+<div style="padding: 16px 24px; max-width: 1200px; margin: 0 auto;">
+
+    <!-- Create New Simulation -->
+    <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title">Create New Simulation</div>
+        <form method="post" action="/admin/simulations/create">
+            <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+                <div class="form-row" style="flex: 0 0 auto;">
+                    <label for="sim_id">Simulation ID</label>
+                    <input type="text" id="sim_id" name="sim_id" placeholder="e.g. sim_mba_spring26"
+                           required pattern="[a-zA-Z0-9_]+" class="form-input" style="width: 200px;">
+                </div>
+                <div class="form-row" style="flex: 1;">
+                    <label for="sim_name">Display Name</label>
+                    <input type="text" id="sim_name" name="sim_name" placeholder="e.g. MBA Spring 2026"
+                           required class="form-input">
+                </div>
+                <div class="form-row" style="flex: 0 0 auto;">
+                    <label for="total_rounds">Rounds</label>
+                    <input type="number" id="total_rounds" name="total_rounds" value="5"
+                           min="1" max="20" class="form-input form-input-short" style="width: 70px;">
+                </div>
+                <div class="form-row" style="flex: 0 0 auto;">
+                    <label for="admin_user">Admin User</label>
+                    <input type="text" id="admin_user" name="admin_user" placeholder="(auto)"
+                           class="form-input" style="width: 160px;">
+                </div>
+                <div class="form-row" style="flex: 0 0 auto;">
+                    <label for="admin_pass">Admin Pass</label>
+                    <input type="text" id="admin_pass" name="admin_pass" placeholder="(auto)"
+                           class="form-input" style="width: 140px;">
+                </div>
+                <button type="submit" class="btn btn-primary btn-action"
+                        onclick="return confirmAction(this, 'Create a new simulation with the specified settings?')">
+                    Create
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Simulations Table -->
+    <div class="card card-table">
+        <div class="card-title">All Simulations</div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Simulation ID</th>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Locked</th>
+                        <th>Created</th>
+                        <th>Updated</th>
+                        <th style="width: 220px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sims %}
+                    <tr>
+                        <td>
+                            <strong>{{ s.simulation_id }}</strong>
+                            {% if s.simulation_id == sim_id %}
+                            <span style="color: #57068C; font-size: 11px;">(active)</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ s.name or '—' }}</td>
+                        <td>
+                            <span class="status-badge
+                                {% if s.status == 'STARTED' %}badge-running
+                                {% elif s.status == 'ENDED' %}badge-ended
+                                {% elif s.status == 'CREATED' %}badge-created
+                                {% else %}badge-default{% endif %}">
+                                {{ s.status }}
+                            </span>
+                        </td>
+                        <td>{{ 'Yes' if s.is_locked == '1' else 'No' }}</td>
+                        <td style="font-size: 12px;">{{ s.created_at_utc[:16] if s.created_at_utc else '—' }}</td>
+                        <td style="font-size: 12px;">{{ s.updated_at_utc[:16] if s.updated_at_utc else '—' }}</td>
+                        <td>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <!-- Switch to this sim -->
+                                {% if s.simulation_id != sim_id %}
+                                <form method="post" action="/admin/switch-sim" style="display:inline;">
+                                    <input type="hidden" name="sim_id" value="{{ s.simulation_id }}">
+                                    <button type="submit" class="btn btn-primary" style="font-size: 11px; padding: 4px 10px;">
+                                        Switch
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <!-- Lock / Unlock -->
+                                {% if s.is_locked == '1' %}
+                                <form method="post" action="/admin/simulations/unlock" style="display:inline;">
+                                    <input type="hidden" name="sim_id" value="{{ s.simulation_id }}">
+                                    <button type="submit" class="btn btn-success" style="font-size: 11px; padding: 4px 10px;">
+                                        Unlock
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form method="post" action="/admin/simulations/lock" style="display:inline;">
+                                    <input type="hidden" name="sim_id" value="{{ s.simulation_id }}">
+                                    <button type="submit" class="btn btn-warning" style="font-size: 11px; padding: 4px 10px;">
+                                        Lock
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <!-- Remove -->
+                                <form method="post" action="/admin/simulations/remove" style="display:inline;">
+                                    <input type="hidden" name="sim_id" value="{{ s.simulation_id }}">
+                                    <button type="submit" class="btn btn-danger" style="font-size: 11px; padding: 4px 10px;"
+                                            onclick="return confirm('PERMANENTLY DELETE simulation {{ s.simulation_id }}? This cannot be undone.')">
+                                        Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not sims %}
+                    <tr>
+                        <td colspan="7" class="empty-msg">No simulations registered yet. Create one above.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────────── -->
+<div class="footer">
+    Copyright 2026 by Dr. Jose Mendoza
+</div>
+
+<script>
+    function confirmAction(btn, message) {
+        if (!confirm(message)) return false;
+        setTimeout(function() { btn.disabled = true; btn.textContent = 'Processing\u2026'; }, 0);
+        return true;
+    }
+    (function() {
+        var banner = document.getElementById('banner');
+        if (banner) setTimeout(function() { banner.remove(); }, 8000);
+    })();
+</script>
+
+</body>
+</html>
