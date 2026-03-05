@@ -106,42 +106,6 @@ class DashboardGuardMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(DashboardGuardMiddleware)
 
-# ── Mount all routes from both sub-apps ────────────────────────────────
-# We include routes from both FastAPI apps into the unified app.
-for route in team_app.routes:
-    # Skip the static mount (we handle it above) and root redirect
-    if hasattr(route, "path"):
-        if route.path == "/static" or getattr(route, "name", "") in ("static",):
-            continue
-    app.routes.append(route)
-
-for route in admin_app.routes:
-    # Skip admin's static mount and logo (team already has /logo.png)
-    if hasattr(route, "path"):
-        if route.path == "/static" or getattr(route, "name", "") in ("static",):
-            continue
-        if route.path == "/logo.png":
-            continue
-        # Skip admin's root / redirect (team app handles /)
-        if route.path == "/" and getattr(route, "name", "") == "root":
-            continue
-    app.routes.append(route)
-
-# ── Demo simulation auto-provisioning ──────────────────────────────────
-@app.on_event("startup")
-async def _provision_demo_on_startup():
-    """Ensure the demo simulation exists on every app start."""
-    import logging
-    _logger = logging.getLogger(__name__)
-    try:
-        from scripts.provision_demo import provision_demo
-        created = provision_demo()
-        if created:
-            _logger.info("Demo simulation provisioned on startup.")
-    except Exception:
-        _logger.warning("Demo auto-provisioning skipped (non-fatal).", exc_info=True)
-
-
 # ── Diagnostic endpoint (temporary) ───────────────────────────────────
 from fastapi.responses import JSONResponse
 
@@ -187,5 +151,40 @@ async def diag():
     info["env_has_secret"] = bool(os.environ.get("SPACES_SECRET_ACCESS_KEY"))
 
     return JSONResponse(info)
+
+# ── Mount all routes from both sub-apps ────────────────────────────────
+# We include routes from both FastAPI apps into the unified app.
+for route in team_app.routes:
+    # Skip the static mount (we handle it above) and root redirect
+    if hasattr(route, "path"):
+        if route.path == "/static" or getattr(route, "name", "") in ("static",):
+            continue
+    app.routes.append(route)
+
+for route in admin_app.routes:
+    # Skip admin's static mount and logo (team already has /logo.png)
+    if hasattr(route, "path"):
+        if route.path == "/static" or getattr(route, "name", "") in ("static",):
+            continue
+        if route.path == "/logo.png":
+            continue
+        # Skip admin's root / redirect (team app handles /)
+        if route.path == "/" and getattr(route, "name", "") == "root":
+            continue
+    app.routes.append(route)
+
+# ── Demo simulation auto-provisioning ──────────────────────────────────
+@app.on_event("startup")
+async def _provision_demo_on_startup():
+    """Ensure the demo simulation exists on every app start."""
+    import logging
+    _logger = logging.getLogger(__name__)
+    try:
+        from scripts.provision_demo import provision_demo
+        created = provision_demo()
+        if created:
+            _logger.info("Demo simulation provisioned on startup.")
+    except Exception:
+        _logger.warning("Demo auto-provisioning skipped (non-fatal).", exc_info=True)
 
 __all__ = ["app"]
