@@ -66,8 +66,6 @@ COOKIE_NAME = "team_session"
 app = FastAPI(title="Airlines Team Dashboard", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
-DEFAULT_SIM_ID = "sim_001"
-
 
 # ── Session helpers ────────────────────────────────────────────────────
 
@@ -130,7 +128,7 @@ async def team_state(request: Request):
     session = _get_session(request)
     if not session:
         return {"error": "unauthenticated"}
-    sim_id = session.get("sim_id", DEFAULT_SIM_ID)
+    sim_id = session.get("sim_id", "")
     state = get_simulation_state(sim_id)
     return {
         "status": state["status"],
@@ -210,7 +208,7 @@ async def team_home(request: Request, msg: str = "", ok: str = "1"):
     if not session:
         return RedirectResponse(url="/team/login", status_code=302)
 
-    sim_id = session.get("sim_id", DEFAULT_SIM_ID)
+    sim_id = session.get("sim_id", "")
     team_id = session.get("team_id", "")
     username = session.get("username", "")
 
@@ -259,7 +257,7 @@ async def team_save(
     if not session:
         return RedirectResponse(url="/team/login", status_code=302)
 
-    sim_id = session.get("sim_id", DEFAULT_SIM_ID)
+    sim_id = session.get("sim_id", "")
     team_id = session.get("team_id", "")
 
     result = save_decision(
@@ -282,7 +280,7 @@ async def team_undo(request: Request):
     if not session:
         return RedirectResponse(url="/team/login", status_code=302)
 
-    sim_id = session.get("sim_id", DEFAULT_SIM_ID)
+    sim_id = session.get("sim_id", "")
     team_id = session.get("team_id", "")
 
     result = undo_decision(simulation_id=sim_id, team_id=team_id)

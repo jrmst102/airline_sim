@@ -13,8 +13,6 @@ from app.data.csv_manager import csv_exists, read_csv_rows
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SIM_ID = "sim_001"
-
 
 def _int(v: str, default: int = 0) -> int:
     try:

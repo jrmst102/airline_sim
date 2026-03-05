@@ -16,11 +16,9 @@ import traceback
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SIM_ID = "sim_001"
-
 
 def action_setup(
-    simulation_id: str = DEFAULT_SIM_ID,
+    simulation_id: str,
     simulation_name: str = "Airline Simulation",
     total_rounds: int = 3,
 ) -> dict:
@@ -64,7 +62,7 @@ def action_setup(
 
 
 def action_start(
-    simulation_id: str = DEFAULT_SIM_ID,
+    simulation_id: str,
     admin_user_id: str = "U_ADMIN",
 ) -> dict:
     """Start a simulation (transition CREATED → STARTED)."""
@@ -87,7 +85,7 @@ def action_start(
 
 
 def action_end(
-    simulation_id: str = DEFAULT_SIM_ID,
+    simulation_id: str,
     admin_user_id: str = "U_ADMIN",
 ) -> dict:
     """End a simulation (transition → ENDED)."""
@@ -112,7 +110,7 @@ def action_end(
 
 
 def action_move_next_round(
-    simulation_id: str = DEFAULT_SIM_ID,
+    simulation_id: str,
     admin_user_id: str = "U_ADMIN",
 ) -> dict:
     """Process the current round and advance to the next one."""
@@ -141,7 +139,7 @@ def action_move_next_round(
 
 
 def action_undo(
-    simulation_id: str = DEFAULT_SIM_ID,
+    simulation_id: str,
     admin_user_id: str = "U_ADMIN",
 ) -> dict:
     """Undo the last round transition."""

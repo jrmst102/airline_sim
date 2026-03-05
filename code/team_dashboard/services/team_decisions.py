@@ -15,8 +15,6 @@ from app.data.csv_manager import csv_exists, load_csv, read_csv_rows, write_csv
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SIM_ID = "sim_001"
-
 # Valid decision enums (must match enter_decisions.py)
 VALID_BRANDING = ("Low", "Medium", "High")
 VALID_PRODUCTS = ("High", "Medium", "Low")
@@ -44,7 +42,7 @@ def _utc_now() -> str:
 
 # ── Simulation state ──────────────────────────────────────────────────
 
-def get_simulation_state(simulation_id: str = DEFAULT_SIM_ID) -> dict:
+def get_simulation_state(simulation_id: str) -> dict:
     """Return simulation state: is_created, is_started, is_ended, etc."""
     if not csv_exists(simulation_id, "simulation.csv"):
         return {

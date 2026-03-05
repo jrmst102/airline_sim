@@ -16,10 +16,7 @@ from datetime import datetime, timezone
 from app.data.csv_manager import csv_exists, load_csv, read_csv_rows
 
 
-DEFAULT_SIM_ID = "sim_001"
-
-
-def get_decision_status(simulation_id: str = DEFAULT_SIM_ID) -> dict:
+def get_decision_status(simulation_id: str) -> dict:
     """Return per-team decision submission status for the current round.
 
     Only counts decisions that were **manually submitted** by a team user.
@@ -82,7 +79,7 @@ def _int(v: str, default: int = 0) -> int:
         return default
 
 
-def get_simulation_status(simulation_id: str = DEFAULT_SIM_ID) -> dict:
+def get_simulation_status(simulation_id: str) -> dict:
     """Return a dict describing the current simulation state.
 
     Keys: ``status``, ``current_round``, ``total_rounds``, ``name``,
@@ -117,7 +114,7 @@ def get_simulation_status(simulation_id: str = DEFAULT_SIM_ID) -> dict:
     }
 
 
-def get_team_table(simulation_id: str = DEFAULT_SIM_ID) -> dict:
+def get_team_table(simulation_id: str) -> dict:
     """Build the team-data table payload for the admin dashboard.
 
     Reads ``round_results_team.csv`` and filters to the latest round.
@@ -194,7 +191,7 @@ def get_team_table(simulation_id: str = DEFAULT_SIM_ID) -> dict:
     }
 
 
-def get_team_history(simulation_id: str = DEFAULT_SIM_ID) -> dict:
+def get_team_history(simulation_id: str) -> dict:
     """Return per-round per-team metrics for all completed rounds.
 
     Returns a dict with:
@@ -246,7 +243,7 @@ def get_team_history(simulation_id: str = DEFAULT_SIM_ID) -> dict:
     return {"rounds": rounds_sorted, "teams": teams}
 
 
-def get_report_data(simulation_id: str = DEFAULT_SIM_ID) -> dict:
+def get_report_data(simulation_id: str) -> dict:
     """Gather all data needed for the final simulation report.
 
     Returns a dict with:

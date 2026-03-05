@@ -60,8 +60,6 @@ _jinja_env = Environment(
 app = FastAPI(title="Airlines Admin Dashboard", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
-DEFAULT_SIM_ID = "sim_001"
-
 # ── Session ────────────────────────────────────────────────────────────
 SESSION_SECRET = os.environ.get("SESSION_SECRET", "airline-sim-dev-secret")
 _signer = URLSafeSerializer(SESSION_SECRET, salt="team-session")
@@ -80,11 +78,13 @@ def _get_session(request: Request) -> dict | None:
 
 
 def _sim_id_from(request: Request) -> str:
-    """Extract sim_id from the session, falling back to DEFAULT_SIM_ID."""
+    """Extract sim_id from the session; raises if no session."""
     session = _get_session(request)
     if session:
-        return session.get("sim_id", DEFAULT_SIM_ID)
-    return DEFAULT_SIM_ID
+        sid = session.get("sim_id", "")
+        if sid:
+            return sid
+    raise ValueError("No simulation selected — please log in.")
 
 
 # ── Helpers ────────────────────────────────────────────────────────────
@@ -403,3 +403,175 @@ async def admin_remove_sim(request: Request, sim_id: str = Form(...)):
 
     params = urlencode({"msg": result["message"], "ok": "1" if result["success"] else "0"})
     return RedirectResponse(url=f"/admin/simulations?{params}", status_code=303)
+
+
+# ── User Management ───────────────────────────────────────────────────
+
+@app.get("/admin/users", response_class=HTMLResponse)
+async def admin_users(request: Request, msg: str = "", ok: str = "1"):
+    """List all users in the current simulation."""
+    from app.modules.user_management import list_users
+
+    session = _get_session(request)
+    if not session:
+        return RedirectResponse(url="/team/login", status_code=302)
+    sim_id = _sim_id_from(request)
+
+    users = list_users(sim_id)
+    template = _jinja_env.get_template("manage_users.html")
+    html = template.render(
+        users=users,
+        sim_id=sim_id,
+        sim_ids=session.get("sim_ids", []),
+        msg=msg,
+        ok=(ok == "1"),
+        role=session.get("role", ""),
+    )
+    return HTMLResponse(content=html)
+
+
+@app.post("/admin/users/create")
+async def admin_create_user(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    role: str = Form("USER"),
+    team_id: str = Form(""),
+    first_name: str = Form(""),
+    last_name: str = Form(""),
+    email: str = Form(""),
+    school_id: str = Form(""),
+    course_id: str = Form(""),
+):
+    """Create a new user in the current simulation."""
+    from app.modules.user_management import create_user
+
+    sim_id = _sim_id_from(request)
+    try:
+        create_user(
+            simulation_id=sim_id,
+            username=username,
+            password=password,
+            role=role,
+            team_id=team_id,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            school_id=school_id,
+            course_id=course_id,
+        )
+        params = urlencode({"msg": f"User '{username}' created.", "ok": "1"})
+    except Exception as exc:
+        params = urlencode({"msg": f"Create failed: {exc}", "ok": "0"})
+    return RedirectResponse(url=f"/admin/users?{params}", status_code=303)
+
+
+@app.post("/admin/users/edit")
+async def admin_edit_user(
+    request: Request,
+    username: str = Form(...),
+    first_name: str = Form(""),
+    last_name: str = Form(""),
+    email: str = Form(""),
+    school_id: str = Form(""),
+    course_id: str = Form(""),
+):
+    """Edit a user's profile fields."""
+    from app.modules.user_management import edit_user
+
+    sim_id = _sim_id_from(request)
+    try:
+        edit_user(
+            simulation_id=sim_id,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            school_id=school_id,
+            course_id=course_id,
+        )
+        params = urlencode({"msg": f"User '{username}' updated.", "ok": "1"})
+    except Exception as exc:
+        params = urlencode({"msg": f"Edit failed: {exc}", "ok": "0"})
+    return RedirectResponse(url=f"/admin/users?{params}", status_code=303)
+
+
+@app.post("/admin/users/lock")
+async def admin_lock_user(request: Request, username: str = Form(...)):
+    """Lock a user account."""
+    from app.modules.user_management import set_user_lock
+
+    sim_id = _sim_id_from(request)
+    try:
+        set_user_lock(simulation_id=sim_id, username=username, is_locked=True)
+        params = urlencode({"msg": f"User '{username}' locked.", "ok": "1"})
+    except Exception as exc:
+        params = urlencode({"msg": f"Lock failed: {exc}", "ok": "0"})
+    return RedirectResponse(url=f"/admin/users?{params}", status_code=303)
+
+
+@app.post("/admin/users/unlock")
+async def admin_unlock_user(request: Request, username: str = Form(...)):
+    """Unlock a user account."""
+    from app.modules.user_management import set_user_lock
+
+    sim_id = _sim_id_from(request)
+    try:
+        set_user_lock(simulation_id=sim_id, username=username, is_locked=False)
+        params = urlencode({"msg": f"User '{username}' unlocked.", "ok": "1"})
+    except Exception as exc:
+        params = urlencode({"msg": f"Unlock failed: {exc}", "ok": "0"})
+    return RedirectResponse(url=f"/admin/users?{params}", status_code=303)
+
+
+@app.post("/admin/users/change-password")
+async def admin_change_password(
+    request: Request,
+    username: str = Form(...),
+    new_password: str = Form(...),
+):
+    """Change a user's password."""
+    from app.modules.user_management import change_password
+
+    sim_id = _sim_id_from(request)
+    try:
+        change_password(simulation_id=sim_id, username=username, new_password=new_password)
+        params = urlencode({"msg": f"Password changed for '{username}'.", "ok": "1"})
+    except Exception as exc:
+        params = urlencode({"msg": f"Password change failed: {exc}", "ok": "0"})
+    return RedirectResponse(url=f"/admin/users?{params}", status_code=303)
+
+
+@app.post("/admin/users/change-role")
+async def admin_change_role(
+    request: Request,
+    username: str = Form(...),
+    new_role: str = Form(...),
+    new_team_id: str = Form(""),
+):
+    """Change a user's role."""
+    from app.modules.user_management import change_role
+
+    sim_id = _sim_id_from(request)
+    try:
+        change_role(
+            simulation_id=sim_id,
+            username=username,
+            new_role=new_role,
+            new_team_id=new_team_id,
+        )
+        params = urlencode({"msg": f"Role changed for '{username}' to {new_role}.", "ok": "1"})
+    except Exception as exc:
+        params = urlencode({"msg": f"Role change failed: {exc}", "ok": "0"})
+    return RedirectResponse(url=f"/admin/users?{params}", status_code=303)
+
+
+@app.post("/admin/users/remove")
+async def admin_remove_user(request: Request, username: str = Form(...)):
+    """Remove a user from the current simulation."""
+    from app.modules.user_management import remove_user
+
+    sim_id = _sim_id_from(request)
+    result = remove_user(simulation_id=sim_id, username=username)
+    params = urlencode({"msg": result["message"], "ok": "1" if result["success"] else "0"})
+    return RedirectResponse(url=f"/admin/users?{params}", status_code=303)

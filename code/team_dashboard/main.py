@@ -83,15 +83,17 @@ from fastapi import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
-class AdminGuardMiddleware(BaseHTTPMiddleware):
-    """Redirect unauthenticated / non-admin users away from /admin*."""
+class DashboardGuardMiddleware(BaseHTTPMiddleware):
+    """Redirect unauthenticated / non-privileged users away from /admin*."""
+
+    _ADMIN_ROLES = {"admin", "ADMIN", "PROFESSOR", "TA"}
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
         # Guard /admin routes and /api/admin routes
         if path.startswith("/admin") or path.startswith("/api/admin"):
             session = _get_session(request)
-            if not session or session.get("role") != "admin":
+            if not session or session.get("role") not in self._ADMIN_ROLES:
                 # For API routes return 401 JSON; for pages redirect
                 if path.startswith("/api/"):
                     from fastapi.responses import JSONResponse
@@ -102,7 +104,7 @@ class AdminGuardMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-app.add_middleware(AdminGuardMiddleware)
+app.add_middleware(DashboardGuardMiddleware)
 
 # ── Mount all routes from both sub-apps ────────────────────────────────
 # We include routes from both FastAPI apps into the unified app.
@@ -124,5 +126,19 @@ for route in admin_app.routes:
         if route.path == "/" and getattr(route, "name", "") == "root":
             continue
     app.routes.append(route)
+
+# ── Demo simulation auto-provisioning ──────────────────────────────────
+@app.on_event("startup")
+async def _provision_demo_on_startup():
+    """Ensure the demo simulation exists on every app start."""
+    import logging
+    _logger = logging.getLogger(__name__)
+    try:
+        from scripts.provision_demo import provision_demo
+        created = provision_demo()
+        if created:
+            _logger.info("Demo simulation provisioned on startup.")
+    except Exception:
+        _logger.warning("Demo auto-provisioning skipped (non-fatal).", exc_info=True)
 
 __all__ = ["app"]
