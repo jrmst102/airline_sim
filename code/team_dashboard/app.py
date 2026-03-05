@@ -163,9 +163,23 @@ async def login_submit(
     password: str = Form(...),
 ):
     """Validate credentials and set session cookie."""
+    # ── Diagnostic logging (temporary) ─────────────────────────────────
+    from app.auth.login_manager import get_active_simulation_ids
+    from app.data.csv_manager import get_store
+    try:
+        store = get_store()
+        logger.info("[LOGIN-DIAG] store type: %s", type(store).__name__)
+        active = get_active_simulation_ids()
+        logger.info("[LOGIN-DIAG] active simulation IDs: %s", active)
+        logger.info("[LOGIN-DIAG] attempting login for username=%r", username)
+    except Exception as exc:
+        logger.warning("[LOGIN-DIAG] error during diagnostics: %s", exc)
+    # ── End diagnostic logging ─────────────────────────────────────────
+
     result = auth_login(username=username, password=password)
 
     if not result.success:
+        logger.info("[LOGIN-DIAG] login FAILED: %s", result.message)
         params = urlencode({"msg": result.message, "ok": "0"})
         return RedirectResponse(url=f"/team/login?{params}", status_code=303)
 
