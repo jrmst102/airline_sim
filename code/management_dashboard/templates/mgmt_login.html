@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Airlines - Management Login</title>
+    <link rel="stylesheet" href="/static/mgmt.css">
+</head>
+<body class="login-body">
+
+<div class="header">
+    <img src="/logo.png" alt="Logo" class="header-logo">
+    <div class="header-center">
+        <div class="header-title">Airlines Management Console</div>
+        <div class="header-subtitle">Platform Administration</div>
+    </div>
+</div>
+
+{% if msg %}
+<div class="banner {{ 'banner-success' if ok else 'banner-error' }}" id="banner">
+    <span>{{ msg }}</span>
+    <button class="banner-close" onclick="document.getElementById('banner').remove()">&#10005;</button>
+</div>
+{% endif %}
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-card-title">Administrator Login</div>
+        <form method="post" action="/mgmt/login">
+            <div class="form-row" style="flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 14px;">
+                <label for="username" style="min-width: unset;">Username</label>
+                <input type="text" id="username" name="username" required
+                       class="form-input" style="height: 38px; font-size: 14px;" autofocus>
+            </div>
+            <div class="form-row" style="flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 20px;">
+                <label for="password" style="min-width: unset;">Password</label>
+                <input type="password" id="password" name="password" required
+                       class="form-input" style="height: 38px; font-size: 14px;">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" style="height: 40px; font-size: 15px;">
+                Login
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="footer">Copyright 2026 by Dr. Jose Mendoza</div>
+</body>
+</html>
