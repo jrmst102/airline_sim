@@ -1,0 +1,2 @@
+simulation_id,user_id,username,role,team_id,password_hash,is_locked,created_at_utc
+sim_smoke,U_ADMIN,admin,ADMIN,,,0,2026-03-01T17:02:27.135957+00:00

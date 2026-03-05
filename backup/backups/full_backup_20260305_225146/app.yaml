@@ -1,0 +1,32 @@
+name: airline-sim
+services:
+  - name: airline-sim
+    github:
+      repo: jrmst102/airline_sim
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    environment_slug: python
+    run_command: uvicorn code.team_dashboard.main:app --host 0.0.0.0 --port $PORT
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    envs:
+      - key: SPACES_BUCKET
+        scope: RUN_TIME
+        value: airlines-sim
+      - key: SPACES_REGION
+        scope: RUN_TIME
+        value: sfo3
+      - key: SPACES_ENDPOINT
+        scope: RUN_TIME
+        value: https://sfo3.digitaloceanspaces.com
+      - key: SPACES_ACCESS_KEY_ID
+        scope: RUN_TIME
+        type: SECRET
+      - key: SPACES_SECRET_ACCESS_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: SESSION_SECRET
+        scope: RUN_TIME
+        type: SECRET

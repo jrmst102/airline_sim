@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1366, initial-scale=1">
+    <title>Airlines - {{ team_name }}</title>
+    <link rel="stylesheet" href="/static/team.css">
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<div class="header">
+    <img src="/logo.png" alt="Logo" class="header-logo">
+    <div class="header-center">
+        <div class="header-title">Airlines - Team Dashboard</div>
+        <div class="header-subtitle">Competitive Strategy Simulation</div>
+    </div>
+    <div class="header-right">
+        <span class="header-user">{{ username }}</span>
+        <a href="/team/logout" class="btn btn-small btn-outline">Log Out</a>
+    </div>
+</div>
+
+<!-- ── Banner (flash message) ──────────────────────────────────── -->
+{% if msg %}
+<div class="banner {{ 'banner-success' if ok else 'banner-error' }}" id="banner">
+    <span>{{ msg }}</span>
+    <button class="banner-close" onclick="document.getElementById('banner').remove()">✕</button>
+</div>
+{% endif %}
+
+<!-- ── Main Grid ───────────────────────────────────────────────── -->
+<div class="main-grid">
+
+    <!-- ═══════════════ Left Panel ═══════════════ -->
+    <div class="panel panel-left">
+
+        <!-- Status Card -->
+        <div class="card">
+            <div class="card-title">Simulation Status</div>
+            <div class="status-grid">
+                <div class="status-label">Team</div>
+                <div class="status-value">{{ team_name }}</div>
+                <div class="status-label">Status</div>
+                <div class="status-value status-badge
+                    {% if sim_state.status == 'STARTED' %}badge-running
+                    {% elif sim_state.status == 'ENDED' %}badge-ended
+                    {% elif sim_state.status == 'CREATED' %}badge-created
+                    {% else %}badge-default{% endif %}">
+                    {{ sim_state.status }}
+                </div>
+                <div class="status-label">Current Round</div>
+                <div class="status-value">{{ sim_state.current_round }} / {{ sim_state.total_rounds }}</div>
+                <div class="status-label">Simulation</div>
+                <div class="status-value">{{ sim_state.name or '—' }}</div>
+            </div>
+        </div>
+
+        <!-- Decision Form Card -->
+        <div class="card">
+            <div class="card-title">
+                Enter Decisions
+                {% if sim_state.is_started and not sim_state.is_ended %}
+                <span class="card-subtitle">Round {{ sim_state.current_round }}</span>
+                {% endif %}
+            </div>
+
+            {% if not sim_state.is_started %}
+            <div class="info-msg">Simulation has not started yet. Decisions cannot be entered.</div>
+            {% elif sim_state.is_ended %}
+            <div class="info-msg">Simulation has ended. Decisions are locked.</div>
+            {% else %}
+            <form method="post" action="/team/save" class="decision-form" id="decision-form">
+                <div class="form-row">
+                    <label for="flights_per_day">Flights per Day</label>
+                    <input type="number" id="flights_per_day" name="flights_per_day"
+                           value="{{ defaults.flights_per_day }}"
+                           min="0" max="5" step="1" required
+                           class="form-input form-input-short">
+                    <span class="form-hint">0 – 5</span>
+                </div>
+                <div class="form-row">
+                    <label for="price_business">Business Price ($)</label>
+                    <input type="number" id="price_business" name="price_business"
+                           value="{{ defaults.price_business|int }}"
+                           min="50" max="1000" step="1" required
+                           class="form-input form-input-short">
+                    <span class="form-hint">$50 – $1,000</span>
+                </div>
+                <div class="form-row">
+                    <label for="price_leisure">Leisure Price ($)</label>
+                    <input type="number" id="price_leisure" name="price_leisure"
+                           value="{{ defaults.price_leisure|int }}"
+                           min="50" max="1000" step="1" required
+                           class="form-input form-input-short">
+                    <span class="form-hint">$50 – $1,000</span>
+                </div>
+                <div class="form-row">
+                    <label for="branding_level">Branding Level</label>
+                    <select id="branding_level" name="branding_level" class="form-input">
+                        <option value="Low" {{ 'selected' if defaults.branding_level == 'Low' }}>Low</option>
+                        <option value="Medium" {{ 'selected' if defaults.branding_level == 'Medium' }}>Medium</option>
+                        <option value="High" {{ 'selected' if defaults.branding_level == 'High' }}>High</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="product_strategy">Product Strategy</label>
+                    <select id="product_strategy" name="product_strategy" class="form-input">
+                        <option value="High" {{ 'selected' if defaults.product_strategy == 'High' }}>High</option>
+                        <option value="Medium" {{ 'selected' if defaults.product_strategy == 'Medium' }}>Medium</option>
+                        <option value="Low" {{ 'selected' if defaults.product_strategy == 'Low' }}>Low</option>
+                    </select>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-primary"
+                            onclick="return disableBtn(this)">
+                        Save Decisions
+                    </button>
+                </div>
+            </form>
+
+            <div class="action-divider"></div>
+
+            <!-- Undo -->
+            <form method="post" action="/team/undo" class="action-form">
+                <button type="submit" class="btn btn-warning btn-small"
+                        onclick="return confirmAction(this, 'Undo your saved decision for the current round? The form will reset to defaults.')">
+                    Undo Current Decision
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- ═══════════════ Right Panel ═══════════════ -->
+    <div class="panel panel-right">
+
+        <!-- Performance Card -->
+        <div class="card">
+            <div class="card-title">Team Performance</div>
+
+            {% if not perf.has_data %}
+            <div class="info-msg">No performance data available yet. Results will appear after the first round is processed.</div>
+            {% else %}
+            <!-- Latest Round Metrics -->
+            <div class="metrics-header">Round {{ perf.latest.round_number }} Results</div>
+            <div class="metrics-grid">
+                <div class="metric">
+                    <div class="metric-value">${{ "{:,.0f}".format(perf.latest.revenue) }}</div>
+                    <div class="metric-label">Revenue</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">${{ "{:,.0f}".format(perf.latest.total_cost) }}</div>
+                    <div class="metric-label">Total Cost</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value {{ 'metric-positive' if perf.latest.profit >= 0 else 'metric-negative' }}">${{ "{:,.0f}".format(perf.latest.profit) }}</div>
+                    <div class="metric-label">Profit</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ "{:,}".format(perf.latest.passengers) }}</div>
+                    <div class="metric-label">Passengers</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ "{:.1f}%".format(perf.latest.load_factor * 100) }}</div>
+                    <div class="metric-label">Load Factor</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ "{:.1f}%".format(perf.latest.market_share_volume * 100) }}</div>
+                    <div class="metric-label">Volume Share</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ perf.latest.csi }}</div>
+                    <div class="metric-label">CSI</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ perf.latest.oei }}</div>
+                    <div class="metric-label">OEI</div>
+                </div>
+            </div>
+
+            <!-- Performance History Table -->
+            {% if perf.history|length > 1 %}
+            <div class="metrics-header" style="margin-top: 20px;">Performance History</div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Round</th>
+                            <th>Passengers</th>
+                            <th>Revenue</th>
+                            <th>Total Cost</th>
+                            <th>Profit</th>
+                            <th>Load Factor</th>
+                            <th>Vol Share</th>
+                            <th>CSI</th>
+                            <th>OEI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in perf.history %}
+                        <tr>
+                            <td>{{ r.round_number }}</td>
+                            <td>{{ "{:,}".format(r.passengers) }}</td>
+                            <td>${{ "{:,.0f}".format(r.revenue) }}</td>
+                            <td>${{ "{:,.0f}".format(r.total_cost) }}</td>
+                            <td class="{{ 'metric-positive' if r.profit >= 0 else 'metric-negative' }}">${{ "{:,.0f}".format(r.profit) }}</td>
+                            <td>{{ "{:.1f}%".format(r.load_factor * 100) }}</td>
+                            <td>{{ "{:.1f}%".format(r.market_share_volume * 100) }}</td>
+                            <td>{{ r.csi }}</td>
+                            <td>{{ r.oei }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Past Decisions Card -->
+        {% if past_decisions %}
+        <div class="card" style="margin-top: 16px;">
+            <div class="card-title">Past Decisions</div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Round</th>
+                            <th>Flights/Day</th>
+                            <th>Biz Price</th>
+                            <th>Leisure Price</th>
+                            <th>Branding</th>
+                            <th>Product</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in past_decisions %}
+                        <tr>
+                            <td>{{ d.round_number }}</td>
+                            <td>{{ d.flights_per_day }}</td>
+                            <td>${{ "{:,.0f}".format(d.price_business) }}</td>
+                            <td>${{ "{:,.0f}".format(d.price_leisure) }}</td>
+                            <td>{{ d.branding_level }}</td>
+                            <td>{{ d.product_strategy }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────────── -->
+<div class="footer">
+    Copyright 2026 by Dr. Jose Mendoza
+</div>
+
+<!-- ── JavaScript ──────────────────────────────────────────────── -->
+<script>
+    function disableBtn(btn) {
+        setTimeout(function() {
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+        }, 0);
+        return true;
+    }
+
+    function confirmAction(btn, message) {
+        if (!confirm(message)) return false;
+        setTimeout(function() {
+            btn.disabled = true;
+            btn.textContent = 'Processing…';
+        }, 0);
+        return true;
+    }
+
+    /* Auto-dismiss banner after 8 seconds */
+    (function() {
+        var banner = document.getElementById('banner');
+        if (banner) {
+            setTimeout(function() { banner.remove(); }, 8000);
+        }
+    })();
+
+    /* ── Auto-refresh: poll /team/state every 10 seconds ────────── */
+    (function() {
+        /* Snapshot of the state at page-render time */
+        var lastStatus = "{{ sim_state.status }}";
+        var lastRound  = {{ sim_state.current_round }};
+
+        function pollState() {
+            fetch("/team/state", { credentials: "same-origin" })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.error) return;              /* session expired – ignore */
+                    if (data.status !== lastStatus || data.current_round !== lastRound) {
+                        /* State changed ➜ full page reload */
+                        window.location.reload();
+                    }
+                })
+                .catch(function() { /* network blip – silently retry next cycle */ });
+        }
+
+        setInterval(pollState, 10000);   /* every 10 seconds */
+    })();
+</script>
+
+</body>
+</html>

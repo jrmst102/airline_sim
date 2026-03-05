@@ -1,0 +1,2 @@
+simulation_id,user_id,username,role,team_id,password_hash,is_locked,created_at_utc
+TS_29,U_ADMIN,admin,ADMIN,,,0,2026-03-01T16:59:56.744746+00:00

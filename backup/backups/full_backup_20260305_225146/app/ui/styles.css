@@ -1,0 +1,75 @@
+/* =========================
+   Airline Sim — UI Baseline
+   ========================= */
+
+/* Layout width */
+.block-container {
+  max-width: 1180px;
+  padding-top: 1.25rem;
+  padding-bottom: 2rem;
+}
+
+/* Background */
+.stApp {
+  background: #f6f8fc;
+}
+
+/* Typography */
+html, body, [class*="css"]  {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+
+/* Sidebar: keep it visible + stable */
+section[data-testid="stSidebar"] {
+  min-width: 280px !important;
+  max-width: 280px !important;
+  background: #eef3ff;
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+/* Sidebar content spacing */
+section[data-testid="stSidebar"] .block-container {
+  padding-top: 1rem;
+}
+
+/* Reduce Streamlit default padding quirks */
+div[data-testid="stSidebarUserContent"] {
+  padding: 0.75rem 0.75rem 1.25rem 0.75rem;
+}
+
+/* Hide the collapse control (prevents “where did my nav go?”) */
+button[data-testid="stSidebarCollapseButton"] {
+  display: none !important;
+}
+
+/* Header / toolbar cleanup */
+header[data-testid="stHeader"] {
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+/* Cards */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+}
+
+/* Buttons */
+.stButton > button {
+  border-radius: 12px;
+  padding: 0.6rem 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+/* Primary buttons (Streamlit uses kind="primary") */
+.stButton > button[kind="primary"] {
+  border: none;
+}
+
+/* Inputs */
+.stTextInput input, .stNumberInput input, .stSelectbox div, .stTextArea textarea {
+  border-radius: 12px !important;
+}

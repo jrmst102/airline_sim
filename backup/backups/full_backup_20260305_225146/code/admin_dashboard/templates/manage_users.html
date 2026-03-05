@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1366, initial-scale=1">
+    <title>Airlines - User Management</title>
+    <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<div class="header">
+    <img src="/logo.png" alt="Logo" class="header-logo">
+    <div class="header-center">
+        <div class="header-title">Airlines - User Management</div>
+        <div class="header-subtitle">Simulation: {{ sim_id }}</div>
+    </div>
+    <div class="header-right">
+        <a href="/admin" class="header-logout" title="Back to Dashboard">Dashboard</a>
+        <a href="/admin/simulations" class="header-logout" title="Manage Simulations">Simulations</a>
+        <a href="/team/logout" class="header-logout" title="Logout">Logout</a>
+    </div>
+</div>
+
+<!-- ── Banner ──────────────────────────────────────────────────── -->
+{% if msg %}
+<div class="banner {{ 'banner-success' if ok else 'banner-error' }}" id="banner">
+    <span>{{ msg }}</span>
+    <button class="banner-close" onclick="document.getElementById('banner').remove()">&#10005;</button>
+</div>
+{% endif %}
+
+<!-- ── Main Content ────────────────────────────────────────────── -->
+<div style="padding: 16px 24px; max-width: 1300px; margin: 0 auto;">
+
+    {% if role == 'admin' or role == 'ADMIN' %}
+    <!-- Create New User (Admin only) -->
+    <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title">Create New User</div>
+        <form method="post" action="/admin/users/create">
+            <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+                <div class="form-row" style="flex: 0 0 auto;">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required
+                           class="form-input" style="width: 130px;" placeholder="e.g. jdoe">
+                </div>
+                <div class="form-row" style="flex: 0 0 auto;">
+                    <label for="password">Password</label>
+                    <input type="text" id="password" name="password" required minlength="8"
+                           class="form-input" style="width: 130px;" placeholder="min 8 chars">
+                </div>
+                <div class="form-row" style="flex: 0 0 auto;">
+                    <label for="first_name">First Name</label>
+                    <input type="text" id="first_name" name="first_name"
+                           class="form-input" style="width: 110px;">
+                </div>
+                <div class="form-row" style="flex: 0 0 auto;">
+                    <label for="last_name">Last Name</label>
+                    <input type="text" id="last_name" name="last_name"
+                           class="form-input" style="width: 110px;">
+                </div>
+                <div class="form-row" style="flex: 0 0 auto;">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email"
+                           class="form-input" style="width: 160px;">
+                </div>
+                <div class="form-row" style="flex: 0 0 auto;">
+                    <label for="role">Role</label>
+                    <select id="role_select" name="role" class="form-input" style="width: 110px;"
+                            onchange="document.getElementById('team_id_field').style.display = this.value === 'USER' ? '' : 'none';">
+                        <option value="USER">USER</option>
+                        <option value="TA">TA</option>
+                        <option value="PROFESSOR">PROFESSOR</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                </div>
+                <div class="form-row" style="flex: 0 0 auto;" id="team_id_field">
+                    <label for="team_id">Team</label>
+                    <select name="team_id" class="form-input" style="width: 70px;">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-action">Create</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Users Table -->
+    <div class="card card-table">
+        <div class="card-title">Users in {{ sim_id }} ({{ users|length }})</div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Team</th>
+                        <th>Status</th>
+                        {% if role == 'admin' or role == 'ADMIN' %}
+                        <th style="width: 320px;">Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td><strong>{{ u.username }}</strong></td>
+                        <td>{{ u.first_name }} {{ u.last_name }}</td>
+                        <td style="font-size: 12px;">{{ u.email or '—' }}</td>
+                        <td>
+                            <span class="status-badge
+                                {% if u.role == 'ADMIN' %}badge-running
+                                {% elif u.role == 'PROFESSOR' %}badge-created
+                                {% elif u.role == 'TA' %}badge-ended
+                                {% else %}badge-default{% endif %}">
+                                {{ u.role }}
+                            </span>
+                        </td>
+                        <td>{{ u.team_id or '—' }}</td>
+                        <td>
+                            {% if u.is_locked == '1' %}
+                            <span style="color: #dc2626; font-weight: 600;">Locked</span>
+                            {% else %}
+                            <span style="color: #16a34a;">Active</span>
+                            {% endif %}
+                        </td>
+                        {% if role == 'admin' or role == 'ADMIN' %}
+                        <td>
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <!-- Lock / Unlock -->
+                                {% if u.is_locked == '1' %}
+                                <form method="post" action="/admin/users/unlock" style="display:inline;">
+                                    <input type="hidden" name="username" value="{{ u.username }}">
+                                    <button type="submit" class="btn btn-success" style="font-size: 11px; padding: 3px 8px;">Unlock</button>
+                                </form>
+                                {% else %}
+                                <form method="post" action="/admin/users/lock" style="display:inline;">
+                                    <input type="hidden" name="username" value="{{ u.username }}">
+                                    <button type="submit" class="btn btn-warning" style="font-size: 11px; padding: 3px 8px;">Lock</button>
+                                </form>
+                                {% endif %}
+
+                                <!-- Change Password -->
+                                <button class="btn btn-primary" style="font-size: 11px; padding: 3px 8px;"
+                                        onclick="promptPassword('{{ u.username }}')">Password</button>
+
+                                <!-- Change Role -->
+                                <button class="btn btn-primary" style="font-size: 11px; padding: 3px 8px;"
+                                        onclick="promptRole('{{ u.username }}', '{{ u.role }}')">Role</button>
+
+                                <!-- Remove -->
+                                <form method="post" action="/admin/users/remove" style="display:inline;">
+                                    <input type="hidden" name="username" value="{{ u.username }}">
+                                    <button type="submit" class="btn btn-danger" style="font-size: 11px; padding: 3px 8px;"
+                                            onclick="return confirm('Remove user {{ u.username }}? This cannot be undone.')">Remove</button>
+                                </form>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                    {% if not users %}
+                    <tr>
+                        <td colspan="7" class="empty-msg">No users found in this simulation.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────────── -->
+<div class="footer">
+    Copyright 2026 by Dr. Jose Mendoza
+</div>
+
+<!-- ── Hidden forms for JS-driven actions ──────────────────────── -->
+<form id="change-password-form" method="post" action="/admin/users/change-password" style="display:none;">
+    <input type="hidden" name="username" id="cp-username">
+    <input type="hidden" name="new_password" id="cp-password">
+</form>
+
+<form id="change-role-form" method="post" action="/admin/users/change-role" style="display:none;">
+    <input type="hidden" name="username" id="cr-username">
+    <input type="hidden" name="new_role" id="cr-role">
+    <input type="hidden" name="new_team_id" id="cr-team">
+</form>
+
+<script>
+    function promptPassword(username) {
+        var pw = prompt('Enter new password for ' + username + ' (min 8 characters):');
+        if (!pw) return;
+        if (pw.length < 8) { alert('Password must be at least 8 characters.'); return; }
+        document.getElementById('cp-username').value = username;
+        document.getElementById('cp-password').value = pw;
+        document.getElementById('change-password-form').submit();
+    }
+
+    function promptRole(username, currentRole) {
+        var roles = ['USER', 'TA', 'PROFESSOR', 'ADMIN'];
+        var newRole = prompt('Change role for ' + username + '.\nCurrent: ' + currentRole + '\nEnter new role (' + roles.join(', ') + '):');
+        if (!newRole) return;
+        newRole = newRole.toUpperCase().trim();
+        if (roles.indexOf(newRole) === -1) { alert('Invalid role. Must be one of: ' + roles.join(', ')); return; }
+        var teamId = '';
+        if (newRole === 'USER') {
+            teamId = prompt('Enter team ID (A-F):');
+            if (!teamId) return;
+        }
+        document.getElementById('cr-username').value = username;
+        document.getElementById('cr-role').value = newRole;
+        document.getElementById('cr-team').value = teamId;
+        document.getElementById('change-role-form').submit();
+    }
+
+    (function() {
+        var banner = document.getElementById('banner');
+        if (banner) setTimeout(function() { banner.remove(); }, 8000);
+    })();
+</script>
+
+</body>
+</html>
