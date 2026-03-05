@@ -129,19 +129,18 @@ def login(username: str, password: str) -> LoginResult:
     matches: list[tuple[str, dict[str, str]]] = []  # (sim_id, user_row)
     for sim_id in active_ids:
         if not csv_exists(sim_id, "users.csv"):
-            logger.info("[LOGIN-DIAG] sim %s: users.csv NOT FOUND", sim_id)
+            print(f"[LOGIN-DIAG] sim {sim_id}: users.csv NOT FOUND", flush=True)
             continue
         rows = read_csv_rows(sim_id, "users.csv")
-        logger.info("[LOGIN-DIAG] sim %s: %d users, usernames=%s",
-                     sim_id, len(rows),
-                     [r.get("username", "?") for r in rows])
+        unames = [r.get('username', '?') for r in rows]
+        print(f"[LOGIN-DIAG] sim {sim_id}: {len(rows)} users, usernames={unames}", flush=True)
         for row in rows:
             if row.get("username", "").strip().lower() == key_lower:
                 matches.append((sim_id, row))
                 break
 
     if not matches:
-        logger.info("[LOGIN-DIAG] no matches for %r across %d active sims", key_lower, len(active_ids))
+        print(f"[LOGIN-DIAG] no matches for {key_lower!r} across {len(active_ids)} active sims", flush=True)
         return LoginResult(success=False, message="Invalid username or password.")
 
     # Check if the simulation is locked (reject team users)
@@ -156,10 +155,9 @@ def login(username: str, password: str) -> LoginResult:
 
     # Check password
     password_hash = user_row.get("password_hash", "")
-    logger.info("[LOGIN-DIAG] matched sim=%s user=%s hash_len=%d",
-                sim_id, user_row.get("username"), len(password_hash))
+    print(f"[LOGIN-DIAG] matched sim={sim_id} user={user_row.get('username')} hash_len={len(password_hash)}", flush=True)
     if not verify_password(password, password_hash):
-        logger.info("[LOGIN-DIAG] password verification FAILED for %s", user_row.get("username"))
+        print(f"[LOGIN-DIAG] password verification FAILED for {user_row.get('username')}", flush=True)
         return LoginResult(success=False, message="Invalid username or password.")
 
     # Normalise role

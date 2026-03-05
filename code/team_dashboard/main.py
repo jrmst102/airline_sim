@@ -141,4 +141,51 @@ async def _provision_demo_on_startup():
     except Exception:
         _logger.warning("Demo auto-provisioning skipped (non-fatal).", exc_info=True)
 
+
+# ── Diagnostic endpoint (temporary) ───────────────────────────────────
+from fastapi.responses import JSONResponse
+
+@app.get("/diag")
+async def diag():
+    """Temporary diagnostic endpoint — shows store type, active sims, etc."""
+    info: dict = {}
+    try:
+        from app.data.csv_manager import get_store
+        store = get_store()
+        info["store_type"] = type(store).__name__
+        info["store_repr"] = repr(store)[:200]
+    except Exception as e:
+        info["store_error"] = str(e)
+
+    try:
+        from app.auth.login_manager import get_active_simulation_ids, _load_simulation_registry
+        registry = _load_simulation_registry()
+        info["registry_count"] = len(registry)
+        info["registry_sims"] = [
+            {"id": r.get("simulation_id"), "status": r.get("status")}
+            for r in registry
+        ]
+        info["active_sim_ids"] = get_active_simulation_ids()
+    except Exception as e:
+        info["registry_error"] = str(e)
+
+    try:
+        from app.data.csv_manager import csv_exists, read_csv_rows
+        for sim_id in info.get("active_sim_ids", []):
+            key = f"users_{sim_id}"
+            if csv_exists(sim_id, "users.csv"):
+                rows = read_csv_rows(sim_id, "users.csv")
+                info[key] = [r.get("username", "?") for r in rows]
+            else:
+                info[key] = "users.csv NOT FOUND"
+    except Exception as e:
+        info["users_error"] = str(e)
+
+    info["env_spaces_bucket"] = os.environ.get("SPACES_BUCKET", "(not set)")
+    info["env_spaces_region"] = os.environ.get("SPACES_REGION", "(not set)")
+    info["env_has_key"] = bool(os.environ.get("SPACES_ACCESS_KEY_ID"))
+    info["env_has_secret"] = bool(os.environ.get("SPACES_SECRET_ACCESS_KEY"))
+
+    return JSONResponse(info)
+
 __all__ = ["app"]
