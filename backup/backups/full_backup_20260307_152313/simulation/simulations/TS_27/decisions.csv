@@ -1,0 +1,7 @@
+simulation_id,round_number,team_id,flights_per_day,price_business,price_leisure,branding_level,product_strategy,submitted_at_utc
+TS_27,1,A,3,292.0,178.0,Medium,High,2026-03-01T16:59:56.729118+00:00
+TS_27,1,B,2,434.0,195.0,Low,Medium,2026-03-01T16:59:56.730050+00:00
+TS_27,1,C,0,400.0,173.0,High,Low,2026-03-01T16:59:56.731006+00:00
+TS_27,1,D,1,446.0,210.0,Low,Medium,2026-03-01T16:59:56.731941+00:00
+TS_27,1,E,0,427.0,220.0,Medium,Low,2026-03-01T16:59:56.732912+00:00
+TS_27,1,F,5,334.0,182.0,Low,Low,2026-03-01T16:59:56.733958+00:00

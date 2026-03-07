@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Airlines - Select Simulation</title>
+    <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body class="login-body">
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<div class="header">
+    <img src="/logo.png" alt="Logo" class="header-logo">
+    <div class="header-center">
+        <div class="header-title">Airline Simulation</div>
+        <div class="header-subtitle">Competitive Strategy Simulation</div>
+    </div>
+    <div class="header-right">
+        <a href="/team/logout" class="header-logout" title="Logout">Logout</a>
+    </div>
+</div>
+
+<!-- ── Picker Card ─────────────────────────────────────────────── -->
+<div class="login-container">
+    <div class="login-card" style="max-width: 480px;">
+        <div class="login-card-title" style="font-size: 18px; margin-bottom: 16px;">Select a Simulation</div>
+        <p style="margin: 0 0 20px; color: #666; font-size: 14px;">
+            You have access to multiple simulations. Choose one to manage:
+        </p>
+
+        {% for sim in sims %}
+        <form method="post" action="/admin/switch-sim" style="margin-bottom: 10px;">
+            <input type="hidden" name="sim_id" value="{{ sim.id }}">
+            <button type="submit" class="btn btn-primary btn-full" style="text-align: left; padding: 12px 16px;">
+                <strong>{{ sim.name }}</strong>
+                <span style="float: right; opacity: 0.8; font-size: 12px;">
+                    {{ sim.id }} &middot; {{ sim.status }}
+                </span>
+            </button>
+        </form>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────────── -->
+<div class="footer">
+    Copyright 2026 by Dr. Jose Mendoza
+</div>
+
+</body>
+</html>

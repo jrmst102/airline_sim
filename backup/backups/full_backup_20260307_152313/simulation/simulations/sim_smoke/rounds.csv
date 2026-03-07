@@ -1,0 +1,4 @@
+simulation_id,round_number,status,opened_at_utc,closed_at_utc
+sim_smoke,1,OPEN,2026-03-01T17:02:27.138888+00:00,
+sim_smoke,2,PLANNED,,
+sim_smoke,3,PLANNED,,

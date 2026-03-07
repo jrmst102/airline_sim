@@ -1,0 +1,2 @@
+simulation_id,name,status,current_round,total_rounds,created_at_utc,updated_at_utc
+TS_30,Scenario 30: Three airlines: flights+prices+product,STARTED,1,3,2026-03-01T16:59:56.758671+00:00,2026-03-01T16:59:56.761320+00:00

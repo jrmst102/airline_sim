@@ -1,0 +1,228 @@
+/* =========================================================
+   airline_sim Streamlit Theme (1440x900)
+   - Fixed custom header
+   - Fixed sidebar width (260px) with safe restore control
+   - Card system + KPI pills
+   - Sticky insight panel
+   IMPORTANT: This CSS keeps the sidebar toggle reachable.
+   ========================================================= */
+
+/* ===== Design Tokens ===== */
+:root{
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --primary: #1d4ed8;
+  --primary-2: #2563eb;
+  --border: rgba(15, 23, 42, .10);
+  --shadow: 0 8px 24px rgba(15,23,42,.08);
+  --radius: 16px;
+
+  --header-h: 90px;
+  --sidebar-w: 260px;
+  --insight-w: 190px;
+}
+
+/* ===== Base Page ===== */
+html, body {
+  background: var(--bg) !important;
+}
+
+/* Remove Streamlit max-width and enforce consistent padding */
+.main .block-container{
+  max-width: none !important;
+  padding-top: calc(var(--header-h) + 18px) !important;
+  padding-left: 22px !important;
+  padding-right: 22px !important;
+  padding-bottom: 28px !important;
+  background: var(--bg) !important;
+}
+
+/* ===== Streamlit Top Chrome =====
+   Do NOT fully hide the header; the sidebar expand control is attached to it.
+   We keep it essentially zero-height, but allow the collapsedControl button. */
+header[data-testid="stHeader"]{
+  visibility: visible !important;
+  height: 0px !important;
+  background: transparent !important;
+}
+
+/* Hide Streamlit toolbar clutter (but keep collapse control visible below) */
+div[data-testid="stToolbar"]{
+  visibility: hidden !important;
+  height: 0px !important;
+}
+
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+
+/* Sidebar collapse/expand button (critical) */
+button[data-testid="collapsedControl"]{
+  display: block !important;
+  position: fixed !important;
+  top: 12px !important;
+  left: 12px !important;
+  z-index: 100000 !important;
+  background: rgba(255,255,255,.92) !important;
+  border: 1px solid rgba(15,23,42,.14) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(15,23,42,.14) !important;
+}
+
+/* ===== Sidebar ===== */
+section[data-testid="stSidebar"]{
+  width: var(--sidebar-w) !important;
+  min-width: var(--sidebar-w) !important;
+  max-width: var(--sidebar-w) !important;
+  background: #eef2ff !important;
+  border-right: 1px solid var(--border) !important;
+}
+
+/* Sidebar content padding */
+section[data-testid="stSidebar"] .block-container{
+  padding-top: 18px !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+  padding-bottom: 18px !important;
+}
+
+/* SAFETY: prevent sidebar from becoming unreachable when collapsed */
+section[data-testid="stSidebar"][aria-expanded="false"]{
+  transform: translateX(0) !important;
+  width: var(--sidebar-w) !important;
+  min-width: var(--sidebar-w) !important;
+  max-width: var(--sidebar-w) !important;
+  visibility: visible !important;
+}
+
+/* Make sidebar radio/nav look cleaner (works with st.radio / st.selectbox) */
+section[data-testid="stSidebar"] label{
+  font-size: 12px !important;
+  color: var(--muted) !important;
+}
+
+/* ===== Custom Fixed Header (your HTML block uses .air-header) ===== */
+.air-header{
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: var(--sidebar-w);
+  right: 0;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  background: linear-gradient(135deg, #0f2a5c, #1d4ed8);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 6px 22px rgba(15,23,42,.18);
+  border-radius: 0 0 18px 18px;
+}
+
+.air-header .title{
+  color: #fff;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.1;
+}
+.air-header .sub{
+  color: rgba(255,255,255,.80);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.air-kpis{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* KPI “pill” */
+.kpi-pill{
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.18);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  min-width: 92px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+.kpi-pill b{
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: .85;
+}
+.kpi-pill span{
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ===== Cards (use in your HTML wrappers: <div class='card'>...) ===== */
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 16px;
+}
+.card-title{
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.card-sub{
+  color: var(--muted);
+  font-size: 13px;
+}
+.card-divider{
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0 12px 0;
+}
+
+/* ===== Sticky Insight Panel (wrap in <div class='sticky'>...) ===== */
+.sticky{
+  position: sticky;
+  top: calc(var(--header-h) + 18px);
+}
+
+/* ===== Buttons ===== */
+.stButton>button{
+  border-radius: 12px !important;
+  border: 1px solid rgba(15,23,42,.14) !important;
+  padding: 10px 14px !important;
+  font-weight: 600 !important;
+}
+
+/* Streamlit "primary" buttons */
+.stButton>button[kind="primary"]{
+  background: var(--primary) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  color: #fff !important;
+}
+
+/* ===== Inputs ===== */
+.stTextInput input,
+.stNumberInput input,
+.stSelectbox div,
+.stMultiSelect div{
+  border-radius: 12px !important;
+}
+
+/* ===== Tables ===== */
+[data-testid="stDataFrame"]{
+  border-radius: var(--radius) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+/* ===== Minor polish ===== */
+h1, h2, h3, h4 { color: var(--text) !important; }
+p, span, div { color: inherit; }

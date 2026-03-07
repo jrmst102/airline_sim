@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1366, initial-scale=1">
+    <title>Airlines - Admin Dashboard</title>
+    <link rel="stylesheet" href="/static/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<div class="header">
+    <img src="/logo.png" alt="Logo" class="header-logo">
+    <div class="header-center">
+        <div class="header-title">Airlines - Admin Dashboard</div>
+        <div class="header-subtitle">Competitive Strategy Simulation</div>
+    </div>
+    <div class="header-right">
+        {% if sim_ids and sim_ids|length > 1 %}
+        <form method="post" action="/admin/switch-sim" class="sim-switcher">
+            <select name="sim_id" onchange="this.form.submit()" title="Switch simulation">
+                {% for sid in sim_ids %}
+                <option value="{{ sid }}" {{ 'selected' if sid == sim_id else '' }}>{{ sid }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        {% else %}
+        <span class="sim-label" title="Active simulation">{{ sim_id }}</span>
+        {% endif %}
+        <a href="/admin/simulations" class="header-logout" title="Manage Simulations">Simulations</a>
+        <a href="/admin/users" class="header-logout" title="Manage Users">Users</a>
+        <a href="/team/logout" class="header-logout" title="Logout">Logout</a>
+    </div>
+</div>
+
+<!-- ── Banner (flash message) ──────────────────────────────────── -->
+{% if msg %}
+<div class="banner {{ 'banner-success' if ok else 'banner-error' }}" id="banner">
+    <span>{{ msg }}</span>
+    <button class="banner-close" onclick="document.getElementById('banner').remove()">✕</button>
+</div>
+{% endif %}
+
+<!-- ── Admin Actions Bar ────────────────────────────────────────── -->
+<div class="actions-bar">
+    <div class="card actions-card">
+        <div class="actions-row">
+            <!-- Setup -->
+            <form method="post" action="/admin/setup" class="action-form action-form-setup">
+                <div class="form-row">
+                    <label for="sim_name">Name</label>
+                    <input type="text" id="sim_name" name="sim_name"
+                           value="Airline Simulation" class="form-input">
+                </div>
+                <div class="form-row">
+                    <label for="total_rounds">Rounds</label>
+                    <input type="number" id="total_rounds" name="total_rounds"
+                           value="5" min="1" max="20" class="form-input form-input-short">
+                </div>
+                <button type="submit" class="btn btn-primary btn-action"
+                        onclick="return confirmAction(this, 'WARNING: Setting up the simulation will reset all simulation values. Are you sure you want to proceed?')">
+                    Set Up
+                </button>
+            </form>
+
+            <div class="action-divider-v"></div>
+
+            <!-- Start -->
+            <form method="post" action="/admin/start" class="action-form">
+                <button type="submit" class="btn btn-primary btn-action"
+                        onclick="return disableBtn(this)">
+                    Start Simulation
+                </button>
+            </form>
+
+            <div class="action-divider-v"></div>
+
+            <!-- Move to Next Round -->
+            <form method="post" action="/admin/next-round" class="action-form">
+                <button type="submit" class="btn btn-success btn-action"
+                        onclick="return confirmAction(this, 'Process the current round and advance to the next? This will close the current round, compute results, and open the next round.')">
+                    Move to Next Round
+                </button>
+            </form>
+
+            <div class="action-divider-v"></div>
+
+            <!-- End -->
+            <form method="post" action="/admin/end" class="action-form" id="end-form">
+                <button type="submit" class="btn btn-danger btn-action"
+                        onclick="return endSimWithReport(this)">
+                    End Simulation
+                </button>
+            </form>
+
+            <div class="action-divider-v"></div>
+
+            <!-- Undo -->
+            <form method="post" action="/admin/undo" class="action-form">
+                <button type="submit" class="btn btn-warning btn-action"
+                        onclick="return confirmAction(this, 'Are you sure you want to UNDO the last period? This will reopen the previous round.')">
+                    Undo Last Period
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Main Grid ───────────────────────────────────────────────── -->
+<div class="main-grid">
+
+    <!-- Left Panel: Status + Decisions -->
+    <div class="panel panel-left">
+
+        <!-- Status Card -->
+        <div class="card">
+            <div class="card-title">Simulation Status</div>
+            <div class="status-grid">
+                <div class="status-label">Status</div>
+                <div class="status-value status-badge
+                    {% if sim_status.status == 'STARTED' %}badge-running
+                    {% elif sim_status.status == 'ENDED' %}badge-ended
+                    {% elif sim_status.status == 'CREATED' %}badge-created
+                    {% else %}badge-default{% endif %}">
+                    {{ sim_status.status }}
+                </div>
+                <div class="status-label">Current Round</div>
+                <div class="status-value">{{ sim_status.current_round }} / {{ sim_status.total_rounds }}</div>
+                <div class="status-label">Simulation</div>
+                <div class="status-value">{{ sim_status.name or sim_id }}</div>
+                <div class="status-label">Last Updated</div>
+                <div class="status-value status-time">{{ sim_status.updated_at_utc or '—' }}</div>
+            </div>
+        </div>
+
+        <!-- Decision Status Card -->
+        {% if sim_status.status == 'STARTED' %}
+        <div class="card">
+            <div class="card-title">Decision Status <span class="card-subtitle" id="decision-round-label">Round {{ decision_status.current_round }}</span></div>
+            <div class="decision-status-list" id="decision-status-list">
+                {% for tid, submitted in decision_status.teams.items() %}
+                <div class="decision-status-row">
+                    <span class="decision-icon {{ 'icon-submitted' if submitted else 'icon-pending' }}"
+                          title="{{ 'Submitted' if submitted else 'Pending' }}">
+                        {{ '✔' if submitted else '✗' }}
+                    </span>
+                    <span class="decision-team">Team {{ tid }}</span>
+                    <span class="decision-label {{ 'label-submitted' if submitted else 'label-pending' }}">
+                        {{ 'Submitted' if submitted else 'Pending' }}
+                    </span>
+                </div>
+                {% endfor %}
+                {% if not decision_status.teams %}
+                <div class="info-msg">No teams found.</div>
+                {% endif %}
+            </div>
+            <div class="decision-updated" id="decision-updated"></div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Panel: Team Data Table -->
+    <div class="panel panel-right">
+        <div class="card card-table">
+            <div class="card-title">
+                Team Data
+                <span class="card-subtitle">Round {{ team_data.round }}</span>
+                <button class="btn-refresh" onclick="refreshTeamData()" id="refresh-btn"
+                        title="Refresh table data">↻ Refresh</button>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table" id="team-table">
+                    <thead>
+                        <tr>
+                            <th class="col-rank sortable" data-col="0" data-type="num">#</th>
+                            <th class="col-team sortable" data-col="1" data-type="str">Team</th>
+                            <th class="col-num sortable" data-col="2" data-type="num">Passengers</th>
+                            <th class="col-num sortable" data-col="3" data-type="num">Revenue</th>
+                            <th class="col-num sortable" data-col="4" data-type="num">Total Cost</th>
+                            <th class="col-num sortable" data-col="5" data-type="num">Profit</th>
+                            <th class="col-pct sortable" data-col="6" data-type="num">Vol Share</th>
+                            <th class="col-pct sortable" data-col="7" data-type="num">Profit Share</th>
+                            <th class="col-pct sortable" data-col="8" data-type="num">Load Factor</th>
+                            <th class="col-num-sm sortable" data-col="9" data-type="num">Biz $</th>
+                            <th class="col-num-sm sortable" data-col="10" data-type="num">Lei $</th>
+                            <th class="col-idx sortable" data-col="11" data-type="num">CSI</th>
+                            <th class="col-idx sortable" data-col="12" data-type="num">OEI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        {% for t in team_data.teams %}
+                        <tr>
+                            <td class="col-rank">{{ loop.index }}</td>
+                            <td class="col-team">{{ t.team_name }}</td>
+                            <td class="col-num">{{ "{:,}".format(t.passengers) }}</td>
+                            <td class="col-num">${{ "{:,.0f}".format(t.revenue) }}</td>
+                            <td class="col-num">${{ "{:,.0f}".format(t.total_cost) }}</td>
+                            <td class="col-num">${{ "{:,.0f}".format(t.profit) }}</td>
+                            <td class="col-pct">{{ "{:.1f}%".format(t.market_share_volume * 100) }}</td>
+                            <td class="col-pct">{{ "{:.1f}%".format(t.market_share_profit * 100) }}</td>
+                            <td class="col-pct">{{ "{:.1f}%".format(t.load_factor * 100) }}</td>
+                            <td class="col-num-sm">${{ t.price_business }}</td>
+                            <td class="col-num-sm">${{ t.price_leisure }}</td>
+                            <td class="col-idx">{{ t.csi }}</td>
+                            <td class="col-idx">{{ t.oei }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not team_data.teams %}
+                        <tr>
+                            <td colspan="13" class="empty-msg">No team data available. Set up and start a simulation first.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Charts Section ──────────────────────────────────────────── -->
+{% if team_data.teams %}
+<div class="charts-section">
+    <div class="charts-row">
+        <div class="card chart-card">
+            <div class="card-title">Profit by Team</div>
+            <div class="chart-container">
+                <canvas id="profitPieChart"></canvas>
+            </div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-title">Market Share (Volume)</div>
+            <div class="chart-container">
+                <canvas id="volumeBarChart"></canvas>
+            </div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-title">Market Share (Revenue)</div>
+            <div class="chart-container">
+                <canvas id="revenueBarChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Line Charts Section (per-round trends) ──────────────────── -->
+{% if team_history and team_history.rounds|length > 0 %}
+<div class="charts-section">
+    <div class="charts-row">
+        <div class="card chart-card">
+            <div class="card-title">Revenue per Round</div>
+            <div class="chart-container"><canvas id="lineRevenueChart"></canvas></div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-title">Profit per Round</div>
+            <div class="chart-container"><canvas id="lineProfitChart"></canvas></div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-title">Costs per Round</div>
+            <div class="chart-container"><canvas id="lineCostChart"></canvas></div>
+        </div>
+    </div>
+    <div class="charts-row" style="margin-top:16px">
+        <div class="card chart-card">
+            <div class="card-title">Price Business per Round</div>
+            <div class="chart-container"><canvas id="linePriceBizChart"></canvas></div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-title">Price Leisure per Round</div>
+            <div class="chart-container"><canvas id="linePriceLeiChart"></canvas></div>
+        </div>
+        <div class="card chart-card chart-card-placeholder"></div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Footer ──────────────────────────────────────────────────── -->
+<div class="footer">
+    Copyright 2026 by Dr. Jose Mendoza
+</div>
+
+<!-- ── JavaScript ──────────────────────────────────────────────── -->
+<script>
+    /* Double-click protection: disable button after click */
+    function disableBtn(btn) {
+        setTimeout(function() {
+            btn.disabled = true;
+            btn.textContent = 'Processing…';
+        }, 0);
+        return true;
+    }
+
+    /* Confirm destructive actions */
+    function confirmAction(btn, message) {
+        if (!confirm(message)) return false;
+        return disableBtn(btn);
+    }
+
+    /* End Simulation: open report then submit */
+    function endSimWithReport(btn) {
+        if (!confirm('Are you sure you want to END the simulation? This cannot be undone easily.')) return false;
+        window.open('/admin/report', '_blank');
+        return disableBtn(btn);
+    }
+
+    /* Client-side column sorting */
+    document.querySelectorAll('.sortable').forEach(function(th) {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', function() {
+            var table = document.getElementById('team-table');
+            var tbody = table.querySelector('tbody');
+            var rows = Array.from(tbody.querySelectorAll('tr'));
+            var col = parseInt(th.dataset.col);
+            var type = th.dataset.type;
+            var asc = th.dataset.asc !== '1';
+            th.dataset.asc = asc ? '1' : '0';
+
+            // Clear sort indicators on other headers
+            document.querySelectorAll('.sortable').forEach(function(h) {
+                h.classList.remove('sort-asc', 'sort-desc');
+            });
+            th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+
+            rows.sort(function(a, b) {
+                var aVal = a.cells[col] ? a.cells[col].textContent.trim() : '';
+                var bVal = b.cells[col] ? b.cells[col].textContent.trim() : '';
+                if (type === 'num') {
+                    aVal = parseFloat(aVal.replace(/[$,%]/g, '').replace(/,/g, '')) || 0;
+                    bVal = parseFloat(bVal.replace(/[$,%]/g, '').replace(/,/g, '')) || 0;
+                    return asc ? aVal - bVal : bVal - aVal;
+                }
+                return asc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            });
+
+            rows.forEach(function(row) { tbody.appendChild(row); });
+        });
+    });
+
+    /* AJAX table refresh */
+    async function refreshTeamData() {
+        var btn = document.getElementById('refresh-btn');
+        btn.disabled = true;
+        btn.textContent = '↻ Loading…';
+        try {
+            var resp = await fetch('/api/admin/teams');
+            var data = await resp.json();
+            var tbody = document.getElementById('table-body');
+            if (!data.teams || data.teams.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="13" class="empty-msg">No team data available.</td></tr>';
+            } else {
+                var html = '';
+                data.teams.forEach(function(t, i) {
+                    html += '<tr>'
+                        + '<td class="col-rank">' + (i + 1) + '</td>'
+                        + '<td class="col-team">' + t.team_name + '</td>'
+                        + '<td class="col-num">' + t.passengers.toLocaleString() + '</td>'
+                        + '<td class="col-num">$' + t.revenue.toLocaleString(undefined, {maximumFractionDigits:0}) + '</td>'
+                        + '<td class="col-num">$' + t.total_cost.toLocaleString(undefined, {maximumFractionDigits:0}) + '</td>'
+                        + '<td class="col-num">$' + t.profit.toLocaleString(undefined, {maximumFractionDigits:0}) + '</td>'
+                        + '<td class="col-pct">' + (t.market_share_volume * 100).toFixed(1) + '%</td>'
+                        + '<td class="col-pct">' + (t.market_share_profit * 100).toFixed(1) + '%</td>'
+                        + '<td class="col-pct">' + (t.load_factor * 100).toFixed(1) + '%</td>'
+                        + '<td class="col-num-sm">$' + t.price_business + '</td>'
+                        + '<td class="col-num-sm">$' + t.price_leisure + '</td>'
+                        + '<td class="col-idx">' + t.csi + '</td>'
+                        + '<td class="col-idx">' + t.oei + '</td>'
+                        + '</tr>';
+                });
+                tbody.innerHTML = html;
+            }
+            // Update round label
+            var subtitle = document.querySelector('.card-subtitle');
+            if (subtitle) subtitle.textContent = 'Round ' + data.round;
+        } catch (err) {
+            console.error('Refresh failed:', err);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '↻ Refresh';
+        }
+    }
+
+    /* Auto-dismiss banner after 8 seconds */
+    (function() {
+        var banner = document.getElementById('banner');
+        if (banner) {
+            setTimeout(function() { banner.remove(); }, 8000);
+        }
+    })();
+
+    /* ── Auto-refresh Decision Status every 30 seconds ─────── */
+    (function() {
+        var list = document.getElementById('decision-status-list');
+        if (!list) return;
+
+        var updatedEl = document.getElementById('decision-updated');
+        var POLL_INTERVAL = 30000; /* 30 seconds */
+        var timer = null;
+
+        function refreshDecisions() {
+            var url = '/api/admin/decisions?_t=' + Date.now();
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('Cache-Control', 'no-cache');
+            xhr.setRequestHeader('Pragma', 'no-cache');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState !== 4) return;
+                if (xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        var roundLabel = document.getElementById('decision-round-label');
+                        if (roundLabel) roundLabel.textContent = 'Round ' + data.current_round;
+                        var teams = data.teams || {};
+                        var keys = Object.keys(teams);
+                        if (keys.length === 0) {
+                            list.innerHTML = '<div class="info-msg">No teams found.</div>';
+                        } else {
+                            var html = '';
+                            for (var i = 0; i < keys.length; i++) {
+                                var tid = keys[i];
+                                var sub = teams[tid];
+                                html += '<div class="decision-status-row">'
+                                    + '<span class="decision-icon ' + (sub ? 'icon-submitted' : 'icon-pending') + '"'
+                                    + ' title="' + (sub ? 'Submitted' : 'Pending') + '">'
+                                    + (sub ? '\u2714' : '\u2717') + '</span>'
+                                    + '<span class="decision-team">Team ' + tid + '</span>'
+                                    + '<span class="decision-label ' + (sub ? 'label-submitted' : 'label-pending') + '">'
+                                    + (sub ? 'Submitted' : 'Pending') + '</span>'
+                                    + '</div>';
+                            }
+                            list.innerHTML = html;
+                        }
+                        if (updatedEl) {
+                            var now = new Date();
+                            updatedEl.textContent = 'Last refreshed: ' + now.toLocaleTimeString();
+                        }
+                    } catch (e) {
+                        console.error('Decision parse error:', e);
+                    }
+                } else {
+                    console.error('Decision poll HTTP error:', xhr.status);
+                }
+                /* schedule next poll */
+                timer = setTimeout(refreshDecisions, POLL_INTERVAL);
+            };
+            xhr.send();
+        }
+
+        /* Run immediately on page load, then every 30 s */
+        refreshDecisions();
+
+        /* Also refresh when this tab regains focus (catches team submissions while tab was idle) */
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                if (timer) clearTimeout(timer);
+                refreshDecisions();
+            }
+        });
+    })();
+
+    /* ── Charts ─────────────────────────────────────────────── */
+    (function() {
+        {% if team_data.teams %}
+        var teamNames = [{% for t in team_data.teams %}'{{ t.team_name }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+        var profits   = [{% for t in team_data.teams %}{{ t.profit }}{% if not loop.last %}, {% endif %}{% endfor %}];
+        var volShares  = [{% for t in team_data.teams %}{{ (t.market_share_volume * 100)|round(1) }}{% if not loop.last %}, {% endif %}{% endfor %}];
+        var revShares  = [{% for t in team_data.teams %}{{ (t.market_share_revenue * 100)|round(1) }}{% if not loop.last %}, {% endif %}{% endfor %}];
+
+        var palette = [
+            '#57068C', '#E67E22', '#2E86C1', '#28B463',
+            '#E74C3C', '#F1C40F', '#8E44AD', '#1ABC9C',
+            '#D35400', '#3498DB'
+        ];
+        var bgColors = teamNames.map(function(_, i) { return palette[i % palette.length]; });
+
+        /* 1. Profit Pie Chart */
+        var ctxPie = document.getElementById('profitPieChart');
+        if (ctxPie) {
+            new Chart(ctxPie, {
+                type: 'pie',
+                data: {
+                    labels: teamNames,
+                    datasets: [{
+                        data: profits,
+                        backgroundColor: bgColors,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 11 },
+                                padding: 12,
+                                usePointStyle: true,
+                                generateLabels: function(chart) {
+                                    var data = chart.data;
+                                    var total = data.datasets[0].data.reduce(function(a, b) { return a + b; }, 0);
+                                    return data.labels.map(function(label, i) {
+                                        var val = data.datasets[0].data[i];
+                                        var pct = total > 0 ? (val / total * 100).toFixed(1) : '0.0';
+                                        return {
+                                            text: label + ' (' + pct + '%)',
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: data.datasets[0].borderColor,
+                                            lineWidth: data.datasets[0].borderWidth,
+                                            pointStyle: 'circle',
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    var val = ctx.parsed;
+                                    var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                    var pct = total > 0 ? (val / total * 100).toFixed(1) : '0.0';
+                                    return ctx.label + ': $' + val.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* 2. Market Share (Volume) Bar Chart */
+        var ctxVol = document.getElementById('volumeBarChart');
+        if (ctxVol) {
+            new Chart(ctxVol, {
+                type: 'bar',
+                data: {
+                    labels: teamNames,
+                    datasets: [{
+                        label: 'Volume Share (%)',
+                        data: volShares,
+                        backgroundColor: bgColors,
+                        borderRadius: 4,
+                        maxBarThickness: 48
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: Math.max(100, Math.ceil(Math.max.apply(null, volShares) + 5)),
+                            ticks: { callback: function(v) { return v + '%'; }, font: { size: 11 } },
+                            grid: { color: '#EEE' }
+                        },
+                        x: {
+                            ticks: { font: { size: 11 } },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) { return ctx.parsed.y.toFixed(1) + '%'; }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* 3. Market Share (Revenue) Bar Chart */
+        var ctxRev = document.getElementById('revenueBarChart');
+        if (ctxRev) {
+            new Chart(ctxRev, {
+                type: 'bar',
+                data: {
+                    labels: teamNames,
+                    datasets: [{
+                        label: 'Revenue Share (%)',
+                        data: revShares,
+                        backgroundColor: bgColors,
+                        borderRadius: 4,
+                        maxBarThickness: 48
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: Math.max(100, Math.ceil(Math.max.apply(null, revShares) + 5)),
+                            ticks: { callback: function(v) { return v + '%'; }, font: { size: 11 } },
+                            grid: { color: '#EEE' }
+                        },
+                        x: {
+                            ticks: { font: { size: 11 } },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) { return ctx.parsed.y.toFixed(1) + '%'; }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        {% endif %}
+    })();
+
+    /* ── Line Charts (per-round trends) ─────────────────────── */
+    (function() {
+        {% if team_history and team_history.rounds|length > 0 %}
+        var roundLabels = [{% for r in team_history.rounds %}'Round {{ r }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+        var lineColors = [
+            '#57068C', '#E67E22', '#2E86C1', '#28B463',
+            '#E74C3C', '#F1C40F', '#8E44AD', '#1ABC9C',
+            '#D35400', '#3498DB'
+        ];
+
+        var histTeams = {{ team_history.teams | tojson }};
+        var teamIds = Object.keys(histTeams);
+
+        function buildLineDatasets(metric) {
+            return teamIds.map(function(tid, i) {
+                var t = histTeams[tid];
+                return {
+                    label: t.name,
+                    data: t[metric],
+                    borderColor: lineColors[i % lineColors.length],
+                    backgroundColor: lineColors[i % lineColors.length],
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.2,
+                    fill: false
+                };
+            });
+        }
+
+        function lineOpts(dollarFormat) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: { size: 11 },
+                            callback: function(v) {
+                                if (dollarFormat) return '$' + v.toLocaleString();
+                                return v.toLocaleString();
+                            }
+                        },
+                        grid: { color: '#EEE' }
+                    },
+                    x: {
+                        ticks: { font: { size: 11 } },
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11 }, padding: 10, usePointStyle: true }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                var v = ctx.parsed.y;
+                                if (dollarFormat) return ctx.dataset.label + ': $' + v.toLocaleString(undefined, {maximumFractionDigits: 0});
+                                return ctx.dataset.label + ': ' + v.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        /* 1. Revenue per Round */
+        var c1 = document.getElementById('lineRevenueChart');
+        if (c1) new Chart(c1, { type: 'line', data: { labels: roundLabels, datasets: buildLineDatasets('revenue') }, options: lineOpts(true) });
+
+        /* 2. Profit per Round */
+        var c2 = document.getElementById('lineProfitChart');
+        if (c2) new Chart(c2, { type: 'line', data: { labels: roundLabels, datasets: buildLineDatasets('profit') }, options: lineOpts(true) });
+
+        /* 3. Costs per Round */
+        var c3 = document.getElementById('lineCostChart');
+        if (c3) new Chart(c3, { type: 'line', data: { labels: roundLabels, datasets: buildLineDatasets('total_cost') }, options: lineOpts(true) });
+
+        /* 4. Price Business per Round */
+        var c4 = document.getElementById('linePriceBizChart');
+        if (c4) new Chart(c4, { type: 'line', data: { labels: roundLabels, datasets: buildLineDatasets('price_business') }, options: lineOpts(true) });
+
+        /* 5. Price Leisure per Round */
+        var c5 = document.getElementById('linePriceLeiChart');
+        if (c5) new Chart(c5, { type: 'line', data: { labels: roundLabels, datasets: buildLineDatasets('price_leisure') }, options: lineOpts(true) });
+
+        {% endif %}
+    })();
+</script>
+
+</body>
+</html>

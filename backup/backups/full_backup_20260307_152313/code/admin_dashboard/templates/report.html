@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1024, initial-scale=1">
+    <title>Simulation Report — {{ simulation.name or 'Airline Simulation' }}</title>
+    <style>
+        /* ── Print-friendly report styles ─────────────────────────── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                         "Helvetica Neue", Arial, sans-serif;
+            color: #222;
+            background: #fff;
+            padding: 24px 40px;
+            font-size: 13px;
+        }
+
+        h1 {
+            font-size: 22px;
+            color: #57068C;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        h2 {
+            font-size: 16px;
+            color: #57068C;
+            margin: 24px 0 10px;
+            border-bottom: 2px solid #57068C;
+            padding-bottom: 4px;
+        }
+        h3 {
+            font-size: 14px;
+            color: #333;
+            margin: 16px 0 6px;
+        }
+
+        .report-subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .report-meta {
+            text-align: center;
+            color: #888;
+            font-size: 11px;
+            margin-bottom: 20px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+        thead tr {
+            background: #57068C;
+        }
+        thead th {
+            color: #fff;
+            font-weight: 600;
+            text-align: left;
+            padding: 6px 8px;
+            white-space: nowrap;
+        }
+        thead th.num { text-align: right; }
+        thead th.ctr { text-align: center; }
+        tbody tr:nth-child(even) { background: #F7F4FB; }
+        tbody td {
+            padding: 5px 8px;
+            white-space: nowrap;
+        }
+        tbody td.num { text-align: right; }
+        tbody td.ctr { text-align: center; }
+
+        /* Print hint */
+        .print-hint {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px 16px;
+            background: #F7F4FB;
+            border: 1px solid #D6C4E8;
+            border-radius: 8px;
+            color: #57068C;
+            font-size: 12px;
+        }
+
+        /* Footer */
+        .report-footer {
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+            margin-top: 24px;
+            padding-top: 12px;
+            border-top: 1px solid #ddd;
+        }
+
+        /* Print media */
+        @media print {
+            body { padding: 0; }
+            .print-hint { display: none; }
+            h2 { break-before: auto; }
+            table { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>{{ simulation.name or 'Airline Simulation' }} — Final Report</h1>
+<div class="report-subtitle">Competitive Strategy Simulation</div>
+<div class="report-meta">
+    Rounds completed: {{ simulation.current_round }} / {{ simulation.total_rounds }}
+    &nbsp;|&nbsp; Status: {{ simulation.status }}
+    &nbsp;|&nbsp; Generated: {{ generated_at }}
+</div>
+
+<div class="print-hint">
+    To save this report, use your browser's print function (Ctrl+P / Cmd+P) and select "Save as PDF" as the destination.
+</div>
+
+<!-- ================================================================ -->
+<h2>Final Results (Round {{ final_results.round }})</h2>
+<!-- ================================================================ -->
+<table>
+    <thead>
+        <tr>
+            <th class="ctr">#</th>
+            <th>Team</th>
+            <th class="num">Passengers</th>
+            <th class="num">Revenue</th>
+            <th class="num">Total Cost</th>
+            <th class="num">Profit</th>
+            <th class="num">Vol Share</th>
+            <th class="num">Load Factor</th>
+            <th class="ctr">CSI</th>
+            <th class="ctr">OEI</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in final_results.teams %}
+        <tr>
+            <td class="ctr">{{ loop.index }}</td>
+            <td>{{ t.team_name }}</td>
+            <td class="num">{{ "{:,}".format(t.passengers) }}</td>
+            <td class="num">${{ "{:,.0f}".format(t.revenue) }}</td>
+            <td class="num">${{ "{:,.0f}".format(t.total_cost) }}</td>
+            <td class="num">${{ "{:,.0f}".format(t.profit) }}</td>
+            <td class="num">{{ "{:.1f}%".format(t.market_share_volume * 100) }}</td>
+            <td class="num">{{ "{:.1f}%".format(t.load_factor * 100) }}</td>
+            <td class="ctr">{{ t.csi }}</td>
+            <td class="ctr">{{ t.oei }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- ================================================================ -->
+<h2>Decisions History</h2>
+<!-- ================================================================ -->
+{% for rn in rounds %}
+{% if rn in decisions_history %}
+<h3>Round {{ rn }}</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Team</th>
+            <th class="ctr">Flights/Day</th>
+            <th class="num">Price Business</th>
+            <th class="num">Price Leisure</th>
+            <th class="ctr">Branding</th>
+            <th class="ctr">Product</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in decisions_history[rn] %}
+        <tr>
+            <td>{{ d.team_name }}</td>
+            <td class="ctr">{{ d.flights_per_day }}</td>
+            <td class="num">${{ "{:,.0f}".format(d.price_business) }}</td>
+            <td class="num">${{ "{:,.0f}".format(d.price_leisure) }}</td>
+            <td class="ctr">{{ d.branding_level }}</td>
+            <td class="ctr">{{ d.product_strategy }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endfor %}
+
+<!-- ================================================================ -->
+<h2>Performance History</h2>
+<!-- ================================================================ -->
+{% for rn in rounds %}
+{% if rn in performance_history %}
+<h3>Round {{ rn }}{% if rn == 0 %} (Baseline){% endif %}</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Team</th>
+            <th class="num">Passengers</th>
+            <th class="num">Revenue</th>
+            <th class="num">Total Cost</th>
+            <th class="num">Profit</th>
+            <th class="num">Vol Share</th>
+            <th class="num">Load Factor</th>
+            <th class="ctr">CSI</th>
+            <th class="ctr">OEI</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in performance_history[rn] %}
+        <tr>
+            <td>{{ p.team_name }}</td>
+            <td class="num">{{ "{:,}".format(p.passengers) }}</td>
+            <td class="num">${{ "{:,.0f}".format(p.revenue) }}</td>
+            <td class="num">${{ "{:,.0f}".format(p.total_cost) }}</td>
+            <td class="num">${{ "{:,.0f}".format(p.profit) }}</td>
+            <td class="num">{{ "{:.1f}%".format(p.market_share_volume * 100) }}</td>
+            <td class="num">{{ "{:.1f}%".format(p.load_factor * 100) }}</td>
+            <td class="ctr">{{ p.csi }}</td>
+            <td class="ctr">{{ p.oei }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endfor %}
+
+<div class="report-footer">
+    Copyright 2026 by Dr. Jose Mendoza
+</div>
+
+</body>
+</html>
