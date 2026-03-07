@@ -29,10 +29,18 @@ def action_setup(
             get_simulation,
             remove_simulation,
         )
+        from app.data.csv_manager import csv_exists, read_csv_rows
 
-        # If the simulation already exists, remove it first (re-setup)
+        # Preserve existing password hashes before re-setup
+        existing_hashes: dict[str, str] = {}
         existing = get_simulation(simulation_id)
         if existing:
+            if csv_exists(simulation_id, "users.csv"):
+                for row in read_csv_rows(simulation_id, "users.csv"):
+                    uname = row.get("username", "").strip()
+                    phash = row.get("password_hash", "").strip()
+                    if uname and phash:
+                        existing_hashes[uname.lower()] = phash
             remove_simulation(simulation_id)
 
         result = create_simulation(
@@ -41,6 +49,20 @@ def action_setup(
             total_rounds=total_rounds,
             auto_create_teams=True,
         )
+
+        # Restore previously existing password hashes
+        if existing_hashes and csv_exists(simulation_id, "users.csv"):
+            from app.data.csv_manager import write_csv
+            rows = read_csv_rows(simulation_id, "users.csv")
+            changed = False
+            for row in rows:
+                uname = row.get("username", "").strip().lower()
+                if uname in existing_hashes:
+                    row["password_hash"] = existing_hashes[uname]
+                    changed = True
+            if changed:
+                from app.modules.simulation_management import USERS_CSV_FIELDS
+                write_csv(simulation_id, "users.csv", USERS_CSV_FIELDS, rows)
 
         return {
             "success": True,
