@@ -19,6 +19,8 @@ This repository provides:
 
 ## Quick Start
 
+See [docs/QUICK_START.md](docs/QUICK_START.md) for a step-by-step guide for new administrators.
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -142,7 +144,9 @@ python -m app.modules.simulation_management create \
 | `--course-id` | `""` | Optional course identifier |
 | `--no-teams` | *(flag)* | Skip creation of the 6 default team accounts |
 
-Creation outputs a credential report with the admin and team usernames/passwords. Passwords are bcrypt-hashed and stored in `{sim_id}/users.csv`. Six team accounts (Teams A–F) are created automatically unless `--no-teams` is specified.
+Passwords are bcrypt-hashed and stored in `{sim_id}/users.csv`. Six team accounts (Teams A–F) are created automatically unless `--no-teams` is specified.
+
+> **Note:** Re-setting up an existing simulation preserves existing user passwords. New passwords are only generated for newly created accounts.
 
 ### List Simulations
 
@@ -331,7 +335,7 @@ All users log in at `/` (or `/team/login`). Credentials are stored in `code/team
 
 - **Status panel** — current round, simulation status (CREATED/STARTED/ENDED), last-updated timestamp
 - **Decision status** — per-team icons (✔ Submitted / ✗ Pending) for the current round; auto-refreshes every 30 seconds and on tab focus
-- **Admin actions** — Set Up Simulation (with confirmation warning), Start, Move to Next Round (green button), End Simulation, Undo Last Period
+- **Admin actions** — Set Up Simulation (with confirmation warning; preserves existing passwords), Start, Move to Next Round (green button), End Simulation, Undo Last Period
 - **Move to Next Round** — processes the current round (computes results for all teams) and advances; teams that did not submit decisions automatically repeat their previous round's choices
 - **Team data table** — reads `round_results_team.csv` from Spaces (or local), sortable columns, AJAX refresh
 - **Charts** — Pie chart (team profits), bar charts (market share by volume and revenue), and 5 line charts (Revenue, Profit, Costs, Price Business, Price Leisure per round per team) with multicolor palette
@@ -363,7 +367,7 @@ Dashboard files live in `code/admin_dashboard/`:
 
 #### Team Dashboard Features
 
-- **Login page** — teams authenticate with credentials from `usernames.csv` (e.g. `Team1` / `MrGreen3`); usernames map to team IDs (`Team1`→A … `Team6`→F)
+- **Login page** — teams authenticate with per-simulation credentials (e.g. `teama_sim_001`); usernames map to team IDs
 - **Decision form** — flights per day, business/leisure prices, branding level, product strategy; pre-filled from previous round
 - **Save & Undo** — upsert decisions for the current round or undo to reset to defaults
 - **Auto-refresh** — polls `/team/state` every 10 seconds and reloads when the simulation status or round changes (e.g. admin starts the sim or advances the round)
@@ -662,7 +666,9 @@ airline_sim/
 │   │   │   └── team_data.py
 │   │   ├── templates/
 │   │   │   ├── admin_home.html
-│   │   │   └── report.html
+│   │   │   ├── report.html
+│   │   │   ├── simulations.html
+│   │   │   └── manage_users.html
 │   │   └── static/
 │   ├── team_dashboard/            # Team dashboard routes & unified entry point
 │   │   ├── __init__.py
@@ -696,7 +702,9 @@ airline_sim/
 ├── tests/                         # Test suite
 │   ├── simulation_test_suite.py
 │   └── helpers/
-└── docs/                          # Specifications
+├── docs/
+│   ├── QUICK_START.md              # Quick Start guide for new admins
+│   └── SPECIFICATION.md
 ```
 
 ## UI Messaging Standard
@@ -799,8 +807,8 @@ After deployment, verify each item:
 
 - `/health` returns `200` with `{"status":"ok"}`
 - `/team/login` loads the shared login page
-- Admin login works (e.g. `Admin` / `RoadRunner1`) → redirected to `/admin`
-- Team login works (e.g. `Team1` / `MrGreen3`) → redirected to `/team`
+- Admin login works (e.g. `admin_sim_001` / your password) → redirected to `/admin`
+- Team login works (e.g. `teama_sim_001` / your password) → redirected to `/team`
 - `/admin` is protected — unauthenticated access redirects to login
 - Admin dashboard shows charts, decision status, and action buttons
 - Team decision page loads and shows simulation status / round indicators
