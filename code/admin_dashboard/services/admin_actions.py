@@ -42,18 +42,11 @@ def action_setup(
             auto_create_teams=True,
         )
 
-        # Build credential summary for the banner
-        cred_lines = []
-        for c in result.credentials:
-            label = f"Team {c.team_id}" if c.team_id else c.role
-            cred_lines.append(f"{label}: {c.username} / {c.password}")
-        cred_text = " | ".join(cred_lines)
-
         return {
             "success": True,
             "message": (
-                f"Setup complete — simulation '{simulation_id}' initialised "
-                f"with {total_rounds} rounds. Credentials: {cred_text}"
+                f"Setup complete \u2014 simulation '{simulation_id}' initialised "
+                f"with {total_rounds} rounds."
             ),
         }
     except Exception as exc:

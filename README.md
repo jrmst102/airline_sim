@@ -102,6 +102,136 @@ Each team submits five decisions per round:
 | Medium | $3,000,000 |
 | High | $5,000,000 |
 
+## Simulation Management
+
+Manage simulation lifecycle via the CLI module:
+
+```bash
+python -m app.modules.simulation_management <command>
+```
+
+### Commands
+
+| Command | Description |
+| --- | --- |
+| `create` | Create a new simulation with admin + 6 team accounts |
+| `list` | List all registered simulations |
+| `lock <sim_id>` | Lock a simulation (reject team logins and decisions) |
+| `unlock <sim_id>` | Unlock a simulation |
+| `remove <sim_id> --confirm <sim_id>` | Delete a simulation and all its data |
+
+### Create a Simulation
+
+```bash
+python -m app.modules.simulation_management create \
+  --sim-id sim_001 \
+  --name "Competitive Strategy" \
+  --rounds 5 \
+  --admin-user professor \
+  --admin-pass Secret123!
+```
+
+| Argument | Default | Description |
+| --- | --- | --- |
+| `--sim-id` | *(required)* | Unique simulation identifier (alphanumeric + underscores) |
+| `--name` | *(required)* | Display name for the simulation |
+| `--rounds` | `3` | Number of rounds |
+| `--admin-user` | *(auto-generated)* | Admin username |
+| `--admin-pass` | *(auto-generated)* | Admin password |
+| `--school-id` | `""` | Optional school identifier |
+| `--course-id` | `""` | Optional course identifier |
+| `--no-teams` | *(flag)* | Skip creation of the 6 default team accounts |
+
+Creation outputs a credential report with the admin and team usernames/passwords. Passwords are bcrypt-hashed and stored in `{sim_id}/users.csv`. Six team accounts (Teams A–F) are created automatically unless `--no-teams` is specified.
+
+### List Simulations
+
+```bash
+python -m app.modules.simulation_management list
+```
+
+Prints a table with simulation ID, status, name, and lock state.
+
+### Lock / Unlock / Remove
+
+```bash
+python -m app.modules.simulation_management lock sim_001
+python -m app.modules.simulation_management unlock sim_001
+python -m app.modules.simulation_management remove sim_001 --confirm sim_001
+```
+
+The demo simulation (`sim_demo`) cannot be removed.
+
+## User Management
+
+Manage users within a specific simulation:
+
+```bash
+python -m app.modules.user_management <simulation_id> <command>
+```
+
+### Commands
+
+| Command | Description |
+| --- | --- |
+| `create` | Create a new user |
+| `list` | List all users in the simulation |
+| `lock --username <name>` | Lock a user account |
+| `unlock --username <name>` | Unlock a user account |
+| `chpass --username <name> --password <pass>` | Change a user's password |
+| `chrole --username <name> --role <role>` | Change a user's role |
+| `remove --username <name>` | Remove a user |
+| `auth --username <name> --password <pass>` | Test authentication |
+
+### Create a User
+
+```bash
+python -m app.modules.user_management sim_001 create \
+  --username jsmith \
+  --password MyPass123 \
+  --role USER \
+  --team-id A
+```
+
+| Argument | Default | Description |
+| --- | --- | --- |
+| `--username` | *(required)* | Unique username (case-insensitive) |
+| `--password` | *(required)* | Password (minimum 8 characters) |
+| `--role` | *(required)* | `ADMIN`, `PROFESSOR`, `TA`, or `USER` |
+| `--team-id` | `""` | Required when role is `USER` |
+| `--first-name` | `""` | Optional first name |
+| `--last-name` | `""` | Optional last name |
+| `--email` | `""` | Optional email |
+
+### Roles
+
+| Role | Dashboard | Description |
+| --- | --- | --- |
+| `ADMIN` | Admin | Full simulation control |
+| `PROFESSOR` | Admin | Same privileges as Admin |
+| `TA` | Admin | Same privileges as Admin |
+| `USER` | Team | Team decision entry and performance view |
+
+### Examples
+
+```bash
+# List all users
+python -m app.modules.user_management sim_001 list
+
+# Change password
+python -m app.modules.user_management sim_001 chpass --username jsmith --password NewPass456
+
+# Change role (team-id required when switching to USER)
+python -m app.modules.user_management sim_001 chrole --username jsmith --role ADMIN
+
+# Lock / unlock
+python -m app.modules.user_management sim_001 lock --username jsmith
+python -m app.modules.user_management sim_001 unlock --username jsmith
+
+# Test credentials
+python -m app.modules.user_management sim_001 auth --username jsmith --password NewPass456
+```
+
 ## Run the Simulation
 
 Choose one of the following approaches.
@@ -319,6 +449,56 @@ Dashboard files live in `code/dashboard_web/`:
 | `code/dashboard_web/templates/index.html` | Single-page HTML with Plotly.js |
 | `code/dashboard_web/static/styles.css` | NYU-themed CSS |
 
+### Option 4: Management Dashboard (FastAPI)
+
+A standalone web UI for platform-level administration — create/lock/remove simulations and manage users across all simulations. Superadmin access only.
+
+```bash
+python run_management_dashboard.py               # default: http://0.0.0.0:8090
+python run_management_dashboard.py --port 9000    # custom port
+```
+
+#### Authentication
+
+Login at `/mgmt/login` with the superadmin account. Session is stored as a signed `httponly` cookie with 24-hour expiry.
+
+#### Features
+
+- **Simulations page** (`/mgmt/simulations`) — list all simulations, create new ones (with full credential report), lock/unlock, remove
+- **Users page** (`/mgmt/users/{sim_id}`) — list users for a simulation, create users, change passwords/roles, lock/unlock/remove
+- Flash messages for operation feedback
+- NYU-themed styling
+
+#### Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/mgmt/login` | Login page |
+| `POST` | `/mgmt/login` | Authenticate |
+| `GET` | `/mgmt/logout` | Log out |
+| `GET` | `/mgmt/simulations` | Simulation list and creation form |
+| `POST` | `/mgmt/simulations/create` | Create simulation |
+| `POST` | `/mgmt/simulations/lock` | Lock simulation |
+| `POST` | `/mgmt/simulations/unlock` | Unlock simulation |
+| `POST` | `/mgmt/simulations/remove` | Remove simulation |
+| `GET` | `/mgmt/users/{sim_id}` | User list for a simulation |
+| `POST` | `/mgmt/users/{sim_id}/create` | Create user |
+| `POST` | `/mgmt/users/{sim_id}/change-password` | Change password |
+| `POST` | `/mgmt/users/{sim_id}/change-role` | Change role |
+| `POST` | `/mgmt/users/{sim_id}/lock` | Lock user |
+| `POST` | `/mgmt/users/{sim_id}/unlock` | Unlock user |
+| `POST` | `/mgmt/users/{sim_id}/remove` | Remove user |
+
+Dashboard files live in `code/management_dashboard/`:
+
+| File | Purpose |
+| --- | --- |
+| `code/management_dashboard/app.py` | FastAPI application, routes, session management |
+| `code/management_dashboard/templates/mgmt_login.html` | Login page template |
+| `code/management_dashboard/templates/mgmt_simulations.html` | Simulation management template |
+| `code/management_dashboard/templates/mgmt_users.html` | User management template |
+| `code/management_dashboard/static/mgmt.css` | Management dashboard CSS |
+
 ## CLI Usage
 
 You can run the simulation in two CLI styles:
@@ -345,6 +525,14 @@ python main.py historical-decisions-team sim_001
 
 | Task | Command |
 | --- | --- |
+| Create simulation | `python -m app.modules.simulation_management create --sim-id sim_001 --name "Airline Simulation" --rounds 5 --admin-user prof --admin-pass Secret123!` |
+| List simulations | `python -m app.modules.simulation_management list` |
+| Lock simulation | `python -m app.modules.simulation_management lock sim_001` |
+| Remove simulation | `python -m app.modules.simulation_management remove sim_001 --confirm sim_001` |
+| Create user | `python -m app.modules.user_management sim_001 create --username jdoe --password Pass1234 --role USER --team-id A` |
+| List users | `python -m app.modules.user_management sim_001 list` |
+| Change password | `python -m app.modules.user_management sim_001 chpass --username jdoe --password NewPass99` |
+| Change role | `python -m app.modules.user_management sim_001 chrole --username jdoe --role ADMIN` |
 | Setup simulation | `python -m app.modules.setup_simulation sim_001 --name "Airline Simulation" --rounds 8 --teams "Team Alpha" "Team Bravo"` |
 | Start simulation | `python -m app.modules.start_simulation sim_001 --admin-user-id U_ADMIN` |
 | Enter decision | `python -m app.modules.enter_decisions sim_001 --team-id T1 --flights-per-day 4 --price-business 360 --price-leisure 180 --branding-level Medium --product-strategy High` |
@@ -428,37 +616,46 @@ The store is selected automatically at runtime:
 
 ```
 airline_sim/
-├── main.py                  # CLI command router
-├── run_dashboard.py         # Web dashboard launcher (FastAPI)
-├── run_admin_dashboard.py   # Unified dashboard launcher (FastAPI, port 8080)
-├── run_team_dashboard.py    # Unified dashboard launcher (FastAPI, port 8081)
-├── kill_port.py             # Kill process on port 8080
-├── Procfile                 # App Platform run command
-├── app.yaml                 # DigitalOcean App Platform spec
+├── main.py                        # CLI command router
+├── run_dashboard.py               # Web dashboard launcher (FastAPI, port 8000)
+├── run_admin_dashboard.py         # Unified dashboard launcher (FastAPI, port 8080)
+├── run_team_dashboard.py          # Unified dashboard launcher (FastAPI, port 8081)
+├── run_management_dashboard.py    # Management dashboard launcher (FastAPI, port 8090)
+├── kill_port.py                   # Kill process on port 8080
+├── Procfile                       # App Platform run command
+├── app.yaml                       # DigitalOcean App Platform spec
 ├── requirements.txt
-├── .env.example             # Spaces credential template
+├── .env.example                   # Spaces credential template
 ├── app/
-│   ├── main.py              # CLI entry point
+│   ├── main.py                    # CLI entry point
 │   ├── config.py
-│   ├── auth/                # Login, password, permissions
-│   ├── core/                # Simulation engine, demand/cost/pricing models
-│   ├── data/                # CSV manager, schema validation, backups
-│   ├── modules/             # Lifecycle modules (setup, start, decisions, etc.)
-│   ├── storage/             # Storage abstraction (Spaces + local fallback)
+│   ├── auth/
+│   │   ├── login_manager.py       # Multi-simulation authentication
+│   │   ├── password_manager.py    # bcrypt hash/verify
+│   │   └── permissions.py         # Role normalisation and dashboard routing
+│   ├── core/                      # Simulation engine, demand/cost/pricing models
+│   ├── data/                      # CSV manager, schema validation, backups
+│   ├── modules/
+│   │   ├── simulation_management.py   # Create/list/lock/remove simulations
+│   │   ├── user_management.py         # Create/list/lock/remove/chpass/chrole users
+│   │   ├── setup_simulation.py
+│   │   ├── start_simulation.py
+│   │   ├── enter_decisions.py
+│   │   ├── move_next_round.py
+│   │   ├── end_simulation.py
+│   │   ├── undo_round.py
+│   │   ├── check_simulation_status.py
+│   │   ├── display_results.py
+│   │   ├── import_decisions_batch.py
+│   │   ├── export_results_batch.py
+│   │   └── ...                    # Additional modules
+│   ├── storage/                   # Storage abstraction (Spaces + local fallback)
 │   │   ├── config.py
 │   │   └── spaces_store.py
-│   └── ui/                  # Streamlit views
-│       ├── components.py
-│       ├── layout.py
-│       ├── team_view.py
-│       └── pages/           # Page-based navigation
-│           ├── home.py
-│           ├── setup.py
-│           ├── decisions.py
-│           └── results.py
+│   └── ui/                        # Streamlit views (legacy)
 ├── code/
 │   ├── __init__.py
-│   ├── admin_dashboard/     # Admin dashboard routes & templates
+│   ├── admin_dashboard/           # Admin dashboard routes & templates
 │   │   ├── app.py
 │   │   ├── services/
 │   │   │   ├── admin_actions.py
@@ -467,31 +664,39 @@ airline_sim/
 │   │   │   ├── admin_home.html
 │   │   │   └── report.html
 │   │   └── static/
-│   ├── team_dashboard/      # Team dashboard routes & unified entry point
+│   ├── team_dashboard/            # Team dashboard routes & unified entry point
 │   │   ├── __init__.py
-│   │   ├── app.py           # Team routes, session management
-│   │   ├── main.py          # Unified entry point (mounts admin + team)
-│   │   ├── usernames.csv    # All credentials (Admin + Teams)
+│   │   ├── app.py                 # Team routes, session management
+│   │   ├── main.py                # Unified entry point (mounts admin + team)
 │   │   ├── services/
-│   │   │   ├── team_auth.py # Auth for both admin and team users
 │   │   │   ├── team_decisions.py
 │   │   │   └── team_performance.py
 │   │   ├── templates/
 │   │   └── static/
-│   └── dashboard_web/       # Standalone FastAPI web dashboard
+│   ├── management_dashboard/      # Management dashboard (superadmin)
+│   │   ├── app.py                 # FastAPI application, routes
+│   │   ├── templates/
+│   │   │   ├── mgmt_login.html
+│   │   │   ├── mgmt_simulations.html
+│   │   │   └── mgmt_users.html
+│   │   └── static/
+│   │       └── mgmt.css
+│   └── dashboard_web/             # Standalone FastAPI web dashboard
 │       ├── app.py
 │       ├── dashboard_data.py
 │       ├── templates/
 │       └── static/
+├── scripts/
+│   ├── provision_demo.py          # Auto-provisions demo simulation on startup
+│   └── migrate_usernames.py
 ├── simulation/
-│   └── simulations/         # Simulation data (CSV files)
-│       └── sim_001/
-├── backup/                  # Bucket backups & pre-migration archives
-├── backup_spaces.py         # DO Spaces bucket backup script
-├── tests/                   # Test suite
+│   └── simulations/               # Local simulation data (CSV files)
+├── backup/                        # Bucket backups & pre-migration archives
+├── backup_spaces.py               # DO Spaces bucket backup script
+├── tests/                         # Test suite
 │   ├── simulation_test_suite.py
 │   └── helpers/
-└── docs/                    # Specifications
+└── docs/                          # Specifications
 ```
 
 ## UI Messaging Standard
