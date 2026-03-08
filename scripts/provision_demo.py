@@ -2,8 +2,8 @@
 """
 provision_demo.py — Provision the demo simulation (sim_demo)
 =============================================================
-Creates ``sim_demo`` with 10 pre-configured accounts:
-1 Admin, 1 Professor, 1 TA, and 6 team Users.
+Creates ``sim_demo`` with 9 pre-configured accounts:
+1 Admin, 1 Professor, 1 TA, and 5 team Users.
 
 Can be run standalone or called from application startup.
 
@@ -43,7 +43,6 @@ DEMO_ACCOUNTS = [
     ("demouser3", "DemoUser3!", "USER", "C", "Demo", "User3", "demo3@example.com"),
     ("demouser4", "DemoUser4!", "USER", "D", "Demo", "User4", "demo4@example.com"),
     ("demouser5", "DemoUser5!", "USER", "E", "Demo", "User5", "demo5@example.com"),
-    ("demouser6", "DemoUser6!", "USER", "F", "Demo", "User6", "demo6@example.com"),
 ]
 
 

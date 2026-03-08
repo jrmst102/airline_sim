@@ -29,8 +29,8 @@ VALID_BRANDING = ("Low", "Medium", "High")
 VALID_PRODUCTS = ("High", "Medium", "Low")
 
 # Price floor / ceiling for sanity checks
-MIN_PRICE = 50.0
-MAX_PRICE = 1000.0
+MIN_PRICE = 100.0
+MAX_PRICE = 5000.0
 
 
 @dataclass(frozen=True)

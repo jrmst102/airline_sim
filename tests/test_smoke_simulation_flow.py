@@ -1,7 +1,7 @@
 """
 Smoke test – full simulation lifecycle
 =======================================
-Uses the 6-airline case setup (team IDs A–F) with numeric price
+Uses the 5-airline default setup (team IDs A–E) with numeric price
 decisions (price_business, price_leisure, branding_level, product_strategy).
 """
 
@@ -24,9 +24,8 @@ TEAM_NAMES = [
     "Airline C",
     "Airline D",
     "Airline E",
-    "Airline F",
 ]
-TEAM_IDS = ["A", "B", "C", "D", "E", "F"]
+TEAM_IDS = ["A", "B", "C", "D", "E"]
 
 
 def _read_single_row(path: Path) -> dict[str, str]:
@@ -56,7 +55,7 @@ def _enter_round_decisions(
             price_business=biz_price,
             price_leisure=lei_price,
             branding_level="Medium",
-            product_strategy="None",
+            product_strategy="Low",
             root_dir=root,
         )
 
@@ -72,6 +71,7 @@ class SmokeSimulationFlowTest(unittest.TestCase):
                 simulation_id=simulation_id,
                 simulation_name="Smoke Test",
                 total_rounds=3,
+                num_teams=len(TEAM_IDS),
                 team_names=TEAM_NAMES,
                 root_dir=root,
                 overwrite=False,
@@ -98,7 +98,6 @@ class SmokeSimulationFlowTest(unittest.TestCase):
                     (290.0, 140.0),   # C – Discount level
                     (360.0, 180.0),   # D – Match level
                     (290.0, 140.0),   # E – Discount level
-                    (450.0, 220.0),   # F – Premium level
                 ],
             )
             move_result_round_2 = move_next_round(
@@ -137,7 +136,7 @@ class SmokeSimulationFlowTest(unittest.TestCase):
             self.assertEqual(len(open_rounds), 0)
 
             # After undo of round 2, remaining results:
-            #   round 0 baseline (6 teams) + round 1 (6 teams) = 12
+            #   round 0 baseline (5 teams) + round 1 (5 teams) = 10
             self.assertEqual(len(team_results_rows), len(TEAM_IDS) * 2)
             # market: round 0 baseline + round 1 = 2
             self.assertEqual(len(market_results_rows), 2)

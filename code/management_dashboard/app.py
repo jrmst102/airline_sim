@@ -191,6 +191,7 @@ async def create_sim(
     sim_id: str = Form(...),
     sim_name: str = Form(...),
     total_rounds: int = Form(3),
+    num_teams: int = Form(5),
     admin_user: str = Form(""),
     admin_pass: str = Form(""),
 ):
@@ -202,6 +203,7 @@ async def create_sim(
             simulation_id=sim_id,
             name=sim_name,
             total_rounds=total_rounds,
+            num_teams=num_teams,
             admin_username=admin_user or "",
             admin_password=admin_pass or "",
             auto_create_teams=True,

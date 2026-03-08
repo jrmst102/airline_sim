@@ -76,7 +76,9 @@ SIM_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
 
 DEMO_SIM_ID = "sim_demo"
 
-TEAM_LETTERS = ["A", "B", "C", "D", "E", "F"]
+# Imported at function level to avoid circular imports; use
+# setup_simulation.TEAM_LETTERS for the full A–J set.
+_ALL_TEAM_LETTERS = list("ABCDEFGHIJ")
 
 
 # ── Data classes ───────────────────────────────────────────────────────
@@ -259,6 +261,7 @@ def create_simulation(
     simulation_id: str,
     name: str,
     total_rounds: int = 3,
+    num_teams: int = 5,
     admin_username: str = "",
     admin_password: str = "",
     school_id: str = "",
@@ -297,6 +300,7 @@ def create_simulation(
         simulation_id=simulation_id,
         simulation_name=name,
         total_rounds=total_rounds,
+        num_teams=num_teams,
         overwrite=True,
     )
 
@@ -341,8 +345,9 @@ def create_simulation(
     user_counter += 1
 
     # Team users
+    team_letters = _ALL_TEAM_LETTERS[:num_teams]
     if auto_create_teams:
-        for letter in TEAM_LETTERS:
+        for letter in team_letters:
             team_username = f"team{letter.lower()}_{simulation_id}"
             team_password = _generate_password()
             users.append({
@@ -392,6 +397,7 @@ def _build_cli() -> argparse.ArgumentParser:
     create_p.add_argument("--sim-id", required=True, help="Simulation ID")
     create_p.add_argument("--name", required=True, help="Display name")
     create_p.add_argument("--rounds", type=int, default=3, help="Number of rounds")
+    create_p.add_argument("--num-teams", type=int, default=5, help="Number of teams (2–10, default: 5)")
     create_p.add_argument("--admin-user", default="", help="Admin username")
     create_p.add_argument("--admin-pass", default="", help="Admin password")
     create_p.add_argument("--school-id", default="")
@@ -428,6 +434,7 @@ def main() -> None:
             simulation_id=args.sim_id,
             name=args.name,
             total_rounds=args.rounds,
+            num_teams=args.num_teams,
             admin_username=args.admin_user,
             admin_password=args.admin_pass,
             school_id=args.school_id,

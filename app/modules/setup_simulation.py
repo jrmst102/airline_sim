@@ -25,7 +25,9 @@ from app.data.csv_manager import write_csv as _cm_write_csv
 # ═══════════════════════════════════════════════════════════════════════════
 # Case Appendix – Baseline Constants
 # ═══════════════════════════════════════════════════════════════════════════
-_NUM_TEAMS = 6  # Airlines A–F
+_NUM_TEAMS = 5  # Default: Airlines A–E
+MIN_TEAMS = 2
+MAX_TEAMS = 10
 
 # ── Market demand (monthly passengers) ─────────────────────────────────
 TOTAL_DEMAND     = 120_000   # Case Appendix
@@ -155,8 +157,60 @@ TEAM_BASELINES: dict[str, dict[str, Any]] = {
         "baseline_csi":             80,
         "baseline_oei":             76,
     },
+    "G": {  # Regional Challenger
+        "baseline_passengers":      12_000,
+        "baseline_volume_share":    0.10,
+        "baseline_profit_millions": 1.5,
+        "baseline_profit_share":    0.06,
+        "variable_cost_per_pax":    140,
+        "baseline_flights_per_day": 3,
+        "baseline_pricing_posture": "Match",
+        "baseline_branding":        "Low",
+        "baseline_product":         "Medium",
+        "baseline_csi":             70,
+        "baseline_oei":             80,
+    },
+    "H": {  # Budget Regional
+        "baseline_passengers":      10_800,
+        "baseline_volume_share":    0.09,
+        "baseline_profit_millions": 1.2,
+        "baseline_profit_share":    0.05,
+        "variable_cost_per_pax":    115,
+        "baseline_flights_per_day": 2,
+        "baseline_pricing_posture": "Discount",
+        "baseline_branding":        "Low",
+        "baseline_product":         "Low",
+        "baseline_csi":             64,
+        "baseline_oei":             88,
+    },
+    "I": {  # Economy Startup
+        "baseline_passengers":      9_600,
+        "baseline_volume_share":    0.08,
+        "baseline_profit_millions": 0.8,
+        "baseline_profit_share":    0.03,
+        "variable_cost_per_pax":    120,
+        "baseline_flights_per_day": 2,
+        "baseline_pricing_posture": "Discount",
+        "baseline_branding":        "Medium",
+        "baseline_product":         "Low",
+        "baseline_csi":             66,
+        "baseline_oei":             84,
+    },
+    "J": {  # New Market Entrant
+        "baseline_passengers":      8_400,
+        "baseline_volume_share":    0.07,
+        "baseline_profit_millions": 0.5,
+        "baseline_profit_share":    0.02,
+        "variable_cost_per_pax":    150,
+        "baseline_flights_per_day": 2,
+        "baseline_pricing_posture": "Match",
+        "baseline_branding":        "Low",
+        "baseline_product":         "High",
+        "baseline_csi":             72,
+        "baseline_oei":             70,
+    },
 }
-TEAM_LETTERS = list(TEAM_BASELINES.keys())  # ["A", "B", … "F"]
+TEAM_LETTERS = list(TEAM_BASELINES.keys())  # ["A", "B", … "J"]
 
 
 def _validate_baseline_enums() -> None:
@@ -453,6 +507,7 @@ def setup_simulation(
     simulation_id: str,
     simulation_name: str,
     total_rounds: int = 3,
+    num_teams: int = _NUM_TEAMS,
     team_names: list[str] | None = None,
     root_dir: Path | str = Path("simulation/simulations"),
     overwrite: bool = False,
@@ -467,9 +522,11 @@ def setup_simulation(
         Human-readable display name.
     total_rounds : int
         Number of monthly rounds (default 3 per case).
+    num_teams : int
+        Number of airlines (2–10, default 5).
     team_names : list[str] | None
-        Display names for the 6 airlines.  Must contain exactly 6
-        entries.  Defaults to ``["Airline A", …, "Airline F"]``.
+        Display names for the airlines.  Must match *num_teams*.
+        Defaults to ``["Airline A", …]``.
     root_dir : Path | str
         Parent directory that holds simulation folders.
     overwrite : bool
@@ -484,13 +541,19 @@ def setup_simulation(
     if total_rounds < 1:
         raise ValueError("total_rounds must be >= 1")
 
-    if team_names is None:
-        team_names = [f"Airline {L}" for L in TEAM_LETTERS]
-
-    if len(team_names) != _NUM_TEAMS:
+    if num_teams < MIN_TEAMS or num_teams > MAX_TEAMS:
         raise ValueError(
-            f"Exactly {_NUM_TEAMS} team names are required (got {len(team_names)}). "
-            f"The case defines {_NUM_TEAMS} airlines (A–F)."
+            f"num_teams must be between {MIN_TEAMS} and {MAX_TEAMS} (got {num_teams})"
+        )
+
+    team_letters = TEAM_LETTERS[:num_teams]
+
+    if team_names is None:
+        team_names = [f"Airline {L}" for L in team_letters]
+
+    if len(team_names) != num_teams:
+        raise ValueError(
+            f"Exactly {num_teams} team names are required (got {len(team_names)})."
         )
 
     root = Path(root_dir)
@@ -520,10 +583,10 @@ def setup_simulation(
     # ── 2) parameters.csv  (key-value, Case Appendix) ─────────────
     parameter_rows = _build_parameter_rows()
 
-    # ── 3) teams.csv  (6 airlines with baselines, Case Appendix) ──
+    # ── 3) teams.csv  (airlines with baselines) ──
     #   Strategic Baseline (Round 0 Positioning) — differentiated per team.
     team_rows: list[dict[str, Any]] = []
-    for i, letter in enumerate(TEAM_LETTERS):
+    for i, letter in enumerate(team_letters):
         bl = TEAM_BASELINES[letter]
         team_rows.append({
             "simulation_id":            simulation_id,
@@ -606,7 +669,7 @@ def setup_simulation(
     #   with each team's archetype decisions so the Team View starts
     #   pre-filled and the simulation begins with strategic asymmetry.
     decision_rows: list[dict[str, Any]] = []
-    for letter in TEAM_LETTERS:
+    for letter in team_letters:
         bl = TEAM_BASELINES[letter]
         posture = bl["baseline_pricing_posture"]
         decision_rows.append({
@@ -626,7 +689,7 @@ def setup_simulation(
     #   Costs are derived from baseline data; revenue = profit + total_cost.
     #   CSI & OEI start at 100.0 (neutral index baseline).
     baseline_team_results: list[dict[str, Any]] = []
-    for letter in TEAM_LETTERS:
+    for letter in team_letters:
         bl = TEAM_BASELINES[letter]
         pax           = bl["baseline_passengers"]
         profit        = bl["baseline_profit_millions"] * 1_000_000
@@ -693,7 +756,7 @@ def setup_simulation(
     # ── admin_actions.csv / log.csv ────────────────────────────────
     detail_msg = (
         f"Created simulation '{simulation_name}' "
-        f"with {_NUM_TEAMS} airlines and {total_rounds} rounds"
+        f"with {num_teams} airlines and {total_rounds} rounds"
     )
     admin_rows = [
         {
@@ -766,10 +829,16 @@ def _parse_cli_args() -> argparse.Namespace:
         help="Total number of monthly rounds (default: 3)",
     )
     parser.add_argument(
+        "--num-teams",
+        type=int,
+        default=_NUM_TEAMS,
+        help=f"Number of airlines ({MIN_TEAMS}–{MAX_TEAMS}, default: {_NUM_TEAMS})",
+    )
+    parser.add_argument(
         "--teams",
         nargs="+",
-        default=[f"Airline {L}" for L in "ABCDEF"],
-        help="List of 6 team display names",
+        default=None,
+        help="Team display names (must match --num-teams count)",
     )
     parser.add_argument(
         "--root",
@@ -791,6 +860,7 @@ def main() -> None:
         simulation_id=args.simulation_id,
         simulation_name=args.name,
         total_rounds=args.rounds,
+        num_teams=args.num_teams,
         team_names=args.teams,
         root_dir=args.root,
         overwrite=args.overwrite,

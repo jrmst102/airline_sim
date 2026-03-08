@@ -33,12 +33,12 @@ def render(sim_id: str, team_id: str = "T1") -> None:
 			round_raw = st.text_input("Round (optional, must be OPEN)", value="")
 			flights_per_day = st.number_input("Flights per Day", min_value=0, max_value=5, value=3, step=1)
 			price_business = st.number_input(
-				"Business Seat Price ($)", min_value=50.0, max_value=1000.0,
+				"Business Seat Price ($)", min_value=100.0, max_value=5000.0,
 				value=360.0, step=10.0, format="%.0f",
 				help="Reference: Premium $450 · Match $360 · Discount $290",
 			)
 			price_leisure = st.number_input(
-				"Leisure Seat Price ($)", min_value=50.0, max_value=1000.0,
+				"Leisure Seat Price ($)", min_value=100.0, max_value=5000.0,
 				value=180.0, step=10.0, format="%.0f",
 				help="Reference: Premium $220 · Match $180 · Discount $140",
 			)

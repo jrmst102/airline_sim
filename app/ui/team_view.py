@@ -34,7 +34,7 @@ SIM_ID = os.environ.get("SIM_ID", "sim_001")
 ROOT_DIR = Path("simulation/simulations")
 ADMIN_USER_ID = "U_ADMIN"
 
-TEAM_OPTIONS = ["A", "B", "C", "D", "E", "F"]
+TEAM_OPTIONS = list("ABCDEFGHIJ")
 TEAM_LABELS = {t: f"Airline {t}" for t in TEAM_OPTIONS}
 
 BRANDING_OPTIONS = ["Low", "Medium", "High"]
@@ -56,6 +56,16 @@ def _data_root() -> Path:
 
 def _sim_dir() -> Path:
     return _data_root() / "simulation" / "simulations" / SIM_ID
+
+
+def _get_active_team_ids(sim_path: Path) -> list[str]:
+    """Read active team IDs from teams.csv (supports variable team counts)."""
+    teams_csv = sim_path / "teams.csv"
+    if teams_csv.exists():
+        df = pd.read_csv(teams_csv)
+        active = df[df["is_active"].astype(str) == "1"]
+        return sorted(active["team_id"].tolist())
+    return TEAM_OPTIONS[:5]
 
 
 # ---------------------------------------------------------------------------
@@ -314,13 +324,14 @@ def _get_latest_decision_for_team(
 
 
 def _build_editable_decisions(sim_path: Path, round_number: int) -> pd.DataFrame:
-    """Build a DataFrame of current decisions for all 6 teams for st.data_editor.
+    """Build a DataFrame of current decisions for all teams for st.data_editor.
 
     Priority: current-round decision > previous-round decision > hardcoded defaults.
     """
     existing = _get_all_decisions_for_round(sim_path, round_number)
+    active_teams = _get_active_team_ids(sim_path)
     rows: list[dict[str, Any]] = []
-    for team_id in TEAM_OPTIONS:
+    for team_id in active_teams:
         # 1) Use existing decision for this round if available
         if existing is not None and "team_id" in existing.columns:
             match = existing[existing["team_id"] == team_id]
@@ -362,19 +373,20 @@ def _validate_decisions_df(df: pd.DataFrame) -> str | None:
         return "team_id contains null values."
     if df["team_id"].duplicated().any():
         return "Duplicate team_id values found."
-    if len(df) != len(TEAM_OPTIONS):
-        return f"Expected {len(TEAM_OPTIONS)} rows (one per team), got {len(df)}."
+    expected_teams = _get_active_team_ids(_sim_dir())
+    if len(df) != len(expected_teams):
+        return f"Expected {len(expected_teams)} rows (one per team), got {len(df)}."
     for _, row in df.iterrows():
         tid = row["team_id"]
         fpd = row.get("flights_per_day")
         if pd.isna(fpd) or int(fpd) < 0 or int(fpd) > 5:
             return f"Team {tid}: flights_per_day must be 0\u20135."
         pb = row.get("price_business")
-        if pd.isna(pb) or float(pb) < 50 or float(pb) > 1000:
-            return f"Team {tid}: price_business must be $50\u2013$1000."
+        if pd.isna(pb) or float(pb) < 100 or float(pb) > 5000:
+            return f"Team {tid}: price_business must be $100–$5,000."
         pl = row.get("price_leisure")
-        if pd.isna(pl) or float(pl) < 50 or float(pl) > 1000:
-            return f"Team {tid}: price_leisure must be $50\u2013$1000."
+        if pd.isna(pl) or float(pl) < 100 or float(pl) > 5000:
+            return f"Team {tid}: price_leisure must be $100–$5,000."
         if row.get("branding_level") not in BRANDING_OPTIONS:
             return f"Team {tid}: invalid branding_level '{row.get('branding_level')}'."
         if row.get("product_strategy") not in PRODUCT_OPTIONS:
@@ -619,10 +631,10 @@ def main() -> None:
                 "Flights/Day", min_value=0, max_value=5, step=1,
             ),
             "price_business": st.column_config.NumberColumn(
-                "Biz Price ($)", min_value=50, max_value=1000, step=10, format="$%.0f",
+                "Biz Price ($)", min_value=100, max_value=5000, step=10, format="$%.0f",
             ),
             "price_leisure": st.column_config.NumberColumn(
-                "Lei Price ($)", min_value=50, max_value=1000, step=10, format="$%.0f",
+                "Lei Price ($)", min_value=100, max_value=5000, step=10, format="$%.0f",
             ),
             "branding_level": st.column_config.SelectboxColumn(
                 "Branding", options=BRANDING_OPTIONS,
