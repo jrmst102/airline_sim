@@ -18,6 +18,7 @@ SIM_LOGO_PATH = IMAGES_DIR / "sim_logo.png"
 
 SIMULATION_TITLE = "Airlines"
 SIMULATION_SUBTITLE = "Competitive Strategy Simulation"
+SIMULATION_VERSION = "v1.12"
 SIMULATION_COPYRIGHT = "Copyright 2026 by Dr. Jose Mendoza"
 
 ADMIN_VIEW_CAPTION = "Admin operations for setup, lifecycle, backups, restore, results, logs, and users"
@@ -509,7 +510,7 @@ def render_branding(st, *, in_sidebar: bool = False, show_caption: bool = False)
 	if show_caption:
 		target.caption(SIMULATION_SUBTITLE)
 
-	target.caption(SIMULATION_COPYRIGHT)
+	target.caption(f"{SIMULATION_COPYRIGHT} · {SIMULATION_VERSION}")
 
 
 def render_basic_context_sidebar(

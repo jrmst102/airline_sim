@@ -29,6 +29,7 @@ from app.modules.move_next_round import move_next_round
 # Constants
 # ---------------------------------------------------------------------------
 PAGE_TITLE = "Airlines - Competitive Strategy Simulation"
+VERSION = "v1.12"
 COPYRIGHT = "Copyright 2026 by Dr. Jose Mendoza"
 SIM_ID = os.environ.get("SIM_ID", "sim_001")
 ROOT_DIR = Path("simulation/simulations")
@@ -729,7 +730,7 @@ def main() -> None:
             st.dataframe(table, use_container_width=True, hide_index=True)
 
     # ── Footer ─────────────────────────────────────────────────────
-    st.markdown(f'<div class="footer">{COPYRIGHT}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="footer">{COPYRIGHT} · {VERSION}</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------

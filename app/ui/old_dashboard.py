@@ -22,6 +22,7 @@ import streamlit as st
 # ---------------------------------------------------------------------------
 AUTO_REFRESH_SECONDS = 60
 PAGE_TITLE = "Airlines - Competitive Strategy Simulation"
+VERSION = "v1.12"
 COPYRIGHT = "Copyright 2026 by Dr. Jose Mendoza"
 
 # Logo lives alongside other images shipped with the app.  Fall back to the
@@ -501,7 +502,7 @@ def main() -> None:
         st.rerun()
 
     # ── Footer ─────────────────────────────────────────────────────
-    st.markdown(f'<div class="footer">{COPYRIGHT}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="footer">{COPYRIGHT} · {VERSION}</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
