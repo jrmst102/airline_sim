@@ -1,0 +1,2 @@
+simulation_id,round_number,total_demand,total_passengers,total_revenue,total_cost,total_profit,created_at_utc
+test2,0,120000,120000,38128000.0,26828000.0,11300000.0,2026-03-08T23:26:06.916406+00:00

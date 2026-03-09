@@ -1,0 +1,3 @@
+simulation_id,round_number,total_demand,total_passengers,total_revenue,total_cost,total_profit,created_at_utc
+sim_smoke,0,120000,120000,75436000.0,53436000.0,22000000.0,2026-03-08T23:22:03.711228+00:00
+sim_smoke,1,120000,90000,74520000.00,46150000.00,28370000.00,2026-03-08T23:22:18.755817+00:00

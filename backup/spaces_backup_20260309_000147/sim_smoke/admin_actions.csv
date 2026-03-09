@@ -1,0 +1,7 @@
+event_id,simulation_id,admin_user_id,action,details,event_at_utc
+E1,sim_smoke,U_ADMIN,SETUP_SIMULATION,Created simulation 'Smoke Test' with 5 airlines and 3 rounds,2026-03-08T23:22:03.711228+00:00
+E2,sim_smoke,U_ADMIN,START_SIMULATION,Started simulation and opened round 1,2026-03-08T23:22:08.529159+00:00
+E3,sim_smoke,U_ADMIN,MOVE_NEXT_ROUND,closed_round=1; opened_round=2; status=STARTED; processed_teams=5,2026-03-08T23:22:18.755817+00:00
+E4,sim_smoke,U_ADMIN,MOVE_NEXT_ROUND,closed_round=2; opened_round=3; status=STARTED; processed_teams=5,2026-03-08T23:22:29.989573+00:00
+E5,sim_smoke,U_ADMIN,UNDO_ROUND,reopened_round=2; rolled_back_open_round=3; status=STARTED,2026-03-08T23:22:32.867174+00:00
+E6,sim_smoke,U_ADMIN,END_SIMULATION,status_before=STARTED; closed_rounds=1; locked_rounds=1,2026-03-08T23:22:36.163339+00:00

@@ -1,0 +1,11 @@
+event_id,simulation_id,actor_user_id,action,details,event_at_utc
+E1,sim_demo,U_ADMIN,SETUP_SIMULATION,Created simulation 'Demo Simulation' with 6 airlines and 3 rounds,2026-03-05T20:39:01.457487+00:00
+E2,sim_demo,U_ADMIN,CREATE_USER,user_id=U002; username=demoadmin; role=ADMIN; team_id=,2026-03-05T20:39:07.498960+00:00
+E3,sim_demo,U_ADMIN,CREATE_USER,user_id=U003; username=demoprof; role=PROFESSOR; team_id=,2026-03-05T20:39:08.882230+00:00
+E4,sim_demo,U_ADMIN,CREATE_USER,user_id=U004; username=demota; role=TA; team_id=,2026-03-05T20:39:10.254365+00:00
+E5,sim_demo,U_ADMIN,CREATE_USER,user_id=U005; username=demouser1; role=USER; team_id=A,2026-03-05T20:39:11.664633+00:00
+E6,sim_demo,U_ADMIN,CREATE_USER,user_id=U006; username=demouser2; role=USER; team_id=B,2026-03-05T20:39:13.036245+00:00
+E7,sim_demo,U_ADMIN,CREATE_USER,user_id=U007; username=demouser3; role=USER; team_id=C,2026-03-05T20:39:14.433798+00:00
+E8,sim_demo,U_ADMIN,CREATE_USER,user_id=U008; username=demouser4; role=USER; team_id=D,2026-03-05T20:39:15.795070+00:00
+E9,sim_demo,U_ADMIN,CREATE_USER,user_id=U009; username=demouser5; role=USER; team_id=E,2026-03-05T20:39:17.344356+00:00
+E10,sim_demo,U_ADMIN,CREATE_USER,user_id=U010; username=demouser6; role=USER; team_id=F,2026-03-05T20:39:18.706444+00:00

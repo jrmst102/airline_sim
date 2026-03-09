@@ -1,0 +1,2 @@
+event_id,simulation_id,actor_user_id,action,details,event_at_utc
+E1,sim_001,U_ADMIN,SETUP_SIMULATION,Created simulation 'Airline Simulation' with 5 airlines and 4 rounds,2026-03-08T23:46:04.064387+00:00

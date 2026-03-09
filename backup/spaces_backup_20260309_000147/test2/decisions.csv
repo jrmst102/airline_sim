@@ -1,0 +1,3 @@
+simulation_id,round_number,team_id,flights_per_day,price_business,price_leisure,branding_level,product_strategy,submitted_at_utc
+test2,1,A,5,450,220,High,High,2026-03-08T23:26:06.916406+00:00
+test2,1,B,4,360,180,Medium,Low,2026-03-08T23:26:06.916406+00:00

@@ -1,5 +1,7 @@
 # airline_sim
 
+**Version: v1.12**
+
 Airlines simulation for the Competitive Strategy course.
 
 ## Overview
@@ -83,8 +85,8 @@ Each team submits five decisions per round:
 | Variable | Values |
 | --- | --- |
 | `flights_per_day` | `0–5` |
-| `price_business` | `$50–$1000` |
-| `price_leisure` | `$50–$1000` |
+| `price_business` | `$100–$5,000` |
+| `price_leisure` | `$100–$5,000` |
 | `branding_level` | `Low`, `Medium`, `High` |
 | `product_strategy` | `High`, `Medium`, `Low` |
 
@@ -116,7 +118,7 @@ python -m app.modules.simulation_management <command>
 
 | Command | Description |
 | --- | --- |
-| `create` | Create a new simulation with admin + 6 team accounts |
+| `create` | Create a new simulation with admin + 5 team accounts |
 | `list` | List all registered simulations |
 | `lock <sim_id>` | Lock a simulation (reject team logins and decisions) |
 | `unlock <sim_id>` | Unlock a simulation |
@@ -142,9 +144,9 @@ python -m app.modules.simulation_management create \
 | `--admin-pass` | *(auto-generated)* | Admin password |
 | `--school-id` | `""` | Optional school identifier |
 | `--course-id` | `""` | Optional course identifier |
-| `--no-teams` | *(flag)* | Skip creation of the 6 default team accounts |
+| `--no-teams` | *(flag)* | Skip creation of the 5 default team accounts |
 
-Passwords are bcrypt-hashed and stored in `{sim_id}/users.csv`. Six team accounts (Teams A–F) are created automatically unless `--no-teams` is specified.
+Passwords are bcrypt-hashed and stored in `{sim_id}/users.csv`. Five team accounts (Teams A–E) are created automatically unless `--no-teams` is specified.
 
 > **Note:** Re-setting up an existing simulation preserves existing user passwords. New passwords are only generated for newly created accounts.
 

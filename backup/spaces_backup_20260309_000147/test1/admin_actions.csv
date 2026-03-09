@@ -1,0 +1,2 @@
+event_id,simulation_id,admin_user_id,action,details,event_at_utc
+E1,test1,U_ADMIN,SETUP_SIMULATION,Created simulation 'Default Test' with 5 airlines and 3 rounds,2026-03-08T23:26:02.445753+00:00

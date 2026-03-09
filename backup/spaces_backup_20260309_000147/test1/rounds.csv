@@ -1,0 +1,4 @@
+simulation_id,round_number,status,opened_at_utc,closed_at_utc
+test1,1,PLANNED,,
+test1,2,PLANNED,,
+test1,3,PLANNED,,
